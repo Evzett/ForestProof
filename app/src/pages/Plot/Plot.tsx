@@ -7,6 +7,7 @@ import {
   ConfidencePill,
   LevelPill,
   WithError,
+  formatDecimal,
   formatNumber,
 } from "../../components/ui";
 import EventDrawer from "../../components/EventDrawer";
@@ -465,7 +466,7 @@ export default function Plot() {
           <div className="plot-econ-right">
             <Card tone="dark" title="Сценарная выручка" className="plot-block">
               <div className="econ__big tabular">
-                {(revenue / 1_000_000).toFixed(1)} <small>млн ₽ / год</small>
+                {formatDecimal(revenue / 1_000_000)} <small>млн ₽ / год</small>
               </div>
               <div className="econ__sub tabular">
                 {formatNumber(perHa)} <small>₽ / га · база: площадь полигона</small>
@@ -493,10 +494,10 @@ export default function Plot() {
                       <td style={{ color: "var(--c-muted-alt)" }}>{h} %</td>
                       {SCENARIO.price_scenarios.map((s) => (
                         <td key={s.key} className="num">
-                          {(
+                          {formatDecimal(
                             (SCENARIO.expected_effect_co2_t_year * s.price * (1 - h / 100)) /
-                            1_000_000
-                          ).toFixed(1)}
+                              1_000_000
+                          )}
                         </td>
                       ))}
                     </tr>

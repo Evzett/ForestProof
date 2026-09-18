@@ -29,6 +29,26 @@
   padding-right: 24px;
 }
 
+/* Кнопка с обводкой — для светлых фонов.
+   На тёмных карточках остаётся лаймовая заливка: обводка там не читается. */
+.btn--outline {
+  background: transparent;
+  border: 1.5px solid var(--c-ink);
+  color: var(--c-ink);
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn--outline:hover {
+  background: var(--c-ink);
+  color: #fff;
+  filter: none;
+}
+
+.btn--outline:hover .btn__arrow {
+  color: #fff;
+}
+
 .btn__arrow {
   color: var(--c-ink-deep);
 }
@@ -270,13 +290,20 @@
 .row-action {
   display: inline-flex;
   align-items: center;
-  padding: 7px 14px;
+  padding: 6px 14px;
+  border: 1.5px solid var(--c-ink);
   border-radius: 24px;
-  background: var(--c-lime);
-  color: var(--c-ink-deep);
+  background: transparent;
+  color: var(--c-ink);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.row-action:hover {
+  background: var(--c-ink);
+  color: #fff;
 }
 
 /* Фильтры и панель выбора */

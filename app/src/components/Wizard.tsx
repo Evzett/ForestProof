@@ -279,7 +279,7 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                 <span>В журнал расчётов</span>
               </button>
               <button
-                className="btn btn--lime"
+                className="btn btn--outline"
                 type="button"
                 onClick={() => {
                   onClose();

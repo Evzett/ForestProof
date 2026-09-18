@@ -407,7 +407,12 @@ export function Methodology() {
 
   const go = (id: string) => {
     setActive(id);
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    /* Плавная прокрутка игнорируется, если у пользователя отключены анимации
+       или браузер их не поддерживает — тогда прыгаем сразу, а не стоим на месте. */
+    const smooth = window.matchMedia?.("(prefers-reduced-motion: no-preference)").matches ?? false;
+    document
+      .getElementById(id)
+      ?.scrollIntoView(smooth ? { behavior: "smooth", block: "start" } : { block: "start" });
   };
 
   return (

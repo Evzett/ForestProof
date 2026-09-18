@@ -107,9 +107,10 @@
   justify-content: center;
   width: 68px;
   height: 68px;
+  border: 1.5px solid var(--c-ink);
   border-radius: 50%;
-  background: var(--c-lime);
-  color: var(--c-ink-deep);
+  background: transparent;
+  color: var(--c-ink);
   font-size: 30px;
 }
 

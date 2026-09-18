@@ -40,22 +40,26 @@
   color: var(--c-muted-alt);
 }
 
+/* Главное действие стоит на светлом фоне: обводка, заливка на наведении */
 .add-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 14px 22px;
+  padding: 13px 22px;
+  border: 1.5px solid var(--c-ink);
   border-radius: var(--r-pill);
-  background: var(--c-lime);
-  color: var(--c-ink-deep);
+  background: transparent;
+  color: var(--c-ink);
   font-size: 15px;
   font-weight: 500;
   white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.add-btn:hover {
-  filter: brightness(1.06);
+.add-btn:hover:not(:disabled) {
+  background: var(--c-ink);
+  color: #fff;
 }
 
 .sidebar__add {

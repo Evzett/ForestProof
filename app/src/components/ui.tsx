@@ -10,7 +10,7 @@ export function Button({
   type = "button",
 }: {
   children: ReactNode;
-  variant?: "dark" | "lime";
+  variant?: "dark" | "lime" | "outline";
   arrow?: boolean;
   onClick?: () => void;
   type?: "button" | "submit";
@@ -131,6 +131,14 @@ export function WithError({ value, error, unit }: { value: number; error: number
 
 export function formatNumber(n: number): string {
   return n.toLocaleString("ru-RU");
+}
+
+/* Дробные — с запятой: точка в русском тексте читается как опечатка */
+export function formatDecimal(n: number, digits = 1): string {
+  return n.toLocaleString("ru-RU", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
 }
 
 /* Карточка раздела «Что мы делаем»: ярлык, заголовок, текст и фотография справа. */
