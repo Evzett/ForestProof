@@ -1,0 +1,4296 @@
+{
+  "generated_from": "ESA CCI Biomass v7.0, Hansen GFC v1.13, MODIS MCD64A1 061",
+  "parameters": {
+    "carbon_fraction": 0.47,
+    "co2_per_carbon": 3.6666666666666665,
+    "unc_threshold": 0.1,
+    "buffer_share": 0.15,
+    "leakage_tco2e": 0.0,
+    "rho_spatial": 0.5,
+    "rho_temporal": 0.7,
+    "k_sigma": 1.645,
+    "treecover_threshold_pct": 30,
+    "prices_rub": {
+      "low": 500,
+      "base": 1500,
+      "high": 4000
+    }
+  },
+  "areas": [
+    {
+      "aoi_id": "RU_TVER_01",
+      "maps": {
+        "stock": "RU_TVER_01_stock.png",
+        "change": "RU_TVER_01_change.png",
+        "loss": "RU_TVER_01_loss.png",
+        "change_span_tc_ha": 32.89999999999999,
+        "size": [
+          73,
+          46
+        ],
+        "loss_size": [
+          256,
+          160
+        ]
+      },
+      "sentinel": {
+        "before": {
+          "file": "RU_TVER_01_s2_before.png",
+          "date": "2019-07-02",
+          "usable_pct": 100.0
+        },
+        "after": {
+          "file": "RU_TVER_01_s2_after.png",
+          "date": "2024-07-08",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_TVER_01_s2_dnbr.png",
+          "span": 0.779,
+          "median": -0.6118,
+          "share_above_threshold_pct": 0.0
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          198,
+          224
+        ],
+        "scenes_total": 12,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+      },
+      "stability": {
+        "level": "low",
+        "score": 2,
+        "max_score": 12,
+        "features": {
+          "loss_share_pct": 0.09520175550685354,
+          "loss_years": 4.0,
+          "fire_confirmed": 0.0,
+          "volatility_rel": 0.006870114363703116,
+          "sd_to_stock": 0.4967243048213013,
+          "baseline_decline": 0.0
+        },
+        "drivers": [
+          {
+            "label": "число лет с потерями",
+            "value": 4.0,
+            "unit": "",
+            "threshold": 4,
+            "points": 1
+          },
+          {
+            "label": "отношение погрешности продукта к запасу",
+            "value": 0.4967243048213013,
+            "unit": "",
+            "threshold": 0.3,
+            "points": 1
+          }
+        ],
+        "method": "пороговые правила по шести признакам",
+        "model_version": null,
+        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+      },
+      "name": "Тверская область контрольный участок",
+      "region": "Тверская область",
+      "role": "контрольный участок",
+      "status": "исследовательский участок",
+      "area_ha": 1750.4839361506984,
+      "area_ha_declared": 1750.4731,
+      "bbox": [
+        32.91,
+        56.59,
+        32.974,
+        56.63
+      ],
+      "baseline_id": "HIST-AGB-2015-2019-v1",
+      "baseline_rate_tc_ha_year": 0.343749779,
+      "baseline_stock_t_ha": {
+        "2019": 85.127113698,
+        "2020": 85.470863477,
+        "2021": 85.814613256,
+        "2022": 86.158363036,
+        "2023": 86.502112815,
+        "2024": 86.845862594,
+        "2025": 87.189612373,
+        "2026": 87.533362152,
+        "2027": 87.877111932,
+        "2028": 88.220861711,
+        "2029": 88.56461149
+      },
+      "series": [
+        {
+          "year": 2015,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 178.19598943995268,
+          "agb_sd_t_ha": 56.90976612622622,
+          "c_t_ha": 83.75211503677775,
+          "stock_tc": 146606.7319905248,
+          "sigma_stock_tc": 33113.30838038689,
+          "_sd_sum": 99619.63141405216,
+          "_sd_sq_sum": 3418325.2452810965
+        },
+        {
+          "year": 2016,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 177.8810467344874,
+          "agb_sd_t_ha": 55.50481642473727,
+          "c_t_ha": 83.60409196520908,
+          "stock_tc": 146347.61998156417,
+          "sigma_stock_tc": 32295.722486469305,
+          "_sd_sum": 97160.28953049603,
+          "_sd_sq_sum": 3189056.6212500175
+        },
+        {
+          "year": 2017,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 179.9682345163034,
+          "agb_sd_t_ha": 83.01114593971577,
+          "c_t_ha": 84.5850702226626,
+          "stock_tc": 148064.80666294965,
+          "sigma_stock_tc": 48299.990531679214,
+          "_sd_sum": 145309.67748893372,
+          "_sd_sq_sum": 6773366.951176784
+        },
+        {
+          "year": 2018,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 180.24180405650583,
+          "agb_sd_t_ha": 62.67695387903155,
+          "c_t_ha": 84.71364790655774,
+          "stock_tc": 148289.87983315554,
+          "sigma_stock_tc": 36468.69850796894,
+          "_sd_sum": 109715.00093210294,
+          "_sd_sq_sum": 3958279.523755553
+        },
+        {
+          "year": 2019,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 181.12151797779435,
+          "agb_sd_t_ha": 85.43445604148098,
+          "c_t_ha": 85.12711344956334,
+          "stock_tc": 149013.6446243387,
+          "sigma_stock_tc": 49709.91140706325,
+          "_sd_sum": 149551.64289438544,
+          "_sd_sq_sum": 7101871.266784687
+        },
+        {
+          "year": 2020,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 183.36228742084288,
+          "agb_sd_t_ha": 97.35810637129966,
+          "c_t_ha": 86.18027508779615,
+          "stock_tc": 150857.18715423538,
+          "sigma_stock_tc": 56647.72460141616,
+          "_sd_sum": 170423.80125701101,
+          "_sd_sq_sum": 9278915.929185823
+        },
+        {
+          "year": 2021,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 181.54702432571165,
+          "agb_sd_t_ha": 81.64615177060655,
+          "c_t_ha": 85.32710143308447,
+          "stock_tc": 149363.7203769156,
+          "sigma_stock_tc": 47505.640986331084,
+          "_sd_sum": 142920.27712296866,
+          "_sd_sq_sum": 6441969.911227986
+        },
+        {
+          "year": 2022,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 180.9830681979305,
+          "agb_sd_t_ha": 79.00947862869042,
+          "c_t_ha": 85.06204205302733,
+          "stock_tc": 148899.7381899995,
+          "sigma_stock_tc": 45971.56179447554,
+          "_sd_sum": 138304.82314316448,
+          "_sd_sq_sum": 6085481.786918409
+        },
+        {
+          "year": 2023,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 182.44887742822326,
+          "agb_sd_t_ha": 60.20480850529054,
+          "c_t_ha": 85.75097239126492,
+          "stock_tc": 150105.69968021128,
+          "sigma_stock_tc": 35030.132187668234,
+          "_sd_sum": 105387.55016754003,
+          "_sd_sq_sum": 3560793.7721461784
+        },
+        {
+          "year": 2024,
+          "area_ha": 1750.4839361506984,
+          "agb_t_ha": 183.2711643408021,
+          "agb_sd_t_ha": 91.03524170097539,
+          "c_t_ha": 86.13744724017698,
+          "stock_tc": 150782.21769495812,
+          "sigma_stock_tc": 52968.62067620746,
+          "_sd_sum": 159355.7282211536,
+          "_sd_sq_sum": 7968056.3964798385
+        }
+      ],
+      "cover_loss": [
+        {
+          "year": 2007,
+          "area_ha": 0.04271776262656257
+        },
+        {
+          "year": 2010,
+          "area_ha": 0.08551746200127597
+        },
+        {
+          "year": 2018,
+          "area_ha": 1.0682356539465248
+        },
+        {
+          "year": 2019,
+          "area_ha": 0.47002055850657093
+        }
+      ],
+      "period_2019_2024": {
+        "year_start": 2019,
+        "year_end": 2024,
+        "years": 5,
+        "area_ha": 1750.4839361506984,
+        "c_start_t_ha": 85.12711344956334,
+        "c_end_t_ha": 86.13744724017698,
+        "stock_start_tc": 149013.6446243387,
+        "stock_end_tc": 150782.21769495812,
+        "delta_stock_tc": 1768.57307061943,
+        "e_tco2e": -6484.767925604576,
+        "e_per_ha_year": -0.7409114464500067,
+        "sigma_e_tco2e": 146228.69172294575,
+        "lower_tco2e": -247030.9658098503,
+        "upper_tco2e": 234061.42995864118,
+        "baseline_c_start_t_ha": 85.127113698,
+        "baseline_c_end_t_ha": 86.845862594,
+        "e_proj_tco2e": -6484.767925604576,
+        "e_base_tco2e": -11031.688553324035,
+        "leakage_tco2e": 0.0,
+        "r_tco2e": -4546.920627719459,
+        "h_tco2e": 240546.19788424575,
+        "h_over_r": null,
+        "unc_share": null,
+        "r_adjusted_tco2e": null,
+        "buffer_tco2e": null,
+        "units": 0,
+        "reason": "результат не превышает базовую линию",
+        "value_rub": {
+          "low": 0,
+          "base": 0,
+          "high": 0
+        },
+        "sensitivity": [
+          [
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 11005.018437574307,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 7788.152922655642,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 6039.31155023462,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 3505.886771549383,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 2499.146167885521,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 1187.149181561619,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.0,
+              "h_tco2e": 309914.9636015453,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.5,
+              "h_tco2e": 219363.34245178354,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.7,
+              "h_tco2e": 170145.44528316645,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.9,
+              "h_tco2e": 98887.1533091913,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.95,
+              "h_tco2e": 70611.38877222741,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.99,
+              "h_tco2e": 33938.29005916972,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.0,
+              "h_tco2e": 438147.7592062785,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.5,
+              "h_tco2e": 310128.8405941264,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.7,
+              "h_tco2e": 240546.19788424575,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.9,
+              "h_tco2e": 139803.6081969143,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.95,
+              "h_tco2e": 99828.31638344789,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.99,
+              "h_tco2e": 47981.328260227194,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.0,
+              "h_tco2e": 536562.7951422078,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.5,
+              "h_tco2e": 379788.7827797794,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.7,
+              "h_tco2e": 294576.7711194442,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.9,
+              "h_tco2e": 171205.80784823996,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.95,
+              "h_tco2e": 122251.45103605617,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.99,
+              "h_tco2e": 58758.8988322914,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 619536.7683714621,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 438519.25987640314,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 340130.0851878675,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 197681.07753971673,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 141156.4444476516,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 67845.47532867879,
+              "h_over_r": null,
+              "units": 0
+            }
+          ]
+        ]
+      },
+      "periods": [
+        {
+          "year_start": 2019,
+          "year_end": 2020,
+          "years": 1,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.12711344956334,
+          "c_end_t_ha": 86.18027508779615,
+          "stock_start_tc": 149013.6446243387,
+          "stock_end_tc": 150857.18715423538,
+          "delta_stock_tc": 1843.5425298966875,
+          "e_tco2e": -6759.6559429545205,
+          "e_per_ha_year": -3.861592673520304,
+          "sigma_e_tco2e": 152847.90488229413,
+          "lower_tco2e": -258194.45947432838,
+          "upper_tco2e": 244675.14758841932,
+          "baseline_c_start_t_ha": 85.127113698,
+          "baseline_c_end_t_ha": 85.470863477,
+          "e_proj_tco2e": -6759.6559429545205,
+          "e_base_tco2e": -2206.3377093810777,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 4553.318233573443,
+          "h_tco2e": 251434.80353137385,
+          "h_over_r": 55.220125331334,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2021,
+          "years": 2,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.12711344956334,
+          "c_end_t_ha": 85.32710143308447,
+          "stock_start_tc": 149013.6446243387,
+          "stock_end_tc": 149363.7203769156,
+          "delta_stock_tc": 350.0757525769004,
+          "e_tco2e": -1283.6110927819682,
+          "e_per_ha_year": -0.36664463645539636,
+          "sigma_e_tco2e": 138256.16451783534,
+          "lower_tco2e": -228715.0017246211,
+          "upper_tco2e": 226147.77953905717,
+          "baseline_c_start_t_ha": 85.127113698,
+          "baseline_c_end_t_ha": 85.814613256,
+          "e_proj_tco2e": -1283.6110927819682,
+          "e_base_tco2e": -4412.675418762246,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -3129.064325980278,
+          "h_tco2e": 227431.39063183914,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2022,
+          "years": 3,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.12711344956334,
+          "c_end_t_ha": 85.06204205302733,
+          "stock_start_tc": 149013.6446243387,
+          "stock_end_tc": 148899.7381899995,
+          "delta_stock_tc": -113.90643433918012,
+          "e_tco2e": 417.6569259103271,
+          "e_per_ha_year": 0.07953170687734724,
+          "sigma_e_tco2e": 136463.09821372633,
+          "lower_tco2e": -224064.1396356695,
+          "upper_tco2e": 224899.45348749016,
+          "baseline_c_start_t_ha": 85.127113698,
+          "baseline_c_end_t_ha": 86.158363036,
+          "e_proj_tco2e": 417.6569259103271,
+          "e_base_tco2e": -6619.013134561788,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -7036.670060472115,
+          "h_tco2e": 224481.79656157983,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2023,
+          "years": 4,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.12711344956334,
+          "c_end_t_ha": 85.75097239126492,
+          "stock_start_tc": 149013.6446243387,
+          "stock_end_tc": 150105.69968021128,
+          "delta_stock_tc": 1092.0550558725954,
+          "e_tco2e": -4004.2018715328495,
+          "e_per_ha_year": -0.5718706965597841,
+          "sigma_e_tco2e": 130169.39228868524,
+          "lower_tco2e": -218132.8521864201,
+          "upper_tco2e": 210124.44844335437,
+          "baseline_c_start_t_ha": 85.127113698,
+          "baseline_c_end_t_ha": 86.502112815,
+          "e_proj_tco2e": -4004.2018715328495,
+          "e_base_tco2e": -8825.350843942957,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -4821.1489724101075,
+          "h_tco2e": 214128.65031488723,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2024,
+          "years": 5,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.12711344956334,
+          "c_end_t_ha": 86.13744724017698,
+          "stock_start_tc": 149013.6446243387,
+          "stock_end_tc": 150782.21769495812,
+          "delta_stock_tc": 1768.57307061943,
+          "e_tco2e": -6484.767925604576,
+          "e_per_ha_year": -0.7409114464500067,
+          "sigma_e_tco2e": 146228.69172294575,
+          "lower_tco2e": -247030.9658098503,
+          "upper_tco2e": 234061.42995864118,
+          "baseline_c_start_t_ha": 85.127113698,
+          "baseline_c_end_t_ha": 86.845862594,
+          "e_proj_tco2e": -6484.767925604576,
+          "e_base_tco2e": -11031.688553324035,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -4546.920627719459,
+          "h_tco2e": 240546.19788424575,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2021,
+          "years": 1,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 86.18027508779615,
+          "c_end_t_ha": 85.32710143308447,
+          "stock_start_tc": 150857.18715423538,
+          "stock_end_tc": 149363.7203769156,
+          "delta_stock_tc": -1493.466777319787,
+          "e_tco2e": 5476.044850172552,
+          "e_per_ha_year": 3.128303400609511,
+          "sigma_e_tco2e": 151101.79732005164,
+          "lower_tco2e": -243086.4117413124,
+          "upper_tco2e": 254038.5014416575,
+          "baseline_c_start_t_ha": 85.470863477,
+          "baseline_c_end_t_ha": 85.814613256,
+          "e_proj_tco2e": 5476.044850172552,
+          "e_base_tco2e": -2206.3377093811687,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -7682.382559553721,
+          "h_tco2e": 248562.45659148495,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2022,
+          "years": 2,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 86.18027508779615,
+          "c_end_t_ha": 85.06204205302733,
+          "stock_start_tc": 150857.18715423538,
+          "stock_end_tc": 148899.7381899995,
+          "delta_stock_tc": -1957.4489642358676,
+          "e_tco2e": 7177.312868864848,
+          "e_per_ha_year": 2.050093897076173,
+          "sigma_e_tco2e": 150131.5793767166,
+          "lower_tco2e": -239789.13520583397,
+          "upper_tco2e": 254143.76094356368,
+          "baseline_c_start_t_ha": 85.470863477,
+          "baseline_c_end_t_ha": 86.158363036,
+          "e_proj_tco2e": 7177.312868864848,
+          "e_base_tco2e": -4412.675425180711,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -11589.988294045557,
+          "h_tco2e": 246966.44807469883,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2023,
+          "years": 3,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 86.18027508779615,
+          "c_end_t_ha": 85.75097239126492,
+          "stock_start_tc": 150857.18715423538,
+          "stock_end_tc": 150105.69968021128,
+          "delta_stock_tc": -751.4874740240921,
+          "e_tco2e": 2755.454071421671,
+          "e_per_ha_year": 0.5247032957603893,
+          "sigma_e_tco2e": 149298.93469459278,
+          "lower_tco2e": -242841.29350118345,
+          "upper_tco2e": 248352.2016440268,
+          "baseline_c_start_t_ha": 85.470863477,
+          "baseline_c_end_t_ha": 86.502112815,
+          "e_proj_tco2e": 2755.454071421671,
+          "e_base_tco2e": -6619.013134561878,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -9374.46720598355,
+          "h_tco2e": 245596.74757260512,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2024,
+          "years": 4,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 86.18027508779615,
+          "c_end_t_ha": 86.13744724017698,
+          "stock_start_tc": 150857.18715423538,
+          "stock_end_tc": 150782.21769495812,
+          "delta_stock_tc": -74.96945927725756,
+          "e_tco2e": 274.88801734994433,
+          "e_per_ha_year": 0.03925886031756754,
+          "sigma_e_tco2e": 156161.56015297223,
+          "lower_tco2e": -256610.8784342894,
+          "upper_tco2e": 257160.65446898926,
+          "baseline_c_start_t_ha": 85.470863477,
+          "baseline_c_end_t_ha": 86.845862594,
+          "e_proj_tco2e": 274.88801734994433,
+          "e_base_tco2e": -8825.350843942957,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -9100.2388612929,
+          "h_tco2e": 256885.76645163933,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2022,
+          "years": 1,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.32710143308447,
+          "c_end_t_ha": 85.06204205302733,
+          "stock_start_tc": 149363.7203769156,
+          "stock_end_tc": 148899.7381899995,
+          "delta_stock_tc": -463.98218691608054,
+          "e_tco2e": 1701.2680186922953,
+          "e_per_ha_year": 0.9718843935428345,
+          "sigma_e_tco2e": 132847.6651050348,
+          "lower_tco2e": -216833.14107908995,
+          "upper_tco2e": 220235.67711647454,
+          "baseline_c_start_t_ha": 85.814613256,
+          "baseline_c_end_t_ha": 86.158363036,
+          "e_proj_tco2e": 1701.2680186922953,
+          "e_base_tco2e": -2206.337715799542,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -3907.605734491837,
+          "h_tco2e": 218534.40909778225,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2023,
+          "years": 2,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.32710143308447,
+          "c_end_t_ha": 85.75097239126492,
+          "stock_start_tc": 149363.7203769156,
+          "stock_end_tc": 150105.69968021128,
+          "delta_stock_tc": 741.979303295695,
+          "e_tco2e": -2720.5907787508813,
+          "e_per_ha_year": -0.7770967566641717,
+          "sigma_e_tco2e": 124565.01810954978,
+          "lower_tco2e": -207630.04556896028,
+          "upper_tco2e": 202188.8640114585,
+          "baseline_c_start_t_ha": 85.814613256,
+          "baseline_c_end_t_ha": 86.502112815,
+          "e_proj_tco2e": -2720.5907787508813,
+          "e_base_tco2e": -4412.675425180711,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -1692.0846464298293,
+          "h_tco2e": 204909.4547902094,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2024,
+          "years": 3,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.32710143308447,
+          "c_end_t_ha": 86.13744724017698,
+          "stock_start_tc": 149363.7203769156,
+          "stock_end_tc": 150782.21769495812,
+          "delta_stock_tc": 1418.4973180425295,
+          "e_tco2e": -5201.156832822608,
+          "e_per_ha_year": -0.9904226531130803,
+          "sigma_e_tco2e": 143873.062391157,
+          "lower_tco2e": -241872.34446627586,
+          "upper_tco2e": 231470.03080063066,
+          "baseline_c_start_t_ha": 85.814613256,
+          "baseline_c_end_t_ha": 86.845862594,
+          "e_proj_tco2e": -5201.156832822608,
+          "e_base_tco2e": -6619.013134561788,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -1417.8563017391807,
+          "h_tco2e": 236671.18763345326,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2023,
+          "years": 1,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.06204205302733,
+          "c_end_t_ha": 85.75097239126492,
+          "stock_start_tc": 148899.7381899995,
+          "stock_end_tc": 150105.69968021128,
+          "delta_stock_tc": 1205.9614902117755,
+          "e_tco2e": -4421.858797443177,
+          "e_per_ha_year": -2.526077906871178,
+          "sigma_e_tco2e": 120830.37075223272,
+          "lower_tco2e": -203187.818684866,
+          "upper_tco2e": 194344.10108997964,
+          "baseline_c_start_t_ha": 86.158363036,
+          "baseline_c_end_t_ha": 86.502112815,
+          "e_proj_tco2e": -4421.858797443177,
+          "e_base_tco2e": -2206.3377093811687,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 2215.521088062008,
+          "h_tco2e": 198765.95988742282,
+          "h_over_r": 89.71521912314101,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2024,
+          "years": 2,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.06204205302733,
+          "c_end_t_ha": 86.13744724017698,
+          "stock_start_tc": 148899.7381899995,
+          "stock_end_tc": 150782.21769495812,
+          "delta_stock_tc": 1882.47950495861,
+          "e_tco2e": -6902.424851514903,
+          "e_per_ha_year": -1.9715761764410378,
+          "sigma_e_tco2e": 142481.4470033645,
+          "lower_tco2e": -241284.4051720495,
+          "upper_tco2e": 227479.55546901972,
+          "baseline_c_start_t_ha": 86.158363036,
+          "baseline_c_end_t_ha": 86.845862594,
+          "e_proj_tco2e": -6902.424851514903,
+          "e_base_tco2e": -4412.675418762246,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 2489.7494327526565,
+          "h_tco2e": 234381.9803205346,
+          "h_over_r": 94.13878249643896,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2023,
+          "year_end": 2024,
+          "years": 1,
+          "area_ha": 1750.4839361506984,
+          "c_start_t_ha": 85.75097239126492,
+          "c_end_t_ha": 86.13744724017698,
+          "stock_start_tc": 150105.69968021128,
+          "stock_end_tc": 150782.21769495812,
+          "delta_stock_tc": 676.5180147468345,
+          "e_tco2e": -2480.5660540717263,
+          "e_per_ha_year": -1.4170744460108975,
+          "sigma_e_tco2e": 138902.70487899546,
+          "lower_tco2e": -230975.51558001927,
+          "upper_tco2e": 226014.3834718758,
+          "baseline_c_start_t_ha": 86.502112815,
+          "baseline_c_end_t_ha": 86.845862594,
+          "e_proj_tco2e": -2480.5660540717263,
+          "e_base_tco2e": -2206.3377093810777,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 274.22834469064856,
+          "h_tco2e": 228494.94952594754,
+          "h_over_r": 833.2287815969866,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        }
+      ]
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_02",
+      "maps": {
+        "stock": "RU_VOLOGDA_02_stock.png",
+        "change": "RU_VOLOGDA_02_change.png",
+        "loss": "RU_VOLOGDA_02_loss.png",
+        "change_span_tc_ha": 51.230000000000004,
+        "size": [
+          73,
+          46
+        ],
+        "loss_size": [
+          256,
+          160
+        ]
+      },
+      "sentinel": {
+        "before": {
+          "file": "RU_VOLOGDA_02_s2_before.png",
+          "date": "2019-08-28",
+          "usable_pct": 100.0
+        },
+        "after": {
+          "file": "RU_VOLOGDA_02_s2_after.png",
+          "date": "2024-08-16",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_VOLOGDA_02_s2_dnbr.png",
+          "span": 0.277,
+          "median": 0.0263,
+          "share_above_threshold_pct": 2.2
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          188,
+          228
+        ],
+        "scenes_total": 12,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+      },
+      "stability": {
+        "level": "medium",
+        "score": 6,
+        "max_score": 12,
+        "features": {
+          "loss_share_pct": 33.58184290629841,
+          "loss_years": 22.0,
+          "fire_confirmed": 0.0,
+          "volatility_rel": 0.009984448038347086,
+          "sd_to_stock": 0.3125917104405256,
+          "baseline_decline": 0.10396421
+        },
+        "drivers": [
+          {
+            "label": "доля потерь покрова за 2001—2024",
+            "value": 33.58184290629841,
+            "unit": "%",
+            "threshold": 5.0,
+            "points": 2
+          },
+          {
+            "label": "число лет с потерями",
+            "value": 22.0,
+            "unit": "",
+            "threshold": 8,
+            "points": 2
+          },
+          {
+            "label": "отношение погрешности продукта к запасу",
+            "value": 0.3125917104405256,
+            "unit": "",
+            "threshold": 0.3,
+            "points": 1
+          },
+          {
+            "label": "падающая историческая динамика",
+            "value": 0.10396421,
+            "unit": "т C/га/год",
+            "threshold": 0.001,
+            "points": 1
+          }
+        ],
+        "method": "пороговые правила по шести признакам",
+        "model_version": null,
+        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+      },
+      "name": "Вологодская область мозаика потерь покрова",
+      "region": "Вологодская область",
+      "role": "недавние потери покрова с неустановленной причиной",
+      "status": "исследовательский участок",
+      "area_ha": 1617.7139160525467,
+      "area_ha_declared": 1617.7075,
+      "bbox": [
+        40.66975,
+        59.43,
+        40.73375,
+        59.47
+      ],
+      "baseline_id": "HIST-AGB-2015-2019-v1",
+      "baseline_rate_tc_ha_year": -0.10396421,
+      "baseline_stock_t_ha": {
+        "2019": 75.714302086,
+        "2020": 75.610337876,
+        "2021": 75.506373665,
+        "2022": 75.402409455,
+        "2023": 75.298445245,
+        "2024": 75.194481035,
+        "2025": 75.090516825,
+        "2026": 74.986552615,
+        "2027": 74.882588405,
+        "2028": 74.778624195,
+        "2029": 74.674659985
+      },
+      "series": [
+        {
+          "year": 2015,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 161.97905960691006,
+          "agb_sd_t_ha": 42.60489580394525,
+          "c_t_ha": 76.13015801524772,
+          "stock_tc": 123156.81605254556,
+          "sigma_stock_tc": 22909.67301832251,
+          "_sd_sum": 68922.53283401098,
+          "_sd_sq_sum": 1636643.4482042254
+        },
+        {
+          "year": 2016,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 164.3607346563784,
+          "agb_sd_t_ha": 52.29748064484929,
+          "c_t_ha": 77.24954528849786,
+          "stock_tc": 124967.66442193442,
+          "sigma_stock_tc": 28121.371139808238,
+          "_sd_sum": 84602.3622136614,
+          "_sd_sq_sum": 2345376.0697928877
+        },
+        {
+          "year": 2017,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 165.1120326983422,
+          "agb_sd_t_ha": 38.81610806131137,
+          "c_t_ha": 77.60265536822084,
+          "stock_tc": 125538.89551180071,
+          "sigma_stock_tc": 20872.157488724955,
+          "_sd_sum": 62793.35817778284,
+          "_sd_sq_sum": 1285325.2450143786
+        },
+        {
+          "year": 2018,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 162.44670972649894,
+          "agb_sd_t_ha": 54.988002943225105,
+          "c_t_ha": 76.34995357145449,
+          "stock_tc": 123512.38238250777,
+          "sigma_stock_tc": 29568.412171609853,
+          "_sd_sum": 88954.85757719364,
+          "_sd_sq_sum": 2750817.723647436
+        },
+        {
+          "year": 2019,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 161.09425821856607,
+          "agb_sd_t_ha": 42.68816592987019,
+          "c_t_ha": 75.71430136272605,
+          "stock_tc": 122484.07895867822,
+          "sigma_stock_tc": 22954.399036567294,
+          "_sd_sum": 69057.2400755112,
+          "_sd_sq_sum": 1622130.319000118
+        },
+        {
+          "year": 2020,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 160.08428283189335,
+          "agb_sd_t_ha": 38.64701369641213,
+          "c_t_ha": 75.23961293098986,
+          "stock_tc": 121716.16887686944,
+          "sigma_stock_tc": 20781.423068473574,
+          "_sd_sum": 62519.81187055928,
+          "_sd_sq_sum": 1345959.8028380382
+        },
+        {
+          "year": 2021,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 157.12971174313915,
+          "agb_sd_t_ha": 54.26014409116087,
+          "c_t_ha": 73.8509645192754,
+          "stock_tc": 119469.73301673468,
+          "sigma_stock_tc": 29176.930905168425,
+          "_sd_sum": 87777.3901832873,
+          "_sd_sq_sum": 2629066.8162117125
+        },
+        {
+          "year": 2022,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 155.2803763557413,
+          "agb_sd_t_ha": 48.51773778237091,
+          "c_t_ha": 72.98177688719841,
+          "stock_tc": 118063.63608866297,
+          "sigma_stock_tc": 26089.211165490822,
+          "_sd_sum": 78487.81958592984,
+          "_sd_sq_sum": 2151440.9070176315
+        },
+        {
+          "year": 2023,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 154.22071882169863,
+          "agb_sd_t_ha": 52.33954338630618,
+          "c_t_ha": 72.48373784619835,
+          "stock_tc": 117257.95140129972,
+          "sigma_stock_tc": 28144.188701322462,
+          "_sd_sum": 84670.40769586354,
+          "_sd_sq_sum": 2450875.968421074
+        },
+        {
+          "year": 2024,
+          "area_ha": 1617.7139160525467,
+          "agb_t_ha": 152.26879031681912,
+          "agb_sd_t_ha": 47.59796161184423,
+          "c_t_ha": 71.56633144890499,
+          "stock_tc": 115773.85030572262,
+          "sigma_stock_tc": 25594.658712466255,
+          "_sd_sum": 76999.88487521531,
+          "_sd_sq_sum": 2086580.336450921
+        }
+      ],
+      "cover_loss": [
+        {
+          "year": 2001,
+          "area_ha": 2.2524357150927994
+        },
+        {
+          "year": 2002,
+          "area_ha": 11.064134534758786
+        },
+        {
+          "year": 2003,
+          "area_ha": 12.168002036088659
+        },
+        {
+          "year": 2004,
+          "area_ha": 0.11851723653610755
+        },
+        {
+          "year": 2005,
+          "area_ha": 16.160133896693356
+        },
+        {
+          "year": 2006,
+          "area_ha": 0.079008785060746
+        },
+        {
+          "year": 2008,
+          "area_ha": 24.616023836094875
+        },
+        {
+          "year": 2009,
+          "area_ha": 8.968848410428098
+        },
+        {
+          "year": 2010,
+          "area_ha": 1.145561568150105
+        },
+        {
+          "year": 2011,
+          "area_ha": 5.018274610135081
+        },
+        {
+          "year": 2012,
+          "area_ha": 22.36164690909461
+        },
+        {
+          "year": 2013,
+          "area_ha": 66.55739777042763
+        },
+        {
+          "year": 2014,
+          "area_ha": 20.697848443903823
+        },
+        {
+          "year": 2015,
+          "area_ha": 10.662907885257585
+        },
+        {
+          "year": 2018,
+          "area_ha": 0.03951482937363831
+        },
+        {
+          "year": 2019,
+          "area_ha": 9.641983345018803
+        },
+        {
+          "year": 2020,
+          "area_ha": 18.054114973181193
+        },
+        {
+          "year": 2021,
+          "area_ha": 199.71339295887884
+        },
+        {
+          "year": 2022,
+          "area_ha": 0.11854071942356734
+        },
+        {
+          "year": 2023,
+          "area_ha": 33.73053646698884
+        },
+        {
+          "year": 2024,
+          "area_ha": 63.06920833432467
+        },
+        {
+          "year": 2025,
+          "area_ha": 17.020112697182604
+        }
+      ],
+      "period_2019_2024": {
+        "year_start": 2019,
+        "year_end": 2024,
+        "years": 5,
+        "area_ha": 1617.7139160525467,
+        "c_start_t_ha": 75.71430136272605,
+        "c_end_t_ha": 71.56633144890499,
+        "stock_start_tc": 122484.07895867822,
+        "stock_end_tc": 115773.85030572262,
+        "delta_stock_tc": -6710.2286529556,
+        "e_tco2e": 24604.171727503868,
+        "e_per_ha_year": 3.0418446034687725,
+        "sigma_e_tco2e": 69519.5529524709,
+        "lower_tco2e": -89755.49287931075,
+        "upper_tco2e": 138963.8363343185,
+        "baseline_c_start_t_ha": 75.714302086,
+        "baseline_c_end_t_ha": 75.194481035,
+        "e_proj_tco2e": 24604.171727503868,
+        "e_base_tco2e": 3083.3797428858365,
+        "leakage_tco2e": 0.0,
+        "r_tco2e": -21520.79198461803,
+        "h_tco2e": 114359.66460681462,
+        "h_over_r": null,
+        "unc_share": null,
+        "r_adjusted_tco2e": null,
+        "buffer_tco2e": null,
+        "units": 0,
+        "reason": "результат не превышает базовую линию",
+        "value_rub": {
+          "low": 0,
+          "base": 0,
+          "high": 0
+        },
+        "sensitivity": [
+          [
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 5459.422014841733,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 3875.560094955379,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 3017.5879398949323,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 1786.5351662892429,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 1308.8833529903798,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 728.2512044707452,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.0,
+              "h_tco2e": 146683.0303233601,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.5,
+              "h_tco2e": 104026.03526807275,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.7,
+              "h_tco2e": 80892.63171077162,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.9,
+              "h_tco2e": 47600.62727102181,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.95,
+              "h_tco2e": 34588.5845253864,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.99,
+              "h_tco2e": 18461.054947370765,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.0,
+              "h_tco2e": 207369.27805475774,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.5,
+              "h_tco2e": 147063.979957616,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.7,
+              "h_tco2e": 114359.66460681462,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.9,
+              "h_tco2e": 67293.77071462259,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.95,
+              "h_tco2e": 48898.172245948605,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.99,
+              "h_tco2e": 26097.79658508108,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.0,
+              "h_tco2e": 253945.11922275467,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.5,
+              "h_tco2e": 180095.00934046155,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.7,
+              "h_tco2e": 140045.1638374338,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.9,
+              "h_tco2e": 82408.0301861804,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.95,
+              "h_tco2e": 59880.650634362726,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.99,
+              "h_tco2e": 31959.027290847855,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 293213.62463768065,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 207943.76782667666,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 161700.84396771112,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 95151.01314113951,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 69140.09974149673,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 36900.72986604952,
+              "h_over_r": null,
+              "units": 0
+            }
+          ]
+        ]
+      },
+      "periods": [
+        {
+          "year_start": 2019,
+          "year_end": 2020,
+          "years": 1,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.71430136272605,
+          "c_end_t_ha": 75.23961293098986,
+          "stock_start_tc": 122484.07895867822,
+          "stock_end_tc": 121716.16887686944,
+          "delta_stock_tc": -767.9100818087754,
+          "e_tco2e": 2815.67029996551,
+          "e_per_ha_year": 1.7405242496993214,
+          "sigma_e_tco2e": 62541.86278870425,
+          "lower_tco2e": -100065.69398745299,
+          "upper_tco2e": 105697.03458738401,
+          "baseline_c_start_t_ha": 75.714302086,
+          "baseline_c_end_t_ha": 75.610337876,
+          "e_proj_tco2e": 2815.67029996551,
+          "e_base_tco2e": 616.6759473908395,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -2198.9943525746703,
+          "h_tco2e": 102881.3642874185,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2021,
+          "years": 2,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.71430136272605,
+          "c_end_t_ha": 73.8509645192754,
+          "stock_start_tc": 122484.07895867822,
+          "stock_end_tc": 119469.73301673468,
+          "delta_stock_tc": -3014.3459419435385,
+          "e_tco2e": 11052.601787126307,
+          "e_per_ha_year": 3.4161175463261872,
+          "sigma_e_tco2e": 76961.86173094127,
+          "lower_tco2e": -115549.66076027208,
+          "upper_tco2e": 137654.8643345247,
+          "baseline_c_start_t_ha": 75.714302086,
+          "baseline_c_end_t_ha": 75.506373665,
+          "e_proj_tco2e": 11052.601787126307,
+          "e_base_tco2e": 1233.3519007133182,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -9819.249886412988,
+          "h_tco2e": 126602.26254739838,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2022,
+          "years": 3,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.71430136272605,
+          "c_end_t_ha": 72.98177688719841,
+          "stock_start_tc": 122484.07895867822,
+          "stock_end_tc": 118063.63608866297,
+          "delta_stock_tc": -4420.442870015249,
+          "e_tco2e": 16208.290523389247,
+          "e_per_ha_year": 3.339752136756004,
+          "sigma_e_tco2e": 70448.14150811474,
+          "lower_tco2e": -99678.9022574595,
+          "upper_tco2e": 132095.483304238,
+          "baseline_c_start_t_ha": 75.714302086,
+          "baseline_c_end_t_ha": 75.402409455,
+          "e_proj_tco2e": 16208.290523389247,
+          "e_base_tco2e": 1850.0278481041578,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -14358.262675285088,
+          "h_tco2e": 115887.19278084875,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2023,
+          "years": 4,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.71430136272605,
+          "c_end_t_ha": 72.48373784619835,
+          "stock_start_tc": 122484.07895867822,
+          "stock_end_tc": 117257.95140129972,
+          "delta_stock_tc": -5226.127557378495,
+          "e_tco2e": 19162.467710387813,
+          "e_per_ha_year": 2.961349890150382,
+          "sigma_e_tco2e": 74655.50156705892,
+          "lower_tco2e": -103645.83236742413,
+          "upper_tco2e": 141970.76778819974,
+          "baseline_c_start_t_ha": 75.714302086,
+          "baseline_c_end_t_ha": 75.298445245,
+          "e_proj_tco2e": 19162.467710387813,
+          "e_base_tco2e": 2466.7037954949974,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -16695.763914892814,
+          "h_tco2e": 122808.30007781193,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2024,
+          "years": 5,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.71430136272605,
+          "c_end_t_ha": 71.56633144890499,
+          "stock_start_tc": 122484.07895867822,
+          "stock_end_tc": 115773.85030572262,
+          "delta_stock_tc": -6710.2286529556,
+          "e_tco2e": 24604.171727503868,
+          "e_per_ha_year": 3.0418446034687725,
+          "sigma_e_tco2e": 69519.5529524709,
+          "lower_tco2e": -89755.49287931075,
+          "upper_tco2e": 138963.8363343185,
+          "baseline_c_start_t_ha": 75.714302086,
+          "baseline_c_end_t_ha": 75.194481035,
+          "e_proj_tco2e": 24604.171727503868,
+          "e_base_tco2e": 3083.3797428858365,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -21520.79198461803,
+          "h_tco2e": 114359.66460681462,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2021,
+          "years": 1,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.23961293098986,
+          "c_end_t_ha": 73.8509645192754,
+          "stock_start_tc": 121716.16887686944,
+          "stock_end_tc": 119469.73301673468,
+          "delta_stock_tc": -2246.435860134763,
+          "e_tco2e": 8236.931487160797,
+          "e_per_ha_year": 5.091710842953053,
+          "sigma_e_tco2e": 76411.73564439433,
+          "lower_tco2e": -117460.37364786788,
+          "upper_tco2e": 133934.23662218946,
+          "baseline_c_start_t_ha": 75.610337876,
+          "baseline_c_end_t_ha": 75.506373665,
+          "e_proj_tco2e": 8236.931487160797,
+          "e_base_tco2e": 616.6759533224787,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -7620.255533838318,
+          "h_tco2e": 125697.30513502867,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2022,
+          "years": 2,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.23961293098986,
+          "c_end_t_ha": 72.98177688719841,
+          "stock_start_tc": 121716.16887686944,
+          "stock_end_tc": 118063.63608866297,
+          "delta_stock_tc": -3652.532788206474,
+          "e_tco2e": 13392.620223423737,
+          "e_per_ha_year": 4.139366080284345,
+          "sigma_e_tco2e": 68936.76346678355,
+          "lower_tco2e": -100008.3556794352,
+          "upper_tco2e": 126793.59612628269,
+          "baseline_c_start_t_ha": 75.610337876,
+          "baseline_c_end_t_ha": 75.402409455,
+          "e_proj_tco2e": 13392.620223423737,
+          "e_base_tco2e": 1233.3519007133182,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -12159.268322710419,
+          "h_tco2e": 113400.97590285895,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2023,
+          "years": 3,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.23961293098986,
+          "c_end_t_ha": 72.48373784619835,
+          "stock_start_tc": 121716.16887686944,
+          "stock_end_tc": 117257.95140129972,
+          "delta_stock_tc": -4458.21747556972,
+          "e_tco2e": 16346.797410422305,
+          "e_per_ha_year": 3.368291770300736,
+          "sigma_e_tco2e": 73802.64017559114,
+          "lower_tco2e": -105058.54567842511,
+          "upper_tco2e": 137752.14049926974,
+          "baseline_c_start_t_ha": 75.610337876,
+          "baseline_c_end_t_ha": 75.298445245,
+          "e_proj_tco2e": 16346.797410422305,
+          "e_base_tco2e": 1850.0278481041578,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -14496.769562318146,
+          "h_tco2e": 121405.34308884742,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2024,
+          "years": 4,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 75.23961293098986,
+          "c_end_t_ha": 71.56633144890499,
+          "stock_start_tc": 121716.16887686944,
+          "stock_end_tc": 115773.85030572262,
+          "delta_stock_tc": -5942.318571146825,
+          "e_tco2e": 21788.50142753836,
+          "e_per_ha_year": 3.367174691911135,
+          "sigma_e_tco2e": 67838.61470963086,
+          "lower_tco2e": -89806.0197698044,
+          "upper_tco2e": 133383.02262488112,
+          "baseline_c_start_t_ha": 75.610337876,
+          "baseline_c_end_t_ha": 75.194481035,
+          "e_proj_tco2e": 21788.50142753836,
+          "e_base_tco2e": 2466.7037954949974,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -19321.79763204336,
+          "h_tco2e": 111594.52119734276,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2022,
+          "years": 1,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 73.8509645192754,
+          "c_end_t_ha": 72.98177688719841,
+          "stock_start_tc": 119469.73301673468,
+          "stock_end_tc": 118063.63608866297,
+          "delta_stock_tc": -1406.0969280717109,
+          "e_tco2e": 5155.6887362629395,
+          "e_per_ha_year": 3.187021317615637,
+          "sigma_e_tco2e": 79174.18314795736,
+          "lower_tco2e": -125085.84254212692,
+          "upper_tco2e": 135397.2200146528,
+          "baseline_c_start_t_ha": 75.506373665,
+          "baseline_c_end_t_ha": 75.402409455,
+          "e_proj_tco2e": 5155.6887362629395,
+          "e_base_tco2e": 616.6759473908395,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -4539.0127888721,
+          "h_tco2e": 130241.53127838986,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2023,
+          "years": 2,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 73.8509645192754,
+          "c_end_t_ha": 72.48373784619835,
+          "stock_start_tc": 119469.73301673468,
+          "stock_end_tc": 117257.95140129972,
+          "delta_stock_tc": -2211.7816154349566,
+          "e_tco2e": 8109.865923261507,
+          "e_per_ha_year": 2.506582233974577,
+          "sigma_e_tco2e": 81476.20340917613,
+          "lower_tco2e": -125918.48868483322,
+          "upper_tco2e": 142138.22053135623,
+          "baseline_c_start_t_ha": 75.506373665,
+          "baseline_c_end_t_ha": 75.298445245,
+          "e_proj_tco2e": 8109.865923261507,
+          "e_base_tco2e": 1233.351894781679,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -6876.514028479828,
+          "h_tco2e": 134028.35460809473,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2024,
+          "years": 3,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 73.8509645192754,
+          "c_end_t_ha": 71.56633144890499,
+          "stock_start_tc": 119469.73301673468,
+          "stock_end_tc": 115773.85030572262,
+          "delta_stock_tc": -3695.882711012062,
+          "e_tco2e": 13551.56994037756,
+          "e_per_ha_year": 2.7923293082304954,
+          "sigma_e_tco2e": 78717.86194878526,
+          "lower_tco2e": -115939.31296537418,
+          "upper_tco2e": 143042.4528461293,
+          "baseline_c_start_t_ha": 75.506373665,
+          "baseline_c_end_t_ha": 75.194481035,
+          "e_proj_tco2e": 13551.56994037756,
+          "e_base_tco2e": 1850.0278421725184,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -11701.542098205042,
+          "h_tco2e": 129490.88290575174,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2023,
+          "years": 1,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 72.98177688719841,
+          "c_end_t_ha": 72.48373784619835,
+          "stock_start_tc": 118063.63608866297,
+          "stock_end_tc": 117257.95140129972,
+          "delta_stock_tc": -805.6846873632458,
+          "e_tco2e": 2954.177186998568,
+          "e_per_ha_year": 1.8261431503335168,
+          "sigma_e_tco2e": 77329.18650850738,
+          "lower_tco2e": -124252.33461949608,
+          "upper_tco2e": 130160.68899349321,
+          "baseline_c_start_t_ha": 75.402409455,
+          "baseline_c_end_t_ha": 75.298445245,
+          "e_proj_tco2e": 2954.177186998568,
+          "e_base_tco2e": 616.6759473908395,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -2337.501239607728,
+          "h_tco2e": 127206.51180649464,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2024,
+          "years": 2,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 72.98177688719841,
+          "c_end_t_ha": 71.56633144890499,
+          "stock_start_tc": 118063.63608866297,
+          "stock_end_tc": 115773.85030572262,
+          "delta_stock_tc": -2289.785782940351,
+          "e_tco2e": 8395.88120411462,
+          "e_per_ha_year": 2.594983303537924,
+          "sigma_e_tco2e": 73414.98630910098,
+          "lower_tco2e": -112371.77127435649,
+          "upper_tco2e": 129163.53368258572,
+          "baseline_c_start_t_ha": 75.402409455,
+          "baseline_c_end_t_ha": 75.194481035,
+          "e_proj_tco2e": 8395.88120411462,
+          "e_base_tco2e": 1233.351894781679,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -7162.52930933294,
+          "h_tco2e": 120767.65247847111,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2023,
+          "year_end": 2024,
+          "years": 1,
+          "area_ha": 1617.7139160525467,
+          "c_start_t_ha": 72.48373784619835,
+          "c_end_t_ha": 71.56633144890499,
+          "stock_start_tc": 117257.95140129972,
+          "stock_end_tc": 115773.85030572262,
+          "delta_stock_tc": -1484.1010955771053,
+          "e_tco2e": 5441.7040171160525,
+          "e_per_ha_year": 3.363823456742332,
+          "sigma_e_tco2e": 76799.35051313485,
+          "lower_tco2e": -120893.22757699079,
+          "upper_tco2e": 131776.63561122288,
+          "baseline_c_start_t_ha": 75.298445245,
+          "baseline_c_end_t_ha": 75.194481035,
+          "e_proj_tco2e": 5441.7040171160525,
+          "e_base_tco2e": 616.6759473908395,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -4825.028069725213,
+          "h_tco2e": 126334.93159410683,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        }
+      ]
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_03",
+      "maps": {
+        "stock": "RU_MORDOVIA_03_stock.png",
+        "change": "RU_MORDOVIA_03_change.png",
+        "loss": "RU_MORDOVIA_03_loss.png",
+        "change_span_tc_ha": 61.504200000000054,
+        "size": [
+          73,
+          46
+        ],
+        "loss_size": [
+          256,
+          160
+        ]
+      },
+      "sentinel": {
+        "before": {
+          "file": "RU_MORDOVIA_03_s2_before.png",
+          "date": "2020-08-18",
+          "usable_pct": 99.0
+        },
+        "after": {
+          "file": "RU_MORDOVIA_03_s2_after.png",
+          "date": "2022-08-23",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_MORDOVIA_03_s2_dnbr.png",
+          "span": 1.417,
+          "median": 0.4818,
+          "share_above_threshold_pct": 67.2
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          212,
+          229
+        ],
+        "scenes_total": 13,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+      },
+      "stability": {
+        "level": "high",
+        "score": 10,
+        "max_score": 12,
+        "features": {
+          "loss_share_pct": 72.4968336966419,
+          "loss_years": 23.0,
+          "fire_confirmed": 1.0,
+          "volatility_rel": 0.12282968973276776,
+          "sd_to_stock": 0.45542607852963835,
+          "baseline_decline": 2.481022774
+        },
+        "drivers": [
+          {
+            "label": "доля потерь покрова за 2001—2024",
+            "value": 72.4968336966419,
+            "unit": "%",
+            "threshold": 5.0,
+            "points": 2
+          },
+          {
+            "label": "число лет с потерями",
+            "value": 23.0,
+            "unit": "",
+            "threshold": 8,
+            "points": 2
+          },
+          {
+            "label": "подтверждённый пожар на участке",
+            "value": 1.0,
+            "unit": "",
+            "threshold": 1,
+            "points": 2
+          },
+          {
+            "label": "волатильность годового ряда запаса",
+            "value": 0.12282968973276776,
+            "unit": "",
+            "threshold": 0.07,
+            "points": 1
+          },
+          {
+            "label": "отношение погрешности продукта к запасу",
+            "value": 0.45542607852963835,
+            "unit": "",
+            "threshold": 0.3,
+            "points": 1
+          },
+          {
+            "label": "падающая историческая динамика",
+            "value": 2.481022774,
+            "unit": "т C/га/год",
+            "threshold": 1.0,
+            "points": 2
+          }
+        ],
+        "method": "пороговые правила по шести признакам",
+        "model_version": null,
+        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+      },
+      "name": "Мордовия пожар и повторные нарушения",
+      "region": "Республика Мордовия",
+      "role": "повторные нарушения и пожар",
+      "status": "исследовательский участок",
+      "area_ha": 1829.611823922258,
+      "area_ha_declared": 1829.5984,
+      "bbox": [
+        43.17,
+        54.85025,
+        43.234,
+        54.89025
+      ],
+      "baseline_id": "HIST-AGB-2015-2019-v1",
+      "baseline_rate_tc_ha_year": -2.481022774,
+      "baseline_stock_t_ha": {
+        "2019": 36.418491606,
+        "2020": 33.937468832,
+        "2021": 31.456446058,
+        "2022": 28.975423285,
+        "2023": 26.494400511,
+        "2024": 24.013377737,
+        "2025": 21.532354963,
+        "2026": 19.051332189,
+        "2027": 16.570309416,
+        "2028": 14.089286642,
+        "2029": 11.608263868
+      },
+      "series": [
+        {
+          "year": 2015,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 98.60123205748414,
+          "agb_sd_t_ha": 42.084609413784044,
+          "c_t_ha": 46.342579067017546,
+          "stock_tc": 84788.93061206743,
+          "sigma_stock_tc": 25595.406949918277,
+          "_sd_sum": 76998.49898860925,
+          "_sd_sq_sum": 2646788.9192021247
+        },
+        {
+          "year": 2016,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 106.12096763642724,
+          "agb_sd_t_ha": 43.73176025080347,
+          "c_t_ha": 49.8768547891208,
+          "stock_tc": 91255.28326222891,
+          "sigma_stock_tc": 26596.466060010407,
+          "_sd_sum": 80012.14563580343,
+          "_sd_sq_sum": 2511117.357839274
+        },
+        {
+          "year": 2017,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 89.8939759069985,
+          "agb_sd_t_ha": 29.009873330360048,
+          "c_t_ha": 42.2501686762893,
+          "stock_tc": 77301.40817284872,
+          "sigma_stock_tc": 17643.1810718635,
+          "_sd_sum": 53076.80725571372,
+          "_sd_sq_sum": 1157994.052829897
+        },
+        {
+          "year": 2018,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 73.82832184878227,
+          "agb_sd_t_ha": 31.686896899268447,
+          "c_t_ha": 34.699311268927666,
+          "stock_tc": 63486.27017958891,
+          "sigma_stock_tc": 19271.898662637297,
+          "_sd_sum": 57974.721230307085,
+          "_sd_sq_sum": 1594242.9758441076
+        },
+        {
+          "year": 2019,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 77.48614441447042,
+          "agb_sd_t_ha": 27.051377913753363,
+          "c_t_ha": 36.418487874801095,
+          "stock_tc": 66631.69602510547,
+          "sigma_stock_tc": 16452.476482193782,
+          "_sd_sum": 49493.52088439258,
+          "_sd_sq_sum": 1129121.5403435056
+        },
+        {
+          "year": 2020,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 69.86778761003904,
+          "agb_sd_t_ha": 22.013840756787232,
+          "c_t_ha": 32.83786017671835,
+          "stock_tc": 60080.53725162974,
+          "sigma_stock_tc": 13389.016537743673,
+          "_sd_sum": 40276.78333855963,
+          "_sd_sq_sum": 829740.1773454695
+        },
+        {
+          "year": 2021,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 66.95255436686827,
+          "agb_sd_t_ha": 22.803804712647832,
+          "c_t_ha": 31.467700552428084,
+          "stock_tc": 57573.677002367396,
+          "sigma_stock_tc": 13869.483845395567,
+          "_sd_sum": 41722.110732674584,
+          "_sd_sq_sum": 891389.4345112108
+        },
+        {
+          "year": 2022,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 47.217378098363056,
+          "agb_sd_t_ha": 23.400420246173777,
+          "c_t_ha": 22.192167706230634,
+          "stock_tc": 40603.05243378526,
+          "sigma_stock_tc": 14232.639571935846,
+          "_sd_sum": 42813.68556714934,
+          "_sd_sq_sum": 1013037.8415979436
+        },
+        {
+          "year": 2023,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 41.28207569054551,
+          "agb_sd_t_ha": 18.927968273712057,
+          "c_t_ha": 19.40257557455639,
+          "stock_tc": 35499.181685753574,
+          "sigma_stock_tc": 11512.618945611739,
+          "_sd_sum": 34630.834556408954,
+          "_sd_sq_sum": 708874.0865078451
+        },
+        {
+          "year": 2024,
+          "area_ha": 1829.611823922258,
+          "agb_t_ha": 37.501253737314755,
+          "agb_sd_t_ha": 17.079048929530202,
+          "c_t_ha": 17.625589256537936,
+          "stock_tc": 32247.986507358928,
+          "sigma_stock_tc": 10388.354964587988,
+          "_sd_sum": 31248.02986281524,
+          "_sd_sq_sum": 635494.9735479862
+        }
+      ],
+      "cover_loss": [
+        {
+          "year": 2001,
+          "area_ha": 1.3404765561865268
+        },
+        {
+          "year": 2002,
+          "area_ha": 0.17872025293968036
+        },
+        {
+          "year": 2004,
+          "area_ha": 7.907877195496889
+        },
+        {
+          "year": 2005,
+          "area_ha": 15.59161349719951
+        },
+        {
+          "year": 2006,
+          "area_ha": 2.1891176210906282
+        },
+        {
+          "year": 2007,
+          "area_ha": 0.9824718478285306
+        },
+        {
+          "year": 2008,
+          "area_ha": 0.9829605630023965
+        },
+        {
+          "year": 2009,
+          "area_ha": 2.233997671991968
+        },
+        {
+          "year": 2010,
+          "area_ha": 3.661722746907637
+        },
+        {
+          "year": 2011,
+          "area_ha": 991.5807645754369
+        },
+        {
+          "year": 2012,
+          "area_ha": 28.589978824864822
+        },
+        {
+          "year": 2013,
+          "area_ha": 18.85329379253524
+        },
+        {
+          "year": 2014,
+          "area_ha": 1.741871653605489
+        },
+        {
+          "year": 2015,
+          "area_ha": 7.64108152135612
+        },
+        {
+          "year": 2016,
+          "area_ha": 13.494263012979713
+        },
+        {
+          "year": 2018,
+          "area_ha": 0.13403236605723584
+        },
+        {
+          "year": 2019,
+          "area_ha": 0.49126256951061364
+        },
+        {
+          "year": 2020,
+          "area_ha": 1.2058327969463922
+        },
+        {
+          "year": 2021,
+          "area_ha": 0.491360311912081
+        },
+        {
+          "year": 2022,
+          "area_ha": 223.81331264208836
+        },
+        {
+          "year": 2023,
+          "area_ha": 1.384407785164439
+        },
+        {
+          "year": 2024,
+          "area_ha": 0.5807706722127439
+        },
+        {
+          "year": 2025,
+          "area_ha": 1.3394508057020609
+        }
+      ],
+      "period_2019_2024": {
+        "year_start": 2019,
+        "year_end": 2024,
+        "years": 5,
+        "area_ha": 1829.611823922258,
+        "c_start_t_ha": 36.418487874801095,
+        "c_end_t_ha": 17.625589256537936,
+        "stock_start_tc": 66631.69602510547,
+        "stock_end_tc": 32247.986507358928,
+        "delta_stock_tc": -34383.70951774654,
+        "e_tco2e": 126073.60156507064,
+        "e_per_ha_year": 13.781458986726314,
+        "sigma_e_tco2e": 43279.41565686581,
+        "lower_tco2e": 54878.96280952639,
+        "upper_tco2e": 197268.2403206149,
+        "baseline_c_start_t_ha": 36.418491606,
+        "baseline_c_end_t_ha": 24.013377737,
+        "e_proj_tco2e": 126073.60156507064,
+        "e_base_tco2e": 83220.65771002279,
+        "leakage_tco2e": 0.0,
+        "r_tco2e": -42852.94385504785,
+        "h_tco2e": 71194.63875554425,
+        "h_over_r": null,
+        "unc_share": null,
+        "r_adjusted_tco2e": null,
+        "buffer_tco2e": null,
+        "units": 0,
+        "reason": "результат не превышает базовую линию",
+        "value_rub": {
+          "low": 0,
+          "base": 0,
+          "high": 0
+        },
+        "sensitivity": [
+          [
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 3765.826959786654,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 2715.4759178600534,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 2156.560263068636,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 1388.4145188002844,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 1116.6604465806147,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 838.0448045966089,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.0,
+              "h_tco2e": 83030.41091784682,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.5,
+              "h_tco2e": 61494.5550096249,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.7,
+              "h_tco2e": 50364.59827388578,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.9,
+              "h_tco2e": 35938.90959319734,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.95,
+              "h_tco2e": 31310.674515451443,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.99,
+              "h_tco2e": 27043.683759875694,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.0,
+              "h_tco2e": 117362.33135756096,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.5,
+              "h_tco2e": 86924.6114918193,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.7,
+              "h_tco2e": 71194.63875554425,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.9,
+              "h_tco2e": 50808.120335839645,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.95,
+              "h_tco2e": 44268.07222133511,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.99,
+              "h_tco2e": 38238.98428435417,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.0,
+              "h_tco2e": 143714.24600984197,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.5,
+              "h_tco2e": 106443.39314720781,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.7,
+              "h_tco2e": 87182.34064359886,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.9,
+              "h_tco2e": 62219.973445043965,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.95,
+              "h_tco2e": 54212.23329981289,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.99,
+              "h_tco2e": 46830.32302295638,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 165932.67366818633,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 122900.38171233752,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 100662.03096890332,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 71841.38871521503,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 62596.08850373297,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 54073.45399284577,
+              "h_over_r": null,
+              "units": 0
+            }
+          ]
+        ]
+      },
+      "periods": [
+        {
+          "year_start": 2019,
+          "year_end": 2020,
+          "years": 1,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 36.418487874801095,
+          "c_end_t_ha": 32.83786017671835,
+          "stock_start_tc": 66631.69602510547,
+          "stock_end_tc": 60080.53725162974,
+          "delta_stock_tc": -6551.158773475727,
+          "e_tco2e": 24020.91550274433,
+          "e_per_ha_year": 13.128968226303396,
+          "sigma_e_tco2e": 43624.74735145498,
+          "lower_tco2e": -47741.7938903991,
+          "upper_tco2e": 95783.62489588777,
+          "baseline_c_start_t_ha": 36.418491606,
+          "baseline_c_end_t_ha": 33.937468832,
+          "e_proj_tco2e": 24020.91550274433,
+          "e_base_tco2e": 16644.131543346284,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -7376.783959398046,
+          "h_tco2e": 71762.70939314344,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2021,
+          "years": 2,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 36.418487874801095,
+          "c_end_t_ha": 31.467700552428084,
+          "stock_start_tc": 66631.69602510547,
+          "stock_end_tc": 57573.677002367396,
+          "delta_stock_tc": -9058.019022738074,
+          "e_tco2e": 33212.73641670627,
+          "e_per_ha_year": 9.076443424350517,
+          "sigma_e_tco2e": 43936.43902663989,
+          "lower_tco2e": -39062.705782116354,
+          "upper_tco2e": 105488.17861552889,
+          "baseline_c_start_t_ha": 36.418491606,
+          "baseline_c_end_t_ha": 31.456446058,
+          "e_proj_tco2e": 33212.73641670627,
+          "e_base_tco2e": 33288.263086692554,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 75.5266699862841,
+          "h_tco2e": 72275.44219882262,
+          "h_over_r": 956.9525865756837,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2022,
+          "years": 3,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 36.418487874801095,
+          "c_end_t_ha": 22.192167706230634,
+          "stock_start_tc": 66631.69602510547,
+          "stock_end_tc": 40603.05243378526,
+          "delta_stock_tc": -26028.643591320208,
+          "e_tco2e": 95438.35983484075,
+          "e_per_ha_year": 17.387724650475008,
+          "sigma_e_tco2e": 44217.16882468736,
+          "lower_tco2e": 22701.117118230046,
+          "upper_tco2e": 168175.60255145148,
+          "baseline_c_start_t_ha": 36.418491606,
+          "baseline_c_end_t_ha": 28.975423285,
+          "e_proj_tco2e": 95438.35983484075,
+          "e_base_tco2e": 49932.39462333024,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -45505.96521151051,
+          "h_tco2e": 72737.24271661071,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2023,
+          "years": 4,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 36.418487874801095,
+          "c_end_t_ha": 19.40257557455639,
+          "stock_start_tc": 66631.69602510547,
+          "stock_end_tc": 35499.181685753574,
+          "delta_stock_tc": -31132.514339351896,
+          "e_tco2e": 114152.55257762362,
+          "e_per_ha_year": 15.597919608557644,
+          "sigma_e_tco2e": 43081.20317395634,
+          "lower_tco2e": 43283.973356465445,
+          "upper_tco2e": 185021.1317987818,
+          "baseline_c_start_t_ha": 36.418491606,
+          "baseline_c_end_t_ha": 26.494400511,
+          "e_proj_tco2e": 114152.55257762362,
+          "e_base_tco2e": 66576.52616667653,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -47576.02641094709,
+          "h_tco2e": 70868.57922115817,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2024,
+          "years": 5,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 36.418487874801095,
+          "c_end_t_ha": 17.625589256537936,
+          "stock_start_tc": 66631.69602510547,
+          "stock_end_tc": 32247.986507358928,
+          "delta_stock_tc": -34383.70951774654,
+          "e_tco2e": 126073.60156507064,
+          "e_per_ha_year": 13.781458986726314,
+          "sigma_e_tco2e": 43279.41565686581,
+          "lower_tco2e": 54878.96280952639,
+          "upper_tco2e": 197268.2403206149,
+          "baseline_c_start_t_ha": 36.418491606,
+          "baseline_c_end_t_ha": 24.013377737,
+          "e_proj_tco2e": 126073.60156507064,
+          "e_base_tco2e": 83220.65771002279,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -42852.94385504785,
+          "h_tco2e": 71194.63875554425,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2021,
+          "years": 1,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 32.83786017671835,
+          "c_end_t_ha": 31.467700552428084,
+          "stock_start_tc": 60080.53725162974,
+          "stock_end_tc": 57573.677002367396,
+          "delta_stock_tc": -2506.8602492623468,
+          "e_tco2e": 9191.820913961938,
+          "e_per_ha_year": 5.023918622397637,
+          "sigma_e_tco2e": 38743.690318547815,
+          "lower_tco2e": -54541.54966004922,
+          "upper_tco2e": 72925.19148797309,
+          "baseline_c_start_t_ha": 33.937468832,
+          "baseline_c_end_t_ha": 31.456446058,
+          "e_proj_tco2e": 9191.820913961938,
+          "e_base_tco2e": 16644.131543346262,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 7452.310629384325,
+          "h_tco2e": 63733.370574011155,
+          "h_over_r": 8.552162375345928,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2022,
+          "years": 2,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 32.83786017671835,
+          "c_end_t_ha": 22.192167706230634,
+          "stock_start_tc": 60080.53725162974,
+          "stock_end_tc": 40603.05243378526,
+          "delta_stock_tc": -19477.48481784448,
+          "e_tco2e": 71417.44433209642,
+          "e_per_ha_year": 19.51710286256081,
+          "sigma_e_tco2e": 39328.88062672574,
+          "lower_tco2e": 6721.435701132577,
+          "upper_tco2e": 136113.45296306026,
+          "baseline_c_start_t_ha": 33.937468832,
+          "baseline_c_end_t_ha": 28.975423285,
+          "e_proj_tco2e": 71417.44433209642,
+          "e_base_tco2e": 33288.263079983946,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -38129.181252112474,
+          "h_tco2e": 64696.00863096384,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2023,
+          "years": 3,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 32.83786017671835,
+          "c_end_t_ha": 19.40257557455639,
+          "stock_start_tc": 60080.53725162974,
+          "stock_end_tc": 35499.181685753574,
+          "delta_stock_tc": -24581.35556587617,
+          "e_tco2e": 90131.63707487928,
+          "e_per_ha_year": 16.42090340264239,
+          "sigma_e_tco2e": 35927.057396970245,
+          "lower_tco2e": 31031.62765686323,
+          "upper_tco2e": 149231.64649289532,
+          "baseline_c_start_t_ha": 33.937468832,
+          "baseline_c_end_t_ha": 26.494400511,
+          "e_proj_tco2e": 90131.63707487928,
+          "e_base_tco2e": 49932.39462333024,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -40199.24245154904,
+          "h_tco2e": 59100.00941801605,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2024,
+          "years": 4,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 32.83786017671835,
+          "c_end_t_ha": 17.625589256537936,
+          "stock_start_tc": 60080.53725162974,
+          "stock_end_tc": 32247.986507358928,
+          "delta_stock_tc": -27832.550744270815,
+          "e_tco2e": 102052.68606232632,
+          "e_per_ha_year": 13.944581676832046,
+          "sigma_e_tco2e": 35256.841623248954,
+          "lower_tco2e": 44055.18159208179,
+          "upper_tco2e": 160050.19053257085,
+          "baseline_c_start_t_ha": 33.937468832,
+          "baseline_c_end_t_ha": 24.013377737,
+          "e_proj_tco2e": 102052.68606232632,
+          "e_base_tco2e": 66576.5261666765,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -35476.15989564982,
+          "h_tco2e": 57997.50447024453,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2022,
+          "years": 1,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 31.467700552428084,
+          "c_end_t_ha": 22.192167706230634,
+          "stock_start_tc": 57573.677002367396,
+          "stock_end_tc": 40603.05243378526,
+          "delta_stock_tc": -16970.624568582134,
+          "e_tco2e": 62225.62341813449,
+          "e_per_ha_year": 34.01028710272399,
+          "sigma_e_tco2e": 39926.5319796831,
+          "lower_tco2e": -3453.5216884442198,
+          "upper_tco2e": 127904.7685247132,
+          "baseline_c_start_t_ha": 31.456446058,
+          "baseline_c_end_t_ha": 28.975423285,
+          "e_proj_tco2e": 62225.62341813449,
+          "e_base_tco2e": 16644.131536637688,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -45581.491881496804,
+          "h_tco2e": 65679.14510657871,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2023,
+          "years": 2,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 31.467700552428084,
+          "c_end_t_ha": 19.40257557455639,
+          "stock_start_tc": 57573.677002367396,
+          "stock_end_tc": 35499.181685753574,
+          "delta_stock_tc": -22074.495316613822,
+          "e_tco2e": 80939.81616091734,
+          "e_per_ha_year": 22.11939579276477,
+          "sigma_e_tco2e": 36915.02352885026,
+          "lower_tco2e": 20214.602455958666,
+          "upper_tco2e": 141665.02986587601,
+          "baseline_c_start_t_ha": 31.456446058,
+          "baseline_c_end_t_ha": 26.494400511,
+          "e_proj_tco2e": 80939.81616091734,
+          "e_base_tco2e": 33288.263079983975,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -47651.553080933365,
+          "h_tco2e": 60725.213704958674,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2024,
+          "years": 3,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 31.467700552428084,
+          "c_end_t_ha": 17.625589256537936,
+          "stock_start_tc": 57573.677002367396,
+          "stock_end_tc": 32247.986507358928,
+          "delta_stock_tc": -25325.690495008468,
+          "e_tco2e": 92860.86514836438,
+          "e_per_ha_year": 16.91813602831018,
+          "sigma_e_tco2e": 36402.98929012287,
+          "lower_tco2e": 32977.94776611226,
+          "upper_tco2e": 152743.7825306165,
+          "baseline_c_start_t_ha": 31.456446058,
+          "baseline_c_end_t_ha": 24.013377737,
+          "e_proj_tco2e": 92860.86514836438,
+          "e_base_tco2e": 49932.39462333024,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -42928.470525034136,
+          "h_tco2e": 59882.91738225212,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2023,
+          "years": 1,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 22.192167706230634,
+          "c_end_t_ha": 19.40257557455639,
+          "stock_start_tc": 40603.05243378526,
+          "stock_end_tc": 35499.181685753574,
+          "delta_stock_tc": -5103.870748031688,
+          "e_tco2e": 18714.192742782856,
+          "e_per_ha_year": 10.228504482805551,
+          "sigma_e_tco2e": 37699.23338656358,
+          "lower_tco2e": -43301.04617811424,
+          "upper_tco2e": 80729.43166367995,
+          "baseline_c_start_t_ha": 28.975423285,
+          "baseline_c_end_t_ha": 26.494400511,
+          "e_proj_tco2e": 18714.192742782856,
+          "e_base_tco2e": 16644.131543346284,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -2070.0611994365718,
+          "h_tco2e": 62015.23892089709,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2024,
+          "years": 2,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 22.192167706230634,
+          "c_end_t_ha": 17.625589256537936,
+          "stock_start_tc": 40603.05243378526,
+          "stock_end_tc": 32247.986507358928,
+          "delta_stock_tc": -8355.065926426334,
+          "e_tco2e": 30635.24173022989,
+          "e_per_ha_year": 8.372060491103278,
+          "sigma_e_tco2e": 37301.148193893874,
+          "lower_tco2e": -30725.147048725532,
+          "upper_tco2e": 91995.63050918531,
+          "baseline_c_start_t_ha": 28.975423285,
+          "baseline_c_end_t_ha": 24.013377737,
+          "e_proj_tco2e": 30635.24173022989,
+          "e_base_tco2e": 33288.263086692554,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 2653.0213564626647,
+          "h_tco2e": 61360.38877895542,
+          "h_over_r": 23.12849409579147,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2023,
+          "year_end": 2024,
+          "years": 1,
+          "area_ha": 1829.611823922258,
+          "c_start_t_ha": 19.40257557455639,
+          "c_end_t_ha": 17.625589256537936,
+          "stock_start_tc": 35499.181685753574,
+          "stock_end_tc": 32247.986507358928,
+          "delta_stock_tc": -3251.195178394646,
+          "e_tco2e": 11921.048987447035,
+          "e_per_ha_year": 6.515616499401007,
+          "sigma_e_tco2e": 31332.792565513955,
+          "lower_tco2e": -39621.39478282342,
+          "upper_tco2e": 63463.4927577175,
+          "baseline_c_start_t_ha": 26.494400511,
+          "baseline_c_end_t_ha": 24.013377737,
+          "e_proj_tco2e": 11921.048987447035,
+          "e_base_tco2e": 16644.131543346262,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 4723.082555899227,
+          "h_tco2e": 51542.44377027046,
+          "h_over_r": 10.91288224591647,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        }
+      ]
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_04",
+      "maps": {
+        "stock": "RU_MORDOVIA_04_stock.png",
+        "change": "RU_MORDOVIA_04_change.png",
+        "loss": "RU_MORDOVIA_04_loss.png",
+        "change_span_tc_ha": 31.959999999999997,
+        "size": [
+          73,
+          46
+        ],
+        "loss_size": [
+          256,
+          160
+        ]
+      },
+      "sentinel": {
+        "before": {
+          "file": "RU_MORDOVIA_04_s2_before.png",
+          "date": "2020-08-18",
+          "usable_pct": 99.5
+        },
+        "after": {
+          "file": "RU_MORDOVIA_04_s2_after.png",
+          "date": "2022-08-23",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_MORDOVIA_04_s2_dnbr.png",
+          "span": 1.201,
+          "median": 0.588,
+          "share_above_threshold_pct": 85.4
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          212,
+          229
+        ],
+        "scenes_total": 13,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+      },
+      "stability": {
+        "level": "high",
+        "score": 9,
+        "max_score": 12,
+        "features": {
+          "loss_share_pct": 86.88359811682163,
+          "loss_years": 12.0,
+          "fire_confirmed": 1.0,
+          "volatility_rel": 0.7394903084974908,
+          "sd_to_stock": 0.49689733357882765,
+          "baseline_decline": 0.0
+        },
+        "drivers": [
+          {
+            "label": "доля потерь покрова за 2001—2024",
+            "value": 86.88359811682163,
+            "unit": "%",
+            "threshold": 5.0,
+            "points": 2
+          },
+          {
+            "label": "число лет с потерями",
+            "value": 12.0,
+            "unit": "",
+            "threshold": 8,
+            "points": 2
+          },
+          {
+            "label": "подтверждённый пожар на участке",
+            "value": 1.0,
+            "unit": "",
+            "threshold": 1,
+            "points": 2
+          },
+          {
+            "label": "волатильность годового ряда запаса",
+            "value": 0.7394903084974908,
+            "unit": "",
+            "threshold": 0.15,
+            "points": 2
+          },
+          {
+            "label": "отношение погрешности продукта к запасу",
+            "value": 0.49689733357882765,
+            "unit": "",
+            "threshold": 0.3,
+            "points": 1
+          }
+        ],
+        "method": "пороговые правила по шести признакам",
+        "model_version": null,
+        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+      },
+      "name": "Мордовия ранняя потеря покрова и пожар 2021 года",
+      "region": "Республика Мордовия",
+      "role": "ранние потери покрова и последующий пожар",
+      "status": "исследовательский участок",
+      "area_ha": 1832.759174848319,
+      "area_ha_declared": 1832.7456,
+      "bbox": [
+        43.18,
+        54.78025,
+        43.244,
+        54.82025
+      ],
+      "baseline_id": "HIST-AGB-2015-2019-v1",
+      "baseline_rate_tc_ha_year": 0.044486812,
+      "baseline_stock_t_ha": {
+        "2019": 13.17639792,
+        "2020": 13.220884733,
+        "2021": 13.265371545,
+        "2022": 13.309858357,
+        "2023": 13.354345169,
+        "2024": 13.398831982,
+        "2025": 13.443318794,
+        "2026": 13.487805606,
+        "2027": 13.532292418,
+        "2028": 13.576779231,
+        "2029": 13.621266043
+      },
+      "series": [
+        {
+          "year": 2015,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 27.656277478353662,
+          "agb_sd_t_ha": 8.395078623079154,
+          "c_t_ha": 12.99845041482622,
+          "stock_tc": 23823.02925658369,
+          "sigma_stock_tc": 5115.332567698821,
+          "_sd_sum": 15386.157370021312,
+          "_sd_sq_sum": 175416.95904675903
+        },
+        {
+          "year": 2016,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 54.61691023307418,
+          "agb_sd_t_ha": 16.34950476547947,
+          "c_t_ha": 25.669947809544862,
+          "stock_tc": 47046.832365820854,
+          "sigma_stock_tc": 9960.738715086545,
+          "_sd_sum": 29964.70486315881,
+          "_sd_sq_sum": 408139.6953300152
+        },
+        {
+          "year": 2017,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 33.94456563812472,
+          "agb_sd_t_ha": 9.915438278109772,
+          "c_t_ha": 15.953945849918618,
+          "stock_tc": 29239.74063147161,
+          "sigma_stock_tc": 6041.381919146383,
+          "_sd_sum": 18172.6104768479,
+          "_sd_sq_sum": 207070.4032389096
+        },
+        {
+          "year": 2018,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 12.76866693760778,
+          "agb_sd_t_ha": 4.868720548529895,
+          "c_t_ha": 6.001273460675656,
+          "stock_tc": 10998.88899582703,
+          "sigma_stock_tc": 2968.072851750806,
+          "_sd_sum": 8923.192255090706,
+          "_sd_sq_sum": 136318.14347117985
+        },
+        {
+          "year": 2019,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 28.034889087593598,
+          "agb_sd_t_ha": 8.09798411440051,
+          "c_t_ha": 13.17639787116899,
+          "stock_tc": 24149.164089836824,
+          "sigma_stock_tc": 4933.743116132136,
+          "_sd_sum": 14841.654683443474,
+          "_sd_sq_sum": 112983.27852712772
+        },
+        {
+          "year": 2020,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 16.627848516506724,
+          "agb_sd_t_ha": 5.1826039031370925,
+          "c_t_ha": 7.81508880275816,
+          "stock_tc": 14323.175705509382,
+          "sigma_stock_tc": 3158.2213311234586,
+          "_sd_sum": 9498.464853079215,
+          "_sd_sq_sum": 85747.38468966052
+        },
+        {
+          "year": 2021,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 11.238206912961049,
+          "agb_sd_t_ha": 3.381679923731636,
+          "c_t_ha": 5.281957249091692,
+          "stock_tc": 9680.555609429386,
+          "sigma_stock_tc": 2061.305055875778,
+          "_sd_sum": 6197.80490661952,
+          "_sd_sq_sum": 56915.86396508012
+        },
+        {
+          "year": 2022,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 5.313424277934858,
+          "agb_sd_t_ha": 2.4217455039807283,
+          "c_t_ha": 2.497309410629383,
+          "stock_tc": 4576.96673476605,
+          "sigma_stock_tc": 1477.5458783356114,
+          "_sd_sum": 4438.476291568346,
+          "_sd_sq_sum": 65811.61875160705
+        },
+        {
+          "year": 2023,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 4.889138770219758,
+          "agb_sd_t_ha": 2.591381589690932,
+          "c_t_ha": 2.297895222003286,
+          "stock_tc": 4211.488550966637,
+          "sigma_stock_tc": 1581.782007636945,
+          "_sd_sum": 4749.378384039077,
+          "_sd_sq_sum": 96499.75638547465
+        },
+        {
+          "year": 2024,
+          "area_ha": 1832.759174848319,
+          "agb_t_ha": 5.189908960141803,
+          "agb_sd_t_ha": 2.578851923811328,
+          "c_t_ha": 2.4392572112666473,
+          "stock_tc": 4470.571033763872,
+          "sigma_stock_tc": 1574.299796149416,
+          "_sd_sum": 4726.41452394045,
+          "_sd_sq_sum": 100298.17120838026
+        }
+      ],
+      "cover_loss": [
+        {
+          "year": 2002,
+          "area_ha": 0.2238207993993121
+        },
+        {
+          "year": 2004,
+          "area_ha": 0.22380955537463987
+        },
+        {
+          "year": 2005,
+          "area_ha": 0.8050468975545344
+        },
+        {
+          "year": 2006,
+          "area_ha": 0.5371548350704439
+        },
+        {
+          "year": 2010,
+          "area_ha": 2.3711520770822165
+        },
+        {
+          "year": 2011,
+          "area_ha": 1575.4078217786137
+        },
+        {
+          "year": 2012,
+          "area_ha": 1.6561378807785487
+        },
+        {
+          "year": 2013,
+          "area_ha": 3.715411007281704
+        },
+        {
+          "year": 2014,
+          "area_ha": 1.9693095306730122
+        },
+        {
+          "year": 2017,
+          "area_ha": 0.04473865163359984
+        },
+        {
+          "year": 2019,
+          "area_ha": 0.22375552272202007
+        },
+        {
+          "year": 2022,
+          "area_ha": 5.188957388206038
+        }
+      ],
+      "period_2019_2024": {
+        "year_start": 2019,
+        "year_end": 2024,
+        "years": 5,
+        "area_ha": 1832.759174848319,
+        "c_start_t_ha": 13.17639787116899,
+        "c_end_t_ha": 2.4392572112666473,
+        "stock_start_tc": 24149.164089836824,
+        "stock_end_tc": 4470.571033763872,
+        "delta_stock_tc": -19678.593056072954,
+        "e_tco2e": 72154.84120560082,
+        "e_per_ha_year": 7.873903150595051,
+        "sigma_e_tco2e": 14641.975582448396,
+        "lower_tco2e": 48068.791372473206,
+        "upper_tco2e": 96240.89103872844,
+        "baseline_c_start_t_ha": 13.17639792,
+        "baseline_c_end_t_ha": 13.398831982,
+        "e_proj_tco2e": 72154.84120560082,
+        "e_base_tco2e": -1494.7829157407018,
+        "leakage_tco2e": 0.0,
+        "r_tco2e": -73649.62412134152,
+        "h_tco2e": 24086.049833127614,
+        "h_over_r": null,
+        "unc_share": null,
+        "r_adjusted_tco2e": null,
+        "buffer_tco2e": null,
+        "units": 0,
+        "reason": "результат не превышает базовую линию",
+        "value_rub": {
+          "low": 0,
+          "base": 0,
+          "high": 0
+        },
+        "sensitivity": [
+          [
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 1309.2172917718683,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 926.5754768565488,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 718.5673198851524,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 417.2959047269949,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 297.63247777362756,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 141.93120729658622,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.0,
+              "h_tco2e": 22107.253466471633,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.5,
+              "h_tco2e": 18620.92106129996,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.7,
+              "h_tco2e": 17027.68097267803,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.9,
+              "h_tco2e": 15269.090917387268,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.95,
+              "h_tco2e": 14796.822022903185,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.25,
+              "rho_temporal": 0.99,
+              "h_tco2e": 14407.865407641068,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.0,
+              "h_tco2e": 31236.9534645197,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.5,
+              "h_tco2e": 26328.104229697405,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.7,
+              "h_tco2e": 24086.049833127614,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.9,
+              "h_tco2e": 21612.647241788847,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.95,
+              "h_tco2e": 20948.715995414306,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.5,
+              "rho_temporal": 0.99,
+              "h_tco2e": 20402.02065245858,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.0,
+              "h_tco2e": 38246.09611003871,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.5,
+              "h_tco2e": 32242.842826769993,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.7,
+              "h_tco2e": 29501.45304742096,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.9,
+              "h_tco2e": 26477.73687962349,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.95,
+              "h_tco2e": 25666.20842383856,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 0.75,
+              "rho_temporal": 0.99,
+              "h_tco2e": 24998.02429247959,
+              "h_over_r": null,
+              "units": 0
+            }
+          ],
+          [
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.0,
+              "h_tco2e": 44156.31861435082,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.5,
+              "h_tco2e": 37229.46581731729,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.7,
+              "h_tco2e": 34066.61394431634,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.9,
+              "h_tco2e": 30578.346034724986,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.95,
+              "h_tco2e": 29642.20827412247,
+              "h_over_r": null,
+              "units": 0
+            },
+            {
+              "rho_spatial": 1.0,
+              "rho_temporal": 0.99,
+              "h_tco2e": 28871.45170378714,
+              "h_over_r": null,
+              "units": 0
+            }
+          ]
+        ]
+      },
+      "periods": [
+        {
+          "year_start": 2019,
+          "year_end": 2020,
+          "years": 1,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 13.17639787116899,
+          "c_end_t_ha": 7.81508880275816,
+          "stock_start_tc": 24149.164089836824,
+          "stock_end_tc": 14323.175705509382,
+          "delta_stock_tc": -9825.988384327442,
+          "e_tco2e": 36028.62407586729,
+          "e_per_ha_year": 19.658133250839708,
+          "sigma_e_tco2e": 12964.448398360744,
+          "lower_tco2e": 14702.10646056386,
+          "upper_tco2e": 57355.14169117071,
+          "baseline_c_start_t_ha": 13.17639792,
+          "baseline_c_end_t_ha": 13.220884733,
+          "e_proj_tco2e": 36028.62407586729,
+          "e_base_tco2e": -298.95658718021326,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -36327.5806630475,
+          "h_tco2e": 21326.517615303426,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2021,
+          "years": 2,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 13.17639787116899,
+          "c_end_t_ha": 5.281957249091692,
+          "stock_start_tc": 24149.164089836824,
+          "stock_end_tc": 9680.555609429386,
+          "delta_stock_tc": -14468.608480407438,
+          "e_tco2e": 53051.56442816061,
+          "e_per_ha_year": 14.473141140475047,
+          "sigma_e_tco2e": 13891.233417461397,
+          "lower_tco2e": 30200.48545643661,
+          "upper_tco2e": 75902.6433998846,
+          "baseline_c_start_t_ha": 13.17639792,
+          "baseline_c_end_t_ha": 13.265371545,
+          "e_proj_tco2e": 53051.56442816061,
+          "e_base_tco2e": -597.9131676403091,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -53649.47759580092,
+          "h_tco2e": 22851.078971723997,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2022,
+          "years": 3,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 13.17639787116899,
+          "c_end_t_ha": 2.497309410629383,
+          "stock_start_tc": 24149.164089836824,
+          "stock_end_tc": 4576.96673476605,
+          "delta_stock_tc": -19572.197355070773,
+          "e_tco2e": 71764.7236352595,
+          "e_per_ha_year": 13.05221922954841,
+          "sigma_e_tco2e": 14812.243471942738,
+          "lower_tco2e": 47398.583123913704,
+          "upper_tco2e": 96130.86414660531,
+          "baseline_c_start_t_ha": 13.17639792,
+          "baseline_c_end_t_ha": 13.309858357,
+          "e_proj_tco2e": 71764.7236352595,
+          "e_base_tco2e": -896.8697481003928,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -72661.5933833599,
+          "h_tco2e": 24366.140511345806,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2023,
+          "years": 4,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 13.17639787116899,
+          "c_end_t_ha": 2.297895222003286,
+          "stock_start_tc": 24149.164089836824,
+          "stock_end_tc": 4211.488550966637,
+          "delta_stock_tc": -19937.675538870186,
+          "e_tco2e": 73104.81030919068,
+          "e_per_ha_year": 9.971960761735229,
+          "sigma_e_tco2e": 14629.084190415011,
+          "lower_tco2e": 49039.96681595799,
+          "upper_tco2e": 97169.65380242337,
+          "baseline_c_start_t_ha": 13.17639792,
+          "baseline_c_end_t_ha": 13.354345169,
+          "e_proj_tco2e": 73104.81030919068,
+          "e_base_tco2e": -1195.8263285604885,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -74300.63663775117,
+          "h_tco2e": 24064.843493232693,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2019,
+          "year_end": 2024,
+          "years": 5,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 13.17639787116899,
+          "c_end_t_ha": 2.4392572112666473,
+          "stock_start_tc": 24149.164089836824,
+          "stock_end_tc": 4470.571033763872,
+          "delta_stock_tc": -19678.593056072954,
+          "e_tco2e": 72154.84120560082,
+          "e_per_ha_year": 7.873903150595051,
+          "sigma_e_tco2e": 14641.975582448396,
+          "lower_tco2e": 48068.791372473206,
+          "upper_tco2e": 96240.89103872844,
+          "baseline_c_start_t_ha": 13.17639792,
+          "baseline_c_end_t_ha": 13.398831982,
+          "e_proj_tco2e": 72154.84120560082,
+          "e_base_tco2e": -1494.7829157407018,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -73649.62412134152,
+          "h_tco2e": 24086.049833127614,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2021,
+          "years": 1,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 7.81508880275816,
+          "c_end_t_ha": 5.281957249091692,
+          "stock_start_tc": 14323.175705509382,
+          "stock_end_tc": 9680.555609429386,
+          "delta_stock_tc": -4642.620096079996,
+          "e_tco2e": 17022.940352293317,
+          "e_per_ha_year": 9.288149030110382,
+          "sigma_e_tco2e": 8288.013062221244,
+          "lower_tco2e": 3389.1588649393707,
+          "upper_tco2e": 30656.721839647264,
+          "baseline_c_start_t_ha": 13.220884733,
+          "baseline_c_end_t_ha": 13.265371545,
+          "e_proj_tco2e": 17022.940352293317,
+          "e_base_tco2e": -298.9565804600958,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -17321.896932753414,
+          "h_tco2e": 13633.781487353946,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2022,
+          "years": 2,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 7.81508880275816,
+          "c_end_t_ha": 2.497309410629383,
+          "stock_start_tc": 14323.175705509382,
+          "stock_end_tc": 4576.96673476605,
+          "delta_stock_tc": -9746.208970743333,
+          "e_tco2e": 35736.09955939222,
+          "e_per_ha_year": 9.749262218902759,
+          "sigma_e_tco2e": 8695.892612830401,
+          "lower_tco2e": 21431.35621128621,
+          "upper_tco2e": 50040.84290749823,
+          "baseline_c_start_t_ha": 13.220884733,
+          "baseline_c_end_t_ha": 13.309858357,
+          "e_proj_tco2e": 35736.09955939222,
+          "e_base_tco2e": -597.9131609201795,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -36334.0127203124,
+          "h_tco2e": 14304.74334810601,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2023,
+          "years": 3,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 7.81508880275816,
+          "c_end_t_ha": 2.297895222003286,
+          "stock_start_tc": 14323.175705509382,
+          "stock_end_tc": 4211.488550966637,
+          "delta_stock_tc": -10111.687154542746,
+          "e_tco2e": 37076.1862333234,
+          "e_per_ha_year": 6.743236598700403,
+          "sigma_e_tco2e": 8585.428981829009,
+          "lower_tco2e": 22953.155558214683,
+          "upper_tco2e": 51199.21690843212,
+          "baseline_c_start_t_ha": 13.220884733,
+          "baseline_c_end_t_ha": 13.354345169,
+          "e_proj_tco2e": 37076.1862333234,
+          "e_base_tco2e": -896.8697413802753,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -37973.055974703675,
+          "h_tco2e": 14123.03067510872,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2020,
+          "year_end": 2024,
+          "years": 4,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 7.81508880275816,
+          "c_end_t_ha": 2.4392572112666473,
+          "stock_start_tc": 14323.175705509382,
+          "stock_end_tc": 4470.571033763872,
+          "delta_stock_tc": -9852.60467174551,
+          "e_tco2e": 36126.21712973354,
+          "e_per_ha_year": 4.9278456255338865,
+          "sigma_e_tco2e": 8592.839198765058,
+          "lower_tco2e": 21990.996647765016,
+          "upper_tco2e": 50261.43761170206,
+          "baseline_c_start_t_ha": 13.220884733,
+          "baseline_c_end_t_ha": 13.398831982,
+          "e_proj_tco2e": 36126.21712973354,
+          "e_base_tco2e": -1195.8263285604885,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -37322.04345829403,
+          "h_tco2e": 14135.22048196852,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2022,
+          "years": 1,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 5.281957249091692,
+          "c_end_t_ha": 2.497309410629383,
+          "stock_start_tc": 9680.555609429386,
+          "stock_end_tc": 4576.96673476605,
+          "delta_stock_tc": -5103.588874663336,
+          "e_tco2e": 18713.1592070989,
+          "e_per_ha_year": 10.210375407695132,
+          "sigma_e_tco2e": 5399.069802229765,
+          "lower_tco2e": 9831.689382430935,
+          "upper_tco2e": 27594.62903176686,
+          "baseline_c_start_t_ha": 13.265371545,
+          "baseline_c_end_t_ha": 13.309858357,
+          "e_proj_tco2e": 18713.1592070989,
+          "e_base_tco2e": -298.95658046008384,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -19012.11578755898,
+          "h_tco2e": 8881.469824667964,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2023,
+          "years": 2,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 5.281957249091692,
+          "c_end_t_ha": 2.297895222003286,
+          "stock_start_tc": 9680.555609429386,
+          "stock_end_tc": 4211.488550966637,
+          "delta_stock_tc": -5469.067058462749,
+          "e_tco2e": 20053.245881030078,
+          "e_per_ha_year": 5.470780382995411,
+          "sigma_e_tco2e": 5421.540206870203,
+          "lower_tco2e": 11134.812240728594,
+          "upper_tco2e": 28971.679521331564,
+          "baseline_c_start_t_ha": 13.265371545,
+          "baseline_c_end_t_ha": 13.354345169,
+          "e_proj_tco2e": 20053.245881030078,
+          "e_base_tco2e": -597.9131609201795,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -20651.159041950257,
+          "h_tco2e": 8918.433640301484,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2021,
+          "year_end": 2024,
+          "years": 3,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 5.281957249091692,
+          "c_end_t_ha": 2.4392572112666473,
+          "stock_start_tc": 9680.555609429386,
+          "stock_end_tc": 4470.571033763872,
+          "delta_stock_tc": -5209.984575665514,
+          "e_tco2e": 19103.276777440216,
+          "e_per_ha_year": 3.4744111573417213,
+          "sigma_e_tco2e": 5419.032401001351,
+          "lower_tco2e": 10188.968477792994,
+          "upper_tco2e": 28017.58507708744,
+          "baseline_c_start_t_ha": 13.265371545,
+          "baseline_c_end_t_ha": 13.398831982,
+          "e_proj_tco2e": 19103.276777440216,
+          "e_base_tco2e": -896.8697481003928,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -20000.146525540607,
+          "h_tco2e": 8914.308299647222,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2023,
+          "years": 1,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 2.497309410629383,
+          "c_end_t_ha": 2.297895222003286,
+          "stock_start_tc": 4576.96673476605,
+          "stock_end_tc": 4211.488550966637,
+          "delta_stock_tc": -365.47818379941236,
+          "e_tco2e": 1340.0866739311787,
+          "e_per_ha_year": 0.7311853582956886,
+          "sigma_e_tco2e": 4358.799196499228,
+          "lower_tco2e": -5830.138004310052,
+          "upper_tco2e": 8510.311352172408,
+          "baseline_c_start_t_ha": 13.309858357,
+          "baseline_c_end_t_ha": 13.354345169,
+          "e_proj_tco2e": 1340.0866739311787,
+          "e_base_tco2e": -298.9565804600958,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -1639.0432543912743,
+          "h_tco2e": 7170.22467824123,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2022,
+          "year_end": 2024,
+          "years": 2,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 2.497309410629383,
+          "c_end_t_ha": 2.4392572112666473,
+          "stock_start_tc": 4576.96673476605,
+          "stock_end_tc": 4470.571033763872,
+          "delta_stock_tc": -106.3957010021777,
+          "e_tco2e": 390.11757034131824,
+          "e_per_ha_year": 0.10642903216501556,
+          "sigma_e_tco2e": 4346.231988794963,
+          "lower_tco2e": -6759.434051226397,
+          "upper_tco2e": 7539.6691919090335,
+          "baseline_c_start_t_ha": 13.309858357,
+          "baseline_c_end_t_ha": 13.398831982,
+          "e_proj_tco2e": 390.11757034131824,
+          "e_base_tco2e": -597.9131676403091,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": -988.0307379816273,
+          "h_tco2e": 7149.551621567715,
+          "h_over_r": null,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "результат не превышает базовую линию",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        },
+        {
+          "year_start": 2023,
+          "year_end": 2024,
+          "years": 1,
+          "area_ha": 1832.759174848319,
+          "c_start_t_ha": 2.297895222003286,
+          "c_end_t_ha": 2.4392572112666473,
+          "stock_start_tc": 4211.488550966637,
+          "stock_end_tc": 4470.571033763872,
+          "delta_stock_tc": 259.08248279723466,
+          "e_tco2e": -949.9691035898604,
+          "e_per_ha_year": -0.5183272939656575,
+          "sigma_e_tco2e": 4482.003868485744,
+          "lower_tco2e": -8322.865467248908,
+          "upper_tco2e": 6422.9272600691875,
+          "baseline_c_start_t_ha": 13.354345169,
+          "baseline_c_end_t_ha": 13.398831982,
+          "e_proj_tco2e": -949.9691035898604,
+          "e_base_tco2e": -298.95658718021326,
+          "leakage_tco2e": 0.0,
+          "r_tco2e": 651.0125164096471,
+          "h_tco2e": 7372.896363659048,
+          "h_over_r": 11.325275901484636,
+          "unc_share": null,
+          "r_adjusted_tco2e": null,
+          "buffer_tco2e": null,
+          "units": 0,
+          "reason": "неопределённость не меньше самого результата",
+          "value_rub": {
+            "low": 0,
+            "base": 0,
+            "high": 0
+          }
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "event_id": "RU_MORDOVIA_03_MODIS_FIRE_202108",
+      "aoi_id": "RU_MORDOVIA_03",
+      "evidence_type": "внешний продукт гарей",
+      "cause_supported": "признак горения по продукту MODIS",
+      "date_min": "2021-08-05",
+      "date_max": "2021-08-22",
+      "burned_pixels": 60,
+      "all_pixels": 88,
+      "uncertainty_days": [
+        1,
+        7
+      ],
+      "source_id": "MODIS_MCD64A1_061",
+      "context_url": "https://mchs.gov.ru/deyatelnost/press-centr/novosti/4541896",
+      "limitations": "Событие выделено по продукту MODIS. Точный контур пожара и наземные измерения отсутствуют. Сообщение МЧС относится к региону."
+    },
+    {
+      "event_id": "RU_MORDOVIA_04_MODIS_FIRE_202108",
+      "aoi_id": "RU_MORDOVIA_04",
+      "evidence_type": "внешний продукт гарей",
+      "cause_supported": "признак горения по продукту MODIS",
+      "date_min": "2021-08-03",
+      "date_max": "2021-08-08",
+      "burned_pixels": 88,
+      "all_pixels": 88,
+      "uncertainty_days": [
+        2,
+        10
+      ],
+      "source_id": "MODIS_MCD64A1_061",
+      "context_url": "https://mchs.gov.ru/deyatelnost/press-centr/novosti/4541896",
+      "limitations": "Событие выделено по продукту MODIS. Точный контур пожара и наземные измерения отсутствуют. Сообщение МЧС относится к региону."
+    }
+  ]
+}

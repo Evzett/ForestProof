@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import "./ui.css";
 
 /* Кнопка-пилюля. Два вида: тёмная (основная) и лаймовая (акцентная, в закрывающем блоке). */
@@ -110,11 +111,137 @@ export function ClaimPill({ status }: { status: keyof typeof CLAIM_LABEL | null 
   return <span className={`lvl lvl--${CLAIM_LEVEL[status]}`}>{CLAIM_LABEL[status]}</span>;
 }
 
-/* Круглая кнопка-переход из угла карточки. */
-export function CircleBtn({ glyph = "↗", tone = "dark" }: { glyph?: string; tone?: "dark" | "lime" }) {
+/* Круглая кнопка-переход из угла карточки.
+   Либо ссылка (to), либо кнопка (onClick) — «декоративного» варианта нет:
+   кружок в углу читается как нажимаемый, и он обязан нажиматься. */
+export function CircleBtn({
+  glyph = "↗",
+  tone = "dark",
+  to,
+  onClick,
+  label,
+  spinning = false,
+}: {
+  glyph?: string;
+  tone?: "dark" | "lime";
+  to?: string;
+  onClick?: () => void;
+  label: string;
+  spinning?: boolean;
+}) {
+  const cls = `circle circle--${tone}${spinning ? " circle--spin" : ""}`;
+  if (to) {
+    return (
+      <Link to={to} className={cls} aria-label={label} title={label}>
+        <span aria-hidden="true">{glyph}</span>
+      </Link>
+    );
+  }
   return (
-    <span className={`circle circle--${tone}`} aria-hidden="true">
-      {glyph}
+    <button type="button" className={cls} onClick={onClick} aria-label={label} title={label}>
+      <span aria-hidden="true">{glyph}</span>
+    </button>
+  );
+}
+
+/* Чекбокс с подписью-причиной, когда он недоступен.
+   Отключённый чекбокс без объяснения читается как сломанный, а не как запрет. */
+export function Checkbox({
+  checked,
+  onChange,
+  label,
+  disabled = false,
+  reason,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  disabled?: boolean;
+  reason?: string;
+}) {
+  return (
+    <span className={`cbx ${disabled ? "cbx--off" : ""}`.trim()} title={disabled ? reason : label}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={onChange}
+        aria-label={disabled && reason ? `${label} — ${reason}` : label}
+      />
+      <span className="cbx__box" aria-hidden="true">
+        ✓
+      </span>
+    </span>
+  );
+}
+
+/* Фильтр-пилюля: переключатель или выпадающий список поверх нативного select. */
+export function FilterToggle({
+  on,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={`filter filter--btn ${on ? "filter--on" : ""}`.trim()}
+      aria-pressed={on}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function FilterSelect({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  label: string;
+}) {
+  const on = value !== options[0].value;
+  return (
+    <span className={`filter filter--select ${on ? "filter--on" : ""}`.trim()}>
+      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <span aria-hidden="true">▾</span>
+    </span>
+  );
+}
+
+export function SearchField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <span className={`filter filter--search ${value ? "filter--on" : ""}`.trim()}>
+      <span aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={placeholder}
+      />
     </span>
   );
 }
@@ -139,6 +266,12 @@ export function formatDecimal(n: number, digits = 1): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+}
+
+/* Площадь: у целого значения дробная часть не дописывается.
+   «1 010,0 га» читается как точность до сотых, которой у нас нет. */
+export function formatArea(n: number): string {
+  return Number.isInteger(n) ? formatNumber(n) : formatDecimal(n);
 }
 
 /* Карточка раздела «Что мы делаем»: ярлык, заголовок, текст и фотография справа. */

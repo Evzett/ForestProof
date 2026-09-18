@@ -1,4 +1,5 @@
 node_modules/
+__pycache__/
 dist/
 dist-ssr/
 *.local
@@ -20,3 +21,6 @@ logs/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Кэш исходных растров: сотни мегабайт, в репозиторий не кладём
+data/cache/

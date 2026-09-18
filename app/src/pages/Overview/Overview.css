@@ -1,18 +1,75 @@
-/* ---------- Плитки ---------- */
-.ov-tiles {
+/* Раскладка обзора снята с макета 35:2 (контент 1479 из 1920).
+   Два столбца: слева плитки + справка + нарушения, справа рынок и покрытие.
+   Карточка рынка занимает два верхних ряда — она начинается на одной
+   линии с плитками, а не под справкой.
+
+   Доли от контента 1479: правый столбец 441 = 29,8 %, зазор 19 = 1,3 %.
+   Левые блоки шире своего столбца на 91 — в макете карточка рынка уже
+   покрытия и оставляет слева свободную полосу. */
+.ov {
+  --ov-side: clamp(280px, 29.8%, 441px);
+  --ov-notch: clamp(0px, 6.2%, 91px);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) var(--ov-side);
+  gap: 27px 19px;
   margin-bottom: 20px;
 }
 
+.ov-tiles {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  /* ширины плиток из макета: 350 / 309 / 380 */
+  grid-template-columns: 350fr 309fr 380fr;
+  gap: 30px;
+  margin-right: calc(-1 * var(--ov-notch));
+}
+
+.ov-row2 {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  /* справка 670, стоимость активов 410 */
+  grid-template-columns: 670fr 410fr;
+  gap: 30px;
+  margin-right: calc(-1 * var(--ov-notch));
+}
+
+.ov-chart {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+/* Рынок закрывает ряд плиток и ряд справки */
+.ov-market {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: min(100%, 350px);
+  margin-left: auto;
+}
+
+/* Ряд из 25 лет требует ширины: в узкой колонке столбики не помещались */
+.ov-gauge {
+  grid-column: 1 / -1;
+  grid-row: 4;
+}
+
+/* ---------- Плитки ---------- */
 .tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 26px 30px 28px;
   border-radius: 40px;
   background: var(--c-surface);
+}
+
+/* Кнопка в углу плитки — на месте из макета (268, 31 из 350×192) */
+.tile__btn {
+  position: absolute;
+  top: 26px;
+  right: 26px;
 }
 
 .tile--dark {
@@ -24,14 +81,23 @@
 }
 
 .tile__label {
-  font-size: 12px;
-  color: var(--c-muted-alt);
+  padding-right: 52px;
+  font-size: var(--t-body);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--c-ink);
+}
+
+.tile--dark .tile__label,
+.tile--lime .tile__label {
+  padding-right: 0;
 }
 
 .tile__value {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  margin-top: auto;
   font-size: clamp(30px, 2.6vw, 44px);
   font-weight: 600;
   line-height: 1;
@@ -51,9 +117,12 @@
   color: var(--c-muted-alt);
 }
 
-.tile--dark .tile__label,
 .tile--dark .tile__note {
   color: #b9c2ae;
+}
+
+.tile--dark .tile__label {
+  color: #fff;
 }
 
 .tile--dark .tile__value {
@@ -64,30 +133,169 @@
   color: #b9c2ae;
 }
 
-.tile--lime .tile__label,
 .tile--lime .tile__note,
 .tile--lime .tile__unit {
   color: #3d4a1f;
+}
+
+.tile--lime .tile__label {
+  color: var(--c-ink-deep);
 }
 
 .tile--lime .tile__value {
   color: var(--c-ink-deep);
 }
 
-/* ---------- Ряды ---------- */
-.ov-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 20px;
-  margin-bottom: 20px;
-  align-items: start;
+/* ---------- Стоимость активов ---------- */
+.ov-assets {
+  display: flex;
+  flex-direction: column;
 }
 
-.ov-row--bottom {
-  grid-template-columns: minmax(0, 1fr) 440px;
+.ov-assets__value {
+  font-size: clamp(34px, 2.9vw, 50px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--c-ink);
+}
+
+.ov-assets__value small {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.ov-assets__cta {
+  align-self: flex-start;
+  margin-top: 16px;
+  text-decoration: none;
+}
+
+/* ---------- Нарушения по годам ---------- */
+.ov-chart__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.ov-chart__dash {
+  width: 10px;
+  height: 1px;
+  background: var(--c-muted-alt);
+}
+
+.ov-chart__head .circle {
+  margin-left: auto;
+}
+
+.ov-chart__body {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(20px, 3vw, 60px);
+}
+
+.ov-chart__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 0 0 auto;
+  max-width: 300px;
+}
+
+.ov-chart__big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: clamp(38px, 3.3vw, 58px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--c-ink);
+}
+
+.ov-chart__big small {
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.ov-chart__cap {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}
+
+.ov-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.ov-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ov-legend__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c-page);
+}
+
+.ov-legend__dot--peak {
+  background: var(--c-ink-deep);
+}
+
+.ov-legend__dot--fresh {
+  background: var(--c-lime);
+}
+
+.ov-chart__plot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Выноска роста: число и к какому году оно посчитано */
+.ov-chart__growth {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  display: flex;
+  flex-direction: column;
+  max-width: 150px;
+}
+
+.ov-chart__growth b {
+  font-size: clamp(26px, 2.2vw, 40px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--c-ink-deep);
+}
+
+.ov-chart__growth span {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.ov-chart__table {
+  margin-top: 24px;
 }
 
 /* ---------- Справка ---------- */
+
 .ov-summary__head {
   display: flex;
   align-items: center;
@@ -190,20 +398,71 @@
   list-style: none;
 }
 
-.ov-market__scenarios li {
+/* Сценарии выбираются, а не просто перечисляются */
+.ov-market__scenarios li button {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 14px;
+  width: 100%;
+  padding: 9px 14px;
   border-radius: 20px;
   font-size: 13px;
+  text-align: left;
   color: #b9c2ae;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
-.ov-market__scenarios li.is-active {
+.ov-market__scenarios li button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.ov-market__scenarios li button.is-active {
   background: var(--c-lime);
   color: var(--c-ink-deep);
   font-weight: 500;
+}
+
+.ov-market__scenarios li button.is-active:hover {
+  background: #b4c93c;
+}
+
+.ov-market__value {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.ov-market__kv {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 0;
+}
+
+.ov-market__kv > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ov-market__kv > div:last-child {
+  border-bottom: 0;
+}
+
+.ov-market__kv dt {
+  font-size: 12px;
+  color: #b9c2ae;
+}
+
+.ov-market__kv dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
 }
 
 .ov-market__cta {
@@ -227,7 +486,8 @@
 
 .bars__col {
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 10px;
@@ -235,10 +495,48 @@
 }
 
 .bars__bar {
+  position: relative;
   width: 100%;
   max-width: 48px;
   border-radius: 16px;
   background: var(--c-page);
+}
+
+/* Широкий режим: когда лет мало, столбики шире и подписаны значением */
+.bars--wide {
+  height: 250px;
+  align-items: flex-end;
+  padding-left: 170px;
+}
+
+.bars--wide .bars__bar {
+  max-width: 96px;
+}
+
+.bars--dense {
+  padding-left: 170px;
+}
+
+.bars--dense .bars__bar {
+  max-width: 48px;
+}
+
+.bars__pill {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: var(--c-surface);
+  font-size: 12px;
+  font-style: normal;
+  white-space: nowrap;
+  color: var(--c-ink-black);
+}
+
+.bars__bar--plain .bars__pill {
+  background: #f4f5f1;
 }
 
 .bars__bar--peak {
@@ -373,13 +671,59 @@
   color: var(--c-muted-alt);
 }
 
-@media (max-width: 1200px) {
-  .ov-row,
-  .ov-row--bottom {
+@media (max-width: 1300px) {
+  .ov {
+    --ov-notch: 0px;
     grid-template-columns: 1fr;
+  }
+
+  .ov-tiles,
+  .ov-row2,
+  .ov-chart,
+  .ov-market,
+  .ov-gauge {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .ov-market {
+    width: 100%;
+    margin-left: 0;
   }
 
   .ov-gauge {
     align-items: flex-start;
+  }
+
+  .ov-chart__body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+  }
+
+  .ov-chart__stat {
+    max-width: none;
+  }
+
+  .ov-chart__growth {
+    position: static;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+    max-width: none;
+    margin-bottom: 12px;
+  }
+
+  .bars--wide,
+  .bars--dense {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .ov-tiles,
+  .ov-row2 {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 }

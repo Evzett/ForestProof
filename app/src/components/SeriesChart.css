@@ -1,0 +1,101 @@
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart__grid {
+  stroke: var(--c-page);
+  stroke-width: 1;
+}
+
+.chart__axis {
+  font-size: 11px;
+  fill: var(--c-muted-alt);
+}
+
+.chart__line {
+  fill: none;
+  stroke: var(--c-ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart__baseline {
+  fill: none;
+  stroke: #9a5240;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  stroke-linecap: round;
+}
+
+/* Заливка между наблюдением и базовой линией: выше — накопление,
+   ниже — отставание. Это визуальный R, и цвет здесь значащий. */
+.chart__band {
+  stroke: none;
+  opacity: 0.16;
+}
+
+.chart__band.is-above {
+  fill: var(--c-lime);
+}
+
+.chart__band.is-below {
+  fill: #9a5240;
+}
+
+.chart__dot {
+  fill: #fff;
+  stroke: var(--c-ink);
+  stroke-width: 2.5;
+}
+
+.chart__value {
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  fill: var(--c-ink);
+}
+
+.chart__gap {
+  font-size: 11px;
+  fill: #b6b6ae;
+}
+
+.chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.chart__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart__key {
+  width: 18px;
+  height: 0;
+  border-top: 2.5px solid var(--c-ink);
+}
+
+.chart__key--base {
+  border-top: 2px dashed #9a5240;
+}
+
+.chart__scale {
+  color: #8d9188;
+  font-variant-numeric: tabular-nums;
+}

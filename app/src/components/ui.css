@@ -203,6 +203,80 @@
   color: var(--c-ink-deep);
 }
 
+.circle:hover {
+  filter: brightness(1.12);
+}
+
+.circle:active {
+  transform: scale(0.94);
+}
+
+/* Крутится, пока идёт пересборка справки */
+.circle--spin span {
+  display: inline-block;
+  animation: circle-spin 0.7s linear infinite;
+}
+
+@keyframes circle-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Чекбокс ---------- */
+.cbx {
+  display: inline-flex;
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+.cbx input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cbx__box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--c-muted);
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1;
+  color: transparent;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.cbx input:checked + .cbx__box {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+  color: #fff;
+}
+
+.cbx input:focus-visible + .cbx__box {
+  outline: 2px solid var(--c-lime);
+  outline-offset: 2px;
+}
+
+.cbx input:disabled {
+  cursor: not-allowed;
+}
+
+/* Недоступный чекбокс — блёклый, но видимый: запрет должен читаться */
+.cbx--off .cbx__box {
+  border-color: #c9ccc4;
+  border-style: dashed;
+  background: transparent;
+}
+
 /* Пояснение под блоком: почему число такое и чего мы не считаем */
 .ov-note {
   margin-top: 16px;
@@ -333,6 +407,70 @@
   font-weight: 500;
 }
 
+.filter--btn {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.filter--btn:hover {
+  background: #eceee6;
+}
+
+.filter--btn.filter--on:hover {
+  background: #b4c93c;
+}
+
+/* Нативный select внутри пилюли: своя стрелка, системная скрыта */
+.filter--select {
+  position: relative;
+  padding-right: 14px;
+}
+
+.filter--select select {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding-right: 4px;
+  max-width: 220px;
+}
+
+.filter--select select:focus-visible {
+  outline: 2px solid var(--c-lime);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.filter--search input {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  width: 260px;
+  max-width: 40vw;
+}
+
+.filter--search input::placeholder {
+  color: var(--c-muted-alt);
+}
+
+.filter--search input:focus {
+  outline: none;
+}
+
+.filter--search:focus-within {
+  box-shadow: 0 0 0 2px var(--c-lime);
+}
+
+/* Пустой результат фильтрации — не пустая таблица без объяснения */
+.empty {
+  padding: 28px 4px;
+  font-size: 14px;
+  color: var(--c-muted-alt);
+}
+
 .selbar {
   display: flex;
   align-items: center;
@@ -446,4 +584,17 @@
     min-width: 0;
     width: 100%;
   }
+}
+
+/* Действие-ссылка внутри таблицы или подписи */
+.link-btn {
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-ink-deep);
+  text-decoration: none;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
 }
