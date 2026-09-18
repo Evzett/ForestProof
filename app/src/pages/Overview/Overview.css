@@ -100,7 +100,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: clamp(40px, 3.3vw, 60px);
+  font-size: clamp(36px, 2.9vw, 52px);
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -142,7 +142,7 @@
 }
 
 .tile--lime .tile__label {
-  color: var(--c-ink-deep);
+  color: #fff;
 }
 
 .tile--lime .tile__value {
@@ -156,7 +156,7 @@
 }
 
 .ov-assets__value {
-  font-size: clamp(34px, 2.6vw, 46px);
+  font-size: clamp(32px, 2.3vw, 42px);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -567,3 +567,59 @@
   }
 }
 
+
+/* Нижний ряд обзора был выше, чем требует его содержимое: справка и
+   потери занимали столько же, сколько таблица результатов. */
+.ov-row2 > .card {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.ov-summary__list {
+  gap: 9px;
+}
+
+/* ---------- Справка по набору ---------- */
+.ov-summary {
+  display: flex;
+  flex-direction: column;
+}
+
+.ov-summary__list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 9px;
+  list-style: none;
+}
+
+.ov-summary__list li {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.ov-summary__value {
+  display: flex;
+  min-width: 132px;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.ov-summary__value small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.ov-summary__why {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--c-ink-black);
+}

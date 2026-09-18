@@ -638,6 +638,16 @@
 .ic--projects { mask-image: url("/icons/projects.svg"); }
 .ic--monitoring { mask-image: url("/icons/monitoring.svg"); }
 .ic--calc { mask-image: url("/icons/calc.svg"); }
+.ic--compare { mask-image: url("/icons/compare.svg"); }
 .ic--method { mask-image: url("/icons/method.svg"); }
 .ic--plus { mask-image: url("/icons/plus.svg"); width: 22px; height: 22px; }
 .ic--arrow { mask-image: url("/icons/arrow.svg"); width: 14px; height: 14px; }
+
+/* Самая правая карточка обзора в макете не тёмно-зелёная, а почти
+   чёрная (#0a0f03): рядом с ней стоят зелёная и лаймовая плитки, и на
+   их фоне тёмно-зелёный читался как ещё один оттенок того же, а не как
+   отдельный блок. */
+.card--ink {
+  background: #0a0f03;
+  color: #fff;
+}
