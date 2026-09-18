@@ -40,6 +40,10 @@ from forestproof_core.case_calculation import (  # noqa: E402
     sigma_from_sums,
     uncertainty_half_width,
 )
+from forestproof_core.scenario_economics import (  # noqa: E402
+    ScenarioEconomicsConfig,
+    calculate_scenario_value,
+)
 from tools.geotiff import read_geotiff
 from tools.sentinel_evidence import build_event_evidence, build_period_evidence
 
@@ -264,10 +268,12 @@ def build_aoi(
     base_stock = baseline_stock_by_year(baseline, aoi, meta["baseline_id"])
     base_rows = [r for r in baseline if r.get("aoi_id") == aoi and r.get("baseline_id") == meta["baseline_id"]]
     base_rate = float(base_rows[0]["historical_rate_tc_ha_yr"]) if base_rows else None
+    economics_config = ScenarioEconomicsConfig(config.prices_rub)
 
     def period(start: int, end: int) -> dict:
         t0, t1 = by_year[start], by_year[end]
         result = calculate_period(t0, t1, base_stock.get(start), base_stock.get(end), config)
+        economics = calculate_scenario_value(result["units"], economics_config)
 
         # Чувствительность к допущениям о корреляции: число единиц целиком
         # определяется ими, и это главный вывод, а не техническая деталь.
@@ -294,10 +300,8 @@ def build_aoi(
 
         return {
             **result,
-            "value_rub": {
-                name: (None if result["units"] is None else result["units"] * price)
-                for name, price in config.prices_rub
-            },
+            "scenario_economics": economics,
+            "value_rub": {row["name"]: row["value_rub"] for row in economics["scenarios"]},
             "sensitivity": grid,
         }
 

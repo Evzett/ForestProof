@@ -265,6 +265,9 @@ def test_extractor_assembles_from_supplied_baseline_without_raster_io(monkeypatc
         area["period_2019_2024"]["e_tco2e"]
     )
     assert result["period_2019_2024"]["units"] == 0
+    economics = result["period_2019_2024"]["scenario_economics"]
+    assert economics["q"] == 0
+    assert [row["value_rub"] for row in economics["scenarios"]] == [0, 0, 0]
     assert result["baseline_stock_t_ha"]["2029"] == pytest.approx(
         area["baseline_stock_t_ha"]["2029"], abs=1e-8
     )
@@ -278,6 +281,7 @@ def test_extractor_assembles_from_supplied_baseline_without_raster_io(monkeypatc
     )
     incomplete = extract_case_data.build_aoi(Path("unused"), meta, baseline, [], None)
     assert incomplete["period_2019_2024"]["units"] is None
+    assert incomplete["period_2019_2024"]["scenario_economics"]["available"] is False
     assert incomplete["period_2019_2024"]["value_rub"] == {
         "low": None, "base": None, "high": None
     }
@@ -287,7 +291,10 @@ def test_extractor_assembles_from_supplied_baseline_without_raster_io(monkeypatc
     assert no_baseline["period_2019_2024"]["units"] is None
 
 
-@pytest.mark.skipif(not (REAL_DATA / "methodology/baseline.csv").exists(), reason="local case data is not distributed with Git")
+@pytest.mark.skipif(
+    not (REAL_DATA / "RU_TVER_01/CCI_Biomass_2019.tif").exists(),
+    reason="local case rasters are not distributed with Git",
+)
 def test_real_case_methodology_and_rasters():
     with (REAL_DATA / "methodology/parameters.csv").open(encoding="utf-8-sig") as handle:
         config = CaseCalculationConfig.from_parameter_rows(list(csv.DictReader(handle)))
