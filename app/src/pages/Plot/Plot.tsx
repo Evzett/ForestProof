@@ -1160,8 +1160,8 @@ function StabilityTab({ area }: { area: Area }) {
               <dd>{s.method}</dd>
             </div>
             <div>
-              <dt>версия модели</dt>
-              <dd>{s.model_version ?? "модель не обучена, работают пороговые правила"}</dd>
+              <dt>что считает эту оценку</dt>
+              <dd>{s.model_version ?? "пороговые правила; обученная модель — ниже"}</dd>
             </div>
           </dl>
           <div className="disclaimer">{s.limitation}</div>

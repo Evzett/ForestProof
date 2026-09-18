@@ -4,10 +4,10 @@
     "60N_040E"
   ],
   "plots": 800,
-  "positives": 326,
-  "negatives": 474,
-  "minority_class": 326,
-  "skipped_non_forest": 704,
+  "positives": 327,
+  "negatives": 473,
+  "minority_class": 327,
+  "skipped_non_forest": 566,
   "plot_size_deg": [
     0.064,
     0.04

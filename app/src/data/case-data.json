@@ -115,7 +115,7 @@
         ],
         "method": "пороговые правила по шести признакам",
         "model_version": null,
-        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+        "limitation": "Правила, а не обученная модель — и это выбор, а не нехватка данных: модель обучена на отдельной выборке и одиночный признак не бьёт, поэтому в продукт идут правила, которые видно насквозь. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
       },
       "name": "Тверская область контрольный участок",
       "region": "Тверская область",
@@ -325,6 +325,29 @@
         "status": "zero_nonpositive_result",
         "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
         "reason": "результат не превышает базовую линию",
+        "scenario_economics": {
+          "q": 0,
+          "available": true,
+          "reason": null,
+          "scenarios": [
+            {
+              "name": "low",
+              "price_rub": 500,
+              "value_rub": 0
+            },
+            {
+              "name": "base",
+              "price_rub": 1500,
+              "value_rub": 0
+            },
+            {
+              "name": "high",
+              "price_rub": 4000,
+              "value_rub": 0
+            }
+          ],
+          "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+        },
         "value_rub": {
           "low": 0,
           "base": 0,
@@ -585,6 +608,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -622,6 +668,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -659,6 +728,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -696,6 +788,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -733,6 +848,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -770,6 +908,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -807,6 +968,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -844,6 +1028,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -881,6 +1088,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -918,6 +1148,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -955,6 +1208,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -992,6 +1268,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1029,6 +1328,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1066,6 +1388,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1103,6 +1448,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1222,7 +1590,7 @@
         ],
         "method": "пороговые правила по шести признакам",
         "model_version": null,
-        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+        "limitation": "Правила, а не обученная модель — и это выбор, а не нехватка данных: модель обучена на отдельной выборке и одиночный признак не бьёт, поэтому в продукт идут правила, которые видно насквозь. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
       },
       "name": "Вологодская область мозаика потерь покрова",
       "region": "Вологодская область",
@@ -1504,6 +1872,29 @@
         "status": "zero_nonpositive_result",
         "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
         "reason": "результат не превышает базовую линию",
+        "scenario_economics": {
+          "q": 0,
+          "available": true,
+          "reason": null,
+          "scenarios": [
+            {
+              "name": "low",
+              "price_rub": 500,
+              "value_rub": 0
+            },
+            {
+              "name": "base",
+              "price_rub": 1500,
+              "value_rub": 0
+            },
+            {
+              "name": "high",
+              "price_rub": 4000,
+              "value_rub": 0
+            }
+          ],
+          "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+        },
         "value_rub": {
           "low": 0,
           "base": 0,
@@ -1764,6 +2155,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1801,6 +2215,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1838,6 +2275,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1875,6 +2335,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1912,6 +2395,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1949,6 +2455,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -1986,6 +2515,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2023,6 +2575,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2060,6 +2635,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2097,6 +2695,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2134,6 +2755,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2171,6 +2815,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2208,6 +2875,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2245,6 +2935,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2282,6 +2995,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -2431,7 +3167,7 @@
         ],
         "method": "пороговые правила по шести признакам",
         "model_version": null,
-        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+        "limitation": "Правила, а не обученная модель — и это выбор, а не нехватка данных: модель обучена на отдельной выборке и одиночный признак не бьёт, поэтому в продукт идут правила, которые видно насквозь. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
       },
       "name": "Мордовия пожар и повторные нарушения",
       "region": "Республика Мордовия",
@@ -2717,6 +3453,29 @@
         "status": "zero_nonpositive_result",
         "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
         "reason": "результат не превышает базовую линию",
+        "scenario_economics": {
+          "q": 0,
+          "available": true,
+          "reason": null,
+          "scenarios": [
+            {
+              "name": "low",
+              "price_rub": 500,
+              "value_rub": 0
+            },
+            {
+              "name": "base",
+              "price_rub": 1500,
+              "value_rub": 0
+            },
+            {
+              "name": "high",
+              "price_rub": 4000,
+              "value_rub": 0
+            }
+          ],
+          "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+        },
         "value_rub": {
           "low": 0,
           "base": 0,
@@ -2977,6 +3736,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3014,6 +3796,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3051,6 +3856,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3088,6 +3916,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3125,6 +3976,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3162,6 +4036,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3199,6 +4096,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3236,6 +4156,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3273,6 +4216,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3310,6 +4276,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3347,6 +4336,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3384,6 +4396,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3421,6 +4456,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3458,6 +4516,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3495,6 +4576,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -3637,7 +4741,7 @@
         ],
         "method": "пороговые правила по шести признакам",
         "model_version": null,
-        "limitation": "Правила, а не обученная модель: четырёх участков для обучения недостаточно. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
+        "limitation": "Правила, а не обученная модель — и это выбор, а не нехватка данных: модель обучена на отдельной выборке и одиночный признак не бьёт, поэтому в продукт идут правила, которые видно насквозь. Настроено на бореальную и умеренную зону, на другие зоны не переносится. На число потенциальных единиц не влияет."
       },
       "name": "Мордовия ранняя потеря покрова и пожар 2021 года",
       "region": "Республика Мордовия",
@@ -3879,6 +4983,29 @@
         "status": "zero_nonpositive_result",
         "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
         "reason": "результат не превышает базовую линию",
+        "scenario_economics": {
+          "q": 0,
+          "available": true,
+          "reason": null,
+          "scenarios": [
+            {
+              "name": "low",
+              "price_rub": 500,
+              "value_rub": 0
+            },
+            {
+              "name": "base",
+              "price_rub": 1500,
+              "value_rub": 0
+            },
+            {
+              "name": "high",
+              "price_rub": 4000,
+              "value_rub": 0
+            }
+          ],
+          "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+        },
         "value_rub": {
           "low": 0,
           "base": 0,
@@ -4139,6 +5266,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4176,6 +5326,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4213,6 +5386,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4250,6 +5446,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4287,6 +5506,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4324,6 +5566,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4361,6 +5626,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4398,6 +5686,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4435,6 +5746,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4472,6 +5806,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4509,6 +5866,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4546,6 +5926,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4583,6 +5986,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4620,6 +6046,29 @@
           "status": "zero_nonpositive_result",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "результат не превышает базовую линию",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
@@ -4657,6 +6106,29 @@
           "status": "zero_uncertainty",
           "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
           "reason": "неопределённость не меньше самого результата",
+          "scenario_economics": {
+            "q": 0,
+            "available": true,
+            "reason": null,
+            "scenarios": [
+              {
+                "name": "low",
+                "price_rub": 500,
+                "value_rub": 0
+              },
+              {
+                "name": "base",
+                "price_rub": 1500,
+                "value_rub": 0
+              },
+              {
+                "name": "high",
+                "price_rub": 4000,
+                "value_rub": 0
+              }
+            ],
+            "disclaimer": "Эти значения не являются прогнозом рыночной цены"
+          },
           "value_rub": {
             "low": 0,
             "base": 0,
