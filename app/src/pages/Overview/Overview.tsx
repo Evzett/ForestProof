@@ -6,12 +6,14 @@ import {
   FilterSelect,
   LevelPill,
   formatArea,
+  plural,
   formatDecimal,
   formatNumber,
 } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
 import { useScenario } from "../../data/scenario";
+import { YearLossChart } from "../../components/YearLossChart";
 import "./Overview.css";
 
 /* Обзор — состояние набора и результатов по всем участкам сразу.
@@ -84,7 +86,6 @@ export default function Overview() {
   const { priceKey, price, label, setPriceKey } = useScenario();
   const [range, setRange] = useState("2019-2024");
   const [lossRange, setLossRange] = useState("2019");
-  const [pickedYear, setPickedYear] = useState<number | null>(null);
   const [startYear, endYear] = range.split("-").map(Number);
 
   const rows = useMemo(
@@ -146,30 +147,6 @@ export default function Overview() {
     const from = lossRange === "all" ? -Infinity : Number(lossRange);
     return lossYears.filter((l) => l.year >= from);
   }, [lossYears, lossRange]);
-
-  const shownPeak = useMemo(
-    () => shownLoss.reduce((a, b) => (b.area_ha > a.area_ha ? b : a), shownLoss[0]),
-    [shownLoss]
-  );
-  const shownTotal = shownLoss.reduce((s, l) => s + l.area_ha, 0);
-  /* Выбранный год: если он выпал из показанного ряда, выбор снимается,
-     иначе карточка показывала бы год, которого на графике нет. */
-  const picked = shownLoss.find((l) => l.year === pickedYear) ?? null;
-  /* Разбор выбранного года по участкам — из тех же cover_loss, что и сам
-     ряд, поэтому сумма разбора всегда сходится со столбцом. */
-  const pickedByArea = picked
-    ? AREAS.map((a) => ({
-        area: a,
-        area_ha: a.cover_loss.find((l) => l.year === picked.year)?.area_ha ?? 0,
-      }))
-        .filter((r) => r.area_ha > 0)
-        .sort((a, b) => b.area_ha - a.area_ha)
-    : [];
-  const peakShare = shownTotal > 0 ? (shownPeak.area_ha / shownTotal) * 100 : 0;
-  /* Выноска ставится над самым высоким столбцом: столбцы равной ширины,
-     поэтому центр нужного — это его порядковый номер плюс половина. */
-  const calloutLeft =
-    ((shownLoss.findIndex((l) => l.year === shownPeak.year) + 0.5) / shownLoss.length) * 100;
 
   return (
     <>
@@ -412,102 +389,34 @@ export default function Overview() {
             <CircleBtn to="/app/areas" label="Открыть участки" />
           </div>
 
-          <div className="yloss">
-            <div className="yloss__info">
-              <span className="yloss__badge">{shownLoss.length} лет наблюдения</span>
-              <div className="yloss__total tabular">
-                {formatArea(Math.round(shownTotal))} <small>га</small>
-              </div>
-              <p className="yloss__caption">
+          <YearLossChart
+            rows={shownLoss}
+            isWithin={(year) => year >= YEARS[0] && year <= YEARS[YEARS.length - 1]}
+            badgeLabel={`${shownLoss.length} ${plural(shownLoss.length, ["год", "года", "лет"])} наблюдения`}
+            caption={
+              <>
                 суммарная площадь, потерявшая
                 <br />
                 древесный покров за показанные годы
-              </p>
-              {picked ? (
-                <div className="yloss__picked">
-                  <div className="yloss__picked-head">
-                    <b>{picked.year}</b>
-                    <span>{formatArea(Math.round(picked.area_ha))} га</span>
-                    <button
-                      type="button"
-                      className="yloss__clear"
-                      onClick={() => setPickedYear(null)}
-                    >
-                      сбросить
-                    </button>
-                  </div>
-                  <ul className="yloss__breakdown">
-                    {pickedByArea.map((r) => (
-                      <li key={r.area.aoi_id}>
-                        <Link to={`/app/area/${r.area.aoi_id}`}>{r.area.name}</Link>
-                        <span className="tabular">{formatDecimal(r.area_ha, 1)} га</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <ul className="yloss__legend">
-                  <li>
-                    <i className="yloss__dot yloss__dot--peak" />
-                    наибольший год ряда
-                  </li>
-                  <li>
-                    <i className="yloss__dot yloss__dot--within" />
-                    внутри периода анализа
-                  </li>
-                  <li>
-                    <i className="yloss__dot yloss__dot--outside" />
-                    вне периода анализа
-                  </li>
-                  <li className="yloss__hint">нажмите столбец — покажу разбор по участкам</li>
-                </ul>
-              )}
-            </div>
-
-            <div className="yloss__plot">
-              {shownLoss.map((l) => {
-                const within = l.year >= YEARS[0] && l.year <= YEARS[YEARS.length - 1];
-                const isPeak = l.year === shownPeak.year;
-                const share = (l.area_ha / shownPeak.area_ha) * 100;
-                /* Столбцы разной высоты, но одной формы: нижняя граница в
-                   14 % держит скруглённую пилюлю и в год, когда потеряли
-                   гектар. Без неё малые годы схлопываются в полоску. */
-                const height = Math.max(share, 14);
-                return (
-                  <div key={l.year} className="yloss__col">
-                    <button
-                      type="button"
-                      className={`yloss__bar ${
-                        isPeak
-                          ? "yloss__bar--peak"
-                          : within
-                            ? "yloss__bar--within"
-                            : "yloss__bar--outside"
-                      } ${picked?.year === l.year ? "yloss__bar--picked" : ""}`.trim()}
-                      style={{ height: `${height}%` }}
-                      aria-pressed={picked?.year === l.year}
-                      onClick={() => setPickedYear(picked?.year === l.year ? null : l.year)}
-                      title={`${l.year}: ${formatDecimal(l.area_ha, 1)} га`}
-                    >
-                      {(isPeak || share >= 22) && (
-                        <span className="yloss__value">{formatArea(Math.round(l.area_ha))} га</span>
-                      )}
-                    </button>
-                    <span className="yloss__year">{l.year}</span>
-                  </div>
-                );
-              })}
-
-              <div
-                className={`yloss__callout ${calloutLeft < 30 ? "yloss__callout--flip" : ""}`.trim()}
-                style={{ left: `${calloutLeft}%` }}
-              >
-                <span className="yloss__share tabular">{formatDecimal(peakShare, 0)} %</span>
-                <span className="yloss__of">ряда пришлось на {shownPeak.year} год</span>
-                <i className="yloss__leader" aria-hidden="true" />
-              </div>
-            </div>
-          </div>
+              </>
+            }
+            renderPicked={(row) => (
+              <ul className="yloss__breakdown">
+                {AREAS.map((a) => ({
+                  area: a,
+                  area_ha: a.cover_loss.find((l) => l.year === row.year)?.area_ha ?? 0,
+                }))
+                  .filter((r) => r.area_ha > 0)
+                  .sort((a, b) => b.area_ha - a.area_ha)
+                  .map((r) => (
+                    <li key={r.area.aoi_id}>
+                      <Link to={`/app/area/${r.area.aoi_id}`}>{r.area.name}</Link>
+                      <span className="tabular">{formatDecimal(r.area_ha, 1)} га</span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          />
 
           <p className="ov-note">
             Площади, потерявшие древесный покров по Hansen GFC v1.13, порог покрова{" "}

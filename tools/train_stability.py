@@ -257,6 +257,29 @@ def main() -> None:
                     continue
                 vector = np.array([[float(row[k]) for k in FEATURES]])
                 probability = float(sigmoid(((vector - mean) / scale) @ weights + bias)[0])
+
+                # Прогноз вперёд. Выше — проверка: признаки 2001–2019,
+                # ответ про 2020–2024, который уже известен и показан
+                # рядом. Здесь то же самое окно длиной девятнадцать лет,
+                # сдвинутое к концу данных: признаки 2006–2024, ответ
+                # про 2025–2029 — и вот он ещё никому не известен.
+                try:
+                    ahead = builder.sample_plot(
+                        loss_path, cover_path, box, feature_end=24, label_years=range(25, 25)
+                    )
+                except (ValueError, IndexError, FileNotFoundError):
+                    ahead = None
+                forecast = None
+                if ahead is not None:
+                    ahead_vec = np.array([[float(ahead[k]) for k in FEATURES]])
+                    p_ahead = float(sigmoid(((ahead_vec - mean) / scale) @ weights + bias)[0])
+                    forecast = {
+                        "probability": p_ahead,
+                        "category": "high" if p_ahead >= 0.65 else "medium" if p_ahead >= 0.35 else "low",
+                        "feature_window": ahead["feature_window"],
+                        "horizon": [2025, 2029],
+                        "recent_loss_pct": ahead["recent_loss_2017_2019_pct"],
+                    }
                 predictions.append(
                     {
                         "aoi_id": meta["aoi_id"],
@@ -265,6 +288,7 @@ def main() -> None:
                         "category": "high" if probability >= 0.65 else "medium" if probability >= 0.35 else "low",
                         "label": row["label"],
                         "future_loss_pct": row["future_loss_2020_2024_pct"],
+                        "forecast": forecast,
                     }
                 )
     except FileNotFoundError:
@@ -272,12 +296,17 @@ def main() -> None:
 
     if predictions:
         print()
-        print("участки кейса по обученной модели:")
+        print("участки кейса: проверка на 2020—2024 и прогноз на 2025—2029")
         for p in predictions:
-            if p.get("available"):
-                print(f"  {p['aoi_id']:<16} p={p['probability']:.3f} {p['category']:<7} факт={p['label']}")
-            else:
+            if not p.get("available"):
                 print(f"  {p['aoi_id']:<16} {p['reason']}")
+                continue
+            f = p.get("forecast")
+            ahead = f"прогноз p={f['probability']:.3f} {f['category']}" if f else "прогноз недоступен"
+            print(
+                f"  {p['aoi_id']:<16} проверка p={p['probability']:.3f} "
+                f"{p['category']:<7} факт={p['label']}   {ahead}"
+            )
 
     payload = {
         "predictions": predictions,

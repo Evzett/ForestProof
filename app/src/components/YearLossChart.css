@@ -1,0 +1,324 @@
+/* ---------- Потери покрова по годам ----------
+   Снято с макета «Нарушения по годам»: карточка 1019x435, столбцы
+   шириной 96 со скруглением 30, диагональная штриховка белым на 16 %,
+   значение пилюлей поверх столбца, слева колонка с итогом и легендой. */
+.yloss {
+  display: flex;
+  gap: clamp(20px, 2.6vw, 50px);
+  align-items: stretch;
+}
+
+.yloss__info {
+  display: flex;
+  flex: 0 0 clamp(220px, 19vw, 300px);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.yloss__badge {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  background: var(--c-ink);
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.yloss__total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: clamp(38px, 3.2vw, 56px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--c-ink);
+}
+
+.yloss__total small {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.yloss__caption {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-muted-alt);
+}
+
+.yloss__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  list-style: none;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.yloss__legend li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.yloss__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.yloss__dot--peak {
+  background: var(--c-lime);
+}
+
+.yloss__dot--within {
+  background: var(--c-ink);
+}
+
+.yloss__dot--outside {
+  background: #d4d4cd;
+}
+
+/* ---- поле со столбцами ---- */
+.yloss__plot {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: flex-end;
+  gap: clamp(6px, 0.9vw, 16px);
+  height: clamp(240px, 19vw, 300px);
+  --yloss-head: 66px;  /* место выноске над самым высоким столбцом */
+  padding-top: var(--yloss-head);
+}
+
+.yloss__col {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.yloss__bar {
+  position: relative;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  transition: filter 0.15s ease, outline-color 0.15s ease;
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  border-radius: var(--r-pill);
+  /* Штриховка макета: полосы шириной 7 с шагом 22 под −45°.
+     В макете это 29 отдельных прямоугольников, здесь — один градиент,
+     поэтому обрезка по скруглению не нужна: фон её и так соблюдает.
+     А без обрезки пилюля со значением не режется узким столбцом. */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 15px,
+    rgba(255, 255, 255, 0.16) 15px 22px
+  );
+}
+
+.yloss__bar--peak {
+  background-color: var(--c-lime);
+}
+
+.yloss__bar--within {
+  background-color: var(--c-ink);
+}
+
+.yloss__bar:hover {
+  filter: brightness(1.08);
+}
+
+.yloss__bar--picked {
+  outline-color: var(--c-ink-deep);
+}
+
+.yloss__bar--outside {
+  background-color: var(--c-page);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 15px,
+    rgba(140, 140, 133, 0.22) 15px 22px
+  );
+}
+
+/* Значение пилюлей внутри верхушки столбца — как в макете */
+.yloss__value {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  box-shadow: 0 1px 6px rgb(27 27 23 / 12%);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--c-ink);
+}
+
+.yloss__year {
+  font-size: 13px;
+  text-align: center;
+  color: var(--c-muted-alt);
+}
+
+/* ---- выноска над пиком ---- */
+.yloss__callout {
+  position: absolute;
+  top: 0;
+  display: flex;
+  height: var(--yloss-head);
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 2px;
+  /* left приходит из разметки — центр самого высокого столбца.
+     Сдвигаем блок влево от него и оставляем справа место поводку.
+     Высота блока равна отступу сверху, поэтому его низ приходится
+     ровно на верхушку столбца — туда же смотрит поводок. */
+  transform: translateX(calc(-100% - 18px));
+  text-align: right;
+  pointer-events: none;
+}
+
+/* Если пик стоит в начале ряда, выноска слева вылезла бы за карточку —
+   тогда она уходит вправо, а поводок разворачивается вместе с ней. */
+.yloss__callout--flip {
+  align-items: flex-start;
+  transform: translateX(18px);
+  text-align: left;
+}
+
+.yloss__share {
+  font-size: clamp(28px, 2.3vw, 42px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-ink-deep);
+}
+
+.yloss__of {
+  font-size: 13px;
+  white-space: nowrap;
+  color: var(--c-muted-alt);
+}
+
+/* Поводок от текста к столбцу: линия и точка на его торце */
+.yloss__leader {
+  position: absolute;
+  bottom: 7px;
+  left: 100%;
+  width: 18px;
+  height: 2px;
+  background: #cfcfc8;
+}
+
+.yloss__callout--flip .yloss__leader {
+  left: auto;
+  right: 100%;
+}
+
+.yloss__leader::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--c-ink-deep);
+  border-radius: 50%;
+  background: var(--c-surface);
+  transform: translateY(-50%);
+}
+
+.yloss__callout--flip .yloss__leader::after {
+  right: auto;
+  left: -5px;
+}
+
+/* ---- разбор выбранного года ---- */
+.yloss__picked {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding: 16px 18px;
+  border: 1px solid rgb(46 62 40 / 22%);
+  border-radius: 24px;
+}
+
+.yloss__picked-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--c-muted-alt);
+}
+
+.yloss__picked-head b {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.yloss__clear {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+  text-decoration: underline;
+}
+
+.yloss__breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  list-style: none;
+  font-size: 13px;
+}
+
+.yloss__breakdown li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.yloss__breakdown a {
+  color: var(--c-ink-black);
+  text-decoration: none;
+}
+
+.yloss__breakdown a:hover {
+  text-decoration: underline;
+}
+
+.yloss__hint {
+  margin-top: 4px;
+  font-size: 12px;
+  font-style: italic;
+  color: #9b9b93;
+}
+
+.yloss__pickednote {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}

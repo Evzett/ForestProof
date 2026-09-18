@@ -375,15 +375,17 @@
 }
 
 /* Действие в строке каталога */
+/* Высота как у остальных кнопок приложения, обводка тоньше: полтора
+   пикселя на маленькой кнопке читались как жирная рамка. */
 .row-action {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
-  border: 1.5px solid var(--c-ink);
-  border-radius: 24px;
+  padding: 12px 22px;
+  border: 1px solid var(--c-ink);
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--c-ink);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
@@ -402,18 +404,22 @@
   margin-bottom: 16px;
 }
 
+/* Та же обводка, что у вкладок: селекторы периода и фильтры — это
+   один и тот же вид управления, и выглядеть они должны одинаково. */
 .filter {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 11px 18px;
-  border-radius: 24px;
+  border: 1px solid rgb(46 62 40 / 28%);
+  border-radius: var(--r-pill);
   background: var(--c-surface);
   font-size: 13px;
   color: var(--c-ink-black);
 }
 
 .filter--on {
+  border-color: var(--c-ink-deep);
   background: var(--c-lime);
   color: var(--c-ink-deep);
   font-weight: 500;

@@ -29,6 +29,20 @@
   image-rendering: pixelated;
 }
 
+/* Без подписи карта читается как декоративный шум. Она им и выглядит,
+   пока не сказано, что квадрат — это пиксель продукта, а не артефакт. */
+.area__legend {
+  margin: 8px 0 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}
+
+.area__legend b {
+  font-weight: 500;
+  color: var(--c-ink-black);
+}
+
 .area__pick {
   position: absolute;
   top: 12px;
@@ -51,7 +65,11 @@
   color: var(--c-ink-black);
 }
 
+/* Названия участков разной длины: у одних одна строка, у других две,
+   и всё, что ниже, съезжало по-разному от карточки к карточке.
+   Держим два ряда всегда — подписи встают на одну линию. */
 .area__name {
+  min-height: calc(2 * 19px * 1.15);
   font-size: 19px;
   font-weight: 500;
   line-height: 1.15;
@@ -68,6 +86,16 @@
 
 .area__meta {
   font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+/* Что означает роль участка обычными словами: «мозаика потерь покрова»
+   — это слово из набора, и без расшифровки оно ничего не сообщает. */
+.area__hint {
+  min-height: 48px;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
   color: var(--c-muted-alt);
 }
 

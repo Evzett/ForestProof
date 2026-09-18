@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Card, FilterSelect, LevelPill, formatDecimal, formatNumber } from "../../components/ui";
+import {
+  Card,
+  FilterSelect,
+  LevelPill,
+  formatDecimal,
+  formatNumber,
+  plural,
+} from "../../components/ui";
 import ChangeMap from "../../components/ChangeMap";
 import SeriesChart from "../../components/SeriesChart";
 import {
@@ -19,6 +26,7 @@ import {
 import { useScenario } from "../../data/scenario";
 import { COVERAGE, recompute } from "../../data/units";
 import type { Area, Period } from "../../data/case";
+import { YearLossChart } from "../../components/YearLossChart";
 import "./Plot.css";
 
 /* Карточка участка — основной экран сервиса.
@@ -449,27 +457,31 @@ function ChangesTab({
           </p>
         ) : (
           <>
-            <div className="bars">
-              {area.cover_loss.map((l) => {
-                const peak = Math.max(...area.cover_loss.map((x) => x.area_ha));
-                const h = Math.max((l.area_ha / peak) * 170, 3);
-                const within = l.year > period.year_start && l.year <= period.year_end;
-                return (
-                  <div key={l.year} className="bars__col">
-                    <span
-                      className={`bars__bar bars__bar--${within ? "peak" : "plain"}`}
-                      style={{ height: `${h}px` }}
-                      title={`${l.year}: ${formatDecimal(l.area_ha, 1)} га`}
-                    />
-                    <span className="bars__year">{String(l.year).slice(2)}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <YearLossChart
+              rows={area.cover_loss}
+              isWithin={(year) => year > period.year_start && year <= period.year_end}
+              badgeLabel={`${area.cover_loss.length} ${plural(area.cover_loss.length, ["год", "года", "лет"])} с потерями`}
+              caption={
+                <>
+                  суммарная площадь, потерявшая
+                  <br />
+                  древесный покров на участке
+                </>
+              }
+              withinLabel="внутри выбранного периода"
+              outsideLabel="вне выбранного периода"
+              renderPicked={(row) => (
+                <p className="yloss__pickednote">
+                  {row.year > period.year_start && row.year <= period.year_end
+                    ? "год попадает в выбранный период, поэтому потеря учтена в результате"
+                    : "год вне выбранного периода: на результат за период не влияет"}
+                </p>
+              )}
+            />
             <p className="ov-note">
-              Тёмные столбцы попадают в выбранный период. Потеря — снижение древесного покрова по
-              продукту Hansen. Отсутствие пожарных признаков не означает рубку: причина
-              указывается только при наличии подтверждений, иначе остаётся неустановленной.
+              Потеря — снижение древесного покрова по продукту Hansen. Отсутствие пожарных
+              признаков не означает рубку: причина указывается только при наличии подтверждений,
+              иначе остаётся неустановленной.
             </p>
           </>
         )}
@@ -1167,6 +1179,10 @@ function StabilityTab({ area }: { area: Area }) {
           <div className="disclaimer">{s.limitation}</div>
         </Card>
 
+        <ModelForecastCard aoiId={area.aoi_id} rulesLevel={s.level} />
+      </div>
+
+      <div className="plot-row plot-row--even">
         <Card title="Чего скрининг не делает" tone="soft" className="plot-block">
           <ul className="meth__not" style={{ color: "var(--c-ink-black)" }}>
             <li>
@@ -1230,7 +1246,7 @@ function StabilityTab({ area }: { area: Area }) {
         </p>
       </Card>
 
-      <ModelOpinion aoiId={area.aoi_id} rulesLevel={s.level} />
+      <ModelEvidence aoiId={area.aoi_id} />
     </>
   );
 }
@@ -1241,7 +1257,67 @@ function StabilityTab({ area }: { area: Area }) {
    с правилами, а не вместо них. Её собственный вывод о том, что
    проверить её нечем, выводится целиком: прятать такое — значит
    выдавать регуляризованный компромисс за оценку. */
-function ModelOpinion({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: string }) {
+/* Прогноз модели. Стоит рядом с пороговыми правилами, потому что это
+   два ответа на один вопрос, и сравнивать их глазами — смысл экрана. */
+function ModelForecastCard({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: string }) {
+  const prediction = modelFor(aoiId);
+  const forecast = prediction?.forecast;
+
+  if (!forecast) {
+    return (
+      <Card title="Прогноз модели" note="обученная модель" className="plot-block plot-block--dark">
+        <div className="vuln">
+          <span className="lvl lvl--none">прогноз недоступен</span>
+        </div>
+        <p className="ov-note">
+          {prediction?.reason ?? "нет данных Hansen по тайлу этого участка"}
+        </p>
+      </Card>
+    );
+  }
+
+  const agrees = forecast.category === rulesLevel;
+  return (
+    <Card
+      title={`Прогноз модели на ${forecast.horizon[0]}—${forecast.horizon[1]}`}
+      note="обученная модель"
+      className="plot-block plot-block--dark"
+    >
+      <div className="vuln">
+        <LevelPill level={forecast.category} />
+        <span className={`lvl ${agrees ? "lvl--low" : "lvl--medium"}`}>
+          {agrees ? "совпадает с правилами" : "расходится с правилами"}
+        </span>
+      </div>
+      <dl className="kv">
+        <div>
+          <dt>вероятность нарушения</dt>
+          <dd className="tabular">{formatDecimal(forecast.probability, 3)}</dd>
+        </div>
+        <div>
+          <dt>признаки посчитаны по</dt>
+          <dd className="tabular">
+            {forecast.feature_window[0]}—{forecast.feature_window[1]}
+          </dd>
+        </div>
+        <div>
+          <dt>потери за последние три года</dt>
+          <dd className="tabular">{formatDecimal(forecast.recent_loss_pct, 2)} %</dd>
+        </div>
+      </dl>
+      <div className="disclaimer">
+        Это и есть предсказание на следующие годы. Окно признаков той же длины, что при
+        обучении, но сдвинуто к концу данных: модель смотрит на девятнадцать последних лет и
+        отвечает про следующую пятилетку. Числовой вероятностью реверсии это не является и на
+        число потенциальных единиц не влияет.
+      </div>
+    </Card>
+  );
+}
+
+/* Всё, чем прогноз подкреплён: проверка на известном пятилетии, качество
+   на отложенной выборке, вклад признаков и почему нет утечки. */
+function ModelEvidence({ aoiId }: { aoiId: string }) {
   const prediction = modelFor(aoiId);
   const ranked = Object.entries(MODEL.weights).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
   const quality = MODEL.quality;
@@ -1250,57 +1326,40 @@ function ModelOpinion({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: string
   return (
     <>
       <div className="plot-row plot-row--even">
-        <Card title="Модель · обучена на выборке" note={MODEL.method} className="plot-block">
+        <Card title="Как проверен прогноз" note="известное пятилетие" className="plot-block">
+          <p className="ov-note" style={{ marginTop: 0 }}>
+            Ту же модель прогоняем по окну 2001—2019 и спрашиваем про 2020—2024 — период,
+            который уже прошёл и чей исход известен. Это единственный способ узнать, чего
+            стоит прогноз на 2025—2029.
+          </p>
           {prediction?.available ? (
-            <>
-              <div className="vuln">
-                <LevelPill level={(prediction.category ?? "low") as "low" | "medium" | "high"} />
-                {prediction.category === rulesLevel ? (
-                  <span className="lvl lvl--low">совпадает с правилами</span>
-                ) : (
-                  <span className="lvl lvl--medium">расходится с правилами</span>
-                )}
+            <dl className="kv">
+              <div>
+                <dt>модель говорила</dt>
+                <dd>
+                  <LevelPill level={(prediction.category ?? "low") as "low" | "medium" | "high"} />{" "}
+                  <span className="tabular">{formatDecimal(prediction.probability ?? 0, 3)}</span>
+                </dd>
               </div>
-              <dl className="kv">
-                <div>
-                  <dt>вероятность нарушения в 2020—2024</dt>
-                  <dd className="tabular">{formatDecimal(prediction.probability ?? 0, 3)}</dd>
-                </div>
-                <div>
-                  <dt>что было на самом деле</dt>
-                  <dd>
-                    {prediction.label === 1 ? "нарушение было" : "нарушения не было"} · потеря{" "}
-                    {formatDecimal(prediction.future_loss_pct ?? 0, 2)} %
-                  </dd>
-                </div>
-              </dl>
-            </>
+              <div>
+                <dt>что было на самом деле</dt>
+                <dd>
+                  {prediction.label === 1 ? "нарушение было" : "нарушения не было"} · потеря{" "}
+                  {formatDecimal(prediction.future_loss_pct ?? 0, 2)} %
+                </dd>
+              </div>
+            </dl>
           ) : (
-            <>
-              <div className="vuln">
-                <span className="lvl lvl--none">оценка недоступна</span>
-              </div>
-              <p className="ov-note" style={{ marginTop: 0 }}>
-                {prediction?.reason ??
-                  "участок не попал в покрытие тайла, по которому собиралась выборка"}
-              </p>
-            </>
+            <p className="ov-note">{prediction?.reason ?? "проверка недоступна"}</p>
           )}
-          <div className="disclaimer">{MODEL.verdict}</div>
         </Card>
 
-        <Card title="Как модель проверена" note="отложенная выборка" className="plot-block">
+        <Card title="Качество на отложенной выборке" note={MODEL.method} className="plot-block">
           <dl className="kv">
             <div>
               <dt>участков в выборке</dt>
               <dd className="tabular">
                 {MODEL.sample.size} · обучение {MODEL.sample.train}, отложенная {MODEL.sample.test}
-              </dd>
-            </div>
-            <div>
-              <dt>меньший класс</dt>
-              <dd className="tabular">
-                {MODEL.sample.minority_class} при нужных {MODEL.sample.required_minority}
               </dd>
             </div>
             <div>

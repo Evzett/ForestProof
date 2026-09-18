@@ -10,7 +10,7 @@ import {
   formatNumber,
 } from "../../components/ui";
 import { AddPlotButton, PageHead } from "../../components/AppShell";
-import { AREAS, EVENTS, formatBbox } from "../../data/case";
+import { AREAS, EVENTS, ROLE_HINT, formatBbox } from "../../data/case";
 import "./Areas.css";
 
 /* Каталог участков. В наборе кейса это исследовательские участки,
@@ -147,6 +147,11 @@ export default function Areas() {
                 </span>
                 <span className="area__role">{a.role}</span>
               </div>
+              <p className="area__legend">
+                <b>изменение запаса 2019 → 2024.</b> Один квадрат — один пиксель продукта
+                ESA CCI, около 0,54 га. Коричневый — потеря, зелёный — накопление. Картинка
+                не сглажена намеренно: сглаживание дорисовало бы детали, которых в данных нет.
+              </p>
 
               <h3 className="area__name">
                 <Link to={`/app/area/${a.aoi_id}`}>{a.name}</Link>
@@ -154,6 +159,7 @@ export default function Areas() {
               <p className="area__meta">
                 {a.aoi_id} · {a.region} · {formatDecimal(a.area_ha, 1)} га
               </p>
+              {ROLE_HINT[a.role] && <p className="area__hint">{ROLE_HINT[a.role]}</p>}
 
               <dl className="area__kv">
                 <div>

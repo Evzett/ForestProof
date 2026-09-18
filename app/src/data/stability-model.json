@@ -6,7 +6,20 @@
       "probability": 0.24799361378944565,
       "category": "low",
       "label": 0,
-      "future_loss_pct": 0.0663
+      "future_loss_pct": 0.0663,
+      "forecast": {
+        "probability": 0.24377504307138984,
+        "category": "low",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 0.0663
+      }
     },
     {
       "aoi_id": "RU_VOLOGDA_02",
@@ -14,7 +27,20 @@
       "probability": 0.49909192255786167,
       "category": "medium",
       "label": 1,
-      "future_loss_pct": 19.0225
+      "future_loss_pct": 19.0225,
+      "forecast": {
+        "probability": 0.9868924999911316,
+        "category": "high",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 5.8648
+      }
     },
     {
       "aoi_id": "RU_MORDOVIA_03",
@@ -22,7 +48,20 @@
       "probability": 0.3010139802318805,
       "category": "low",
       "label": 1,
-      "future_loss_pct": 12.2239
+      "future_loss_pct": 12.2239,
+      "forecast": {
+        "probability": 0.9999467126592458,
+        "category": "high",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 12.1173
+      }
     },
     {
       "aoi_id": "RU_MORDOVIA_04",
@@ -30,7 +69,20 @@
       "probability": 0.13999482368264338,
       "category": "low",
       "label": 0,
-      "future_loss_pct": 0.2842
+      "future_loss_pct": 0.2842,
+      "forecast": {
+        "probability": 0.19165279073895208,
+        "category": "low",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 0.2842
+      }
     }
   ],
   "method": "логистическая регрессия с L2, подбор регуляризации по скользящему контролю",

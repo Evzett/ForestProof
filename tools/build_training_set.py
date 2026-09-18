@@ -79,13 +79,26 @@ def tile_bounds(tile: str) -> tuple[float, float, float, float]:
 
 
 def sample_plot(
-    loss_path: Path, cover_path: Path, box: tuple[float, float, float, float]
+    loss_path: Path,
+    cover_path: Path,
+    box: tuple[float, float, float, float],
+    feature_end: int = FEATURE_YEARS_END,
+    label_years: range | None = None,
 ) -> dict | None:
     """Признаки и метка по одному участку.
 
     Возвращает None, если участок не лесной: обучать различать поле
     от поля бессмысленно, а отрицательный класс от этого раздувается.
+
+    Окно признаков сдвигается параметрами. Это нужно, чтобы применить
+    обученную модель вперёд: признаки считаются по последним девятнадцати
+    годам, какие есть, и модель отвечает про следующую пятилетку. Длина
+    окна при этом та же, что при обучении, иначе признаки означали бы
+    не то, на чём модель училась.
     """
+    if label_years is None:
+        label_years = LABEL_YEARS
+    feature_start = feature_end - (FEATURE_YEARS_END - 1)
     loss = read_geotiff(str(loss_path), bbox=box)
     cover = read_geotiff(str(cover_path), bbox=box)
 
@@ -102,24 +115,25 @@ def sample_plot(
     if forest_share < MIN_FOREST_SHARE:
         return None
 
-    # --- признаки: только до 2019 года включительно ---
-    past = (lossyear > 0) & (lossyear <= FEATURE_YEARS_END) & forest
+    # --- признаки: только внутри окна признаков ---
+    past = (lossyear >= feature_start) & (lossyear <= feature_end) & forest
     past_ha = float(weights[past].sum())
 
     years_with_loss = 0
     yearly = []
-    for code in range(1, FEATURE_YEARS_END + 1):
+    for code in range(feature_start, feature_end + 1):
         year_ha = float(weights[(lossyear == code) & forest].sum())
         yearly.append(year_ha)
         if year_ha / total_ha * 100 > 0.1:
             years_with_loss += 1
 
-    recent_ha = sum(yearly[16:19])  # 2017–2019
+    # последние три года окна признаков
+    recent_ha = sum(yearly[-3:])
     peak_ha = max(yearly) if yearly else 0.0
     mean_cover = float((treecover * weights)[forest].sum() / max(weights[forest].sum(), 1e-9))
 
-    # --- метка: потеря за 2020–2024, в признаки не входит ---
-    future = np.isin(lossyear, list(LABEL_YEARS)) & forest
+    # --- метка: потеря за годы после окна признаков, в признаки не входит ---
+    future = np.isin(lossyear, list(label_years)) & forest
     future_ha = float(weights[future].sum())
     future_pct = future_ha / total_ha * 100
 
@@ -137,6 +151,7 @@ def sample_plot(
         "peak_year_loss_pct": round(peak_ha / total_ha * 100, 4),
         "future_loss_2020_2024_pct": round(future_pct, 4),
         "label": int(future_pct > LABEL_LOSS_PCT),
+        "feature_window": [2000 + feature_start, 2000 + feature_end],
     }
 
 
