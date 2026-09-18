@@ -218,6 +218,43 @@ def render_terrain(
         peak = max(peak, float(np.percentile(density[inside], 99)))
 
     rows, cols = weights.shape
+
+    # Год потери покрова, переложенный на сетку запаса. Hansen снимает
+    # тридцатиметровым шагом, CCI — стометровым, поэтому в одну клетку
+    # запаса попадает около дюжины пикселей Hansen. Берём самый поздний
+    # год среди них: клетка помечается годом, когда её задело в последний
+    # раз, и подсветка «что упало в 2022» не теряет клетки, задетые ещё
+    # и раньше.
+    loss_years = [0] * (rows * cols)
+    gfc_path = data_dir / aoi / "GFC_2025_v1_13.tif"
+    if gfc_path.exists():
+        gfc = read_geotiff(str(gfc_path))
+        cover = gfc.band(0).astype(float)
+        lossyear = gfc.band(1).astype(int)
+        forest = cover >= TREECOVER_THRESHOLD
+        marked = np.where(forest, lossyear, 0)
+
+        lat0, lon0 = first.lat_origin, first.lon_origin
+        for row in range(rows):
+            top = lat0 - row * first.lat_step
+            r0 = int(round((gfc.lat_origin - top) / gfc.lat_step))
+            r1 = int(round((gfc.lat_origin - (top - first.lat_step)) / gfc.lat_step))
+            if r1 <= r0 or r0 < 0 or r0 >= marked.shape[0]:
+                continue
+            for col in range(cols):
+                if not inside[row, col]:
+                    continue
+                left = lon0 + col * first.lon_step
+                c0 = int(round((left - gfc.lon_origin) / gfc.lon_step))
+                c1 = int(round((left + first.lon_step - gfc.lon_origin) / gfc.lon_step))
+                if c1 <= c0 or c0 < 0 or c0 >= marked.shape[1]:
+                    continue
+                block = marked[r0 : min(r1, marked.shape[0]), c0 : min(c1, marked.shape[1])]
+                if block.size:
+                    code = int(block.max())
+                    if code > 0:
+                        loss_years[row * cols + col] = 2000 + code
+
     return {
         "width": int(cols),
         "height": int(rows),
@@ -226,6 +263,7 @@ def render_terrain(
         "pixel_area_ha": round(float(weights[inside].mean()), 4),
         "years": [int(y) for y in years],
         "grids": grids,
+        "loss_years": loss_years,
     }
 
 

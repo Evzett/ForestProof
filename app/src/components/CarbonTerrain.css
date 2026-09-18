@@ -117,3 +117,30 @@
 .terrain__dot--down {
   background: rgb(150 120 96);
 }
+
+.terrain__play {
+  padding: 9px 18px;
+  border: 1px solid rgb(46 62 40 / 28%);
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--c-ink);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.terrain__play.is-on {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+  color: #fff;
+}
+
+/* Витрина сравнения: только лес, без подписей — их место в таблице. */
+.terrain--compact {
+  gap: 0;
+}
+
+.terrain--compact .terrain__canvas {
+  height: clamp(150px, 13vw, 210px);
+}

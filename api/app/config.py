@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     environment: str = "development"
     data_dir: str = "data"
 
+    # Языковая модель для краткой справки. Пустой ключ — штатное
+    # состояние: сервис обязан работать без неё, показывая шаблонную
+    # справку. Ключ держится только на сервере и во фронт не уезжает.
+    routerai_base_url: str = "https://routerai.ru/api/v1"
+    routerai_model: str = "deepseek/deepseek-v4-pro-0813"
+    routerai_api_key: str = ""
+
     @property
     def data_root(self) -> Path:
         """Абсолютный путь к `api/data/` — превью, полигоны, загрузки геометрии.

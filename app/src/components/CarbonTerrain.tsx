@@ -59,11 +59,20 @@ export default function CarbonTerrain({
   name,
   startYear,
   endYear,
+  highlightYear = null,
+  compact = false,
 }: {
   terrain: Terrain;
   name: string;
   startYear: number;
   endYear: number;
+  /* Год, который надо подсветить: клетки, потерявшие покров именно в
+     нём, горят, остальные гаснут. Приходит от наведения на столбец
+     диаграммы — так видно, куда именно пришёлся этот столбец. */
+  highlightYear?: number | null;
+  /* Урезанный вид для витрины сравнения: без переключателей и подписей,
+     только сам лес. */
+  compact?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [year, setYear] = useState<"start" | "end">("end");
@@ -73,6 +82,11 @@ export default function CarbonTerrain({
      «Рельеф» — те же значения столбиками, когда нужно сравнить высоты,
      а не впечатлиться. */
   const [mode, setMode] = useState<"forest" | "relief">("forest");
+  /* Проигрывание по годам. Данные за все годы уже лежат рядом, поэтому
+     «плёнка» — это не новая выгрузка, а другой способ прочитать ту же
+     сетку: видно, что участок не потерял всё разом. */
+  const [playing, setPlaying] = useState(false);
+  const [frame, setFrame] = useState<number | null>(null);
   const dragRef = useRef<{ x: number; y: number; rotation: number; tilt: number } | null>(null);
 
   const { width, height, peak_t_ha: peak } = terrain;
@@ -85,7 +99,14 @@ export default function CarbonTerrain({
   const yearB = nearest(endYear);
   const start = terrain.grids[String(yearA)] ?? [];
   const end = terrain.grids[String(yearB)] ?? [];
-  const values = year === "end" ? end : start;
+  /* Во время проигрывания показывается кадр, а не выбранный год. */
+  const frameYear = frame === null ? null : terrain.years[frame];
+  const values =
+    frameYear !== null
+      ? terrain.grids[String(frameYear)] ?? end
+      : year === "end"
+        ? end
+        : start;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -206,11 +227,20 @@ export default function CarbonTerrain({
          2019 он не наносится: иначе картинка утверждала бы, что лес уже
          повреждён, хотя тогда он ещё стоял. */
       const delta =
-        year === "start" || end[index] === EMPTY || start[index] === EMPTY
+        frameYear !== null || year === "start" || end[index] === EMPTY || start[index] === EMPTY
           ? 0
           : end[index] - start[index];
       const norm = Math.max(0, Math.min(1, value / (peak || 1)));
-      const base = colorFor(norm, delta, deltaSpan);
+      let base = colorFor(norm, delta, deltaSpan);
+      /* Подсветка года: задетые клетки горят лаймом, остальные гаснут.
+         Гасим, а не прячем — иначе исчезал бы и контур участка, и было
+         бы непонятно, к чему относится подсвеченное пятно. */
+      if (highlightYear !== null) {
+        base =
+          terrain.loss_years[index] === highlightYear
+            ? [167, 187, 47]
+            : [base[0] * 0.45 + 120, base[1] * 0.45 + 122, base[2] * 0.45 + 112];
+      }
 
       /* В режиме леса рельеф приземляется: высоту показывают деревья,
          и если поднимать ещё и землю, одно и то же число считалось бы
@@ -264,7 +294,22 @@ export default function CarbonTerrain({
        поворота; вдобавок в отладочной сборке он печатает массив
        зависимостей целиком, заваливая консоль. Сами данные меняются
        только вместе с годом и участком, поэтому ключей достаточно. */
-  }, [terrain, yearA, yearB, year, width, height, peak, view, mode]);
+  }, [terrain, yearA, yearB, year, frameYear, highlightYear, width, height, peak, view, mode]);
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => {
+      setFrame((previous) => {
+        const next = (previous === null ? -1 : previous) + 1;
+        if (next >= terrain.years.length) {
+          setPlaying(false);
+          return null;
+        }
+        return next;
+      });
+    }, 620);
+    return () => window.clearInterval(timer);
+  }, [playing, terrain.years.length]);
 
   const onDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     dragRef.current = {
@@ -296,7 +341,8 @@ export default function CarbonTerrain({
   const total = values.filter((v) => v !== EMPTY).length;
 
   return (
-    <div className="terrain">
+    <div className={`terrain ${compact ? "terrain--compact" : ""}`.trim()}>
+      {compact ? null : (
       <div className="terrain__bar">
         <div className="terrain__years">
           <button
@@ -330,8 +376,24 @@ export default function CarbonTerrain({
             рельеф
           </button>
         </div>
+        <button
+          type="button"
+          className={`terrain__play ${playing ? "is-on" : ""}`.trim()}
+          onClick={() => {
+            if (playing) {
+              setPlaying(false);
+              setFrame(null);
+            } else {
+              setFrame(0);
+              setPlaying(true);
+            }
+          }}
+        >
+          {playing ? `■ ${frameYear ?? ""}` : "▶ по годам"}
+        </button>
         <span className="terrain__hint">тяните мышью, чтобы повернуть</span>
       </div>
+      )}
 
       <canvas
         ref={canvasRef}
@@ -346,6 +408,7 @@ export default function CarbonTerrain({
         } год`}
       />
 
+      {compact ? null : (
       <dl className="terrain__kv">
         <div>
           <dt>высота столбика</dt>
@@ -365,7 +428,9 @@ export default function CarbonTerrain({
           </dd>
         </div>
       </dl>
+      )}
 
+      {compact ? null : (
       <p className="ov-note">
         {mode === "forest"
           ? "Одно дерево — один пиксель продукта, его высота и есть запас на этом пикселе. Деревья стоят через клетку: при трёх с половиной тысячах крон рисунок превращается в сплошной ковёр, где не видно ни просек, ни границы вырубки."
@@ -375,6 +440,7 @@ export default function CarbonTerrain({
         Значения взяты из тех же чисел, из которых считается изменение запаса, поэтому провал на
         картинке и вклад в результат — одно и то же место. Тень и наклон граней — оформление.
       </p>
+      )}
     </div>
   );
 }
