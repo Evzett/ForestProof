@@ -174,26 +174,34 @@ RISK_RULES = [
 def render_terrain(
     data_dir: Path, aoi: str, box, out_dir: Path, config: CaseCalculationConfig = CONFIG
 ) -> dict | None:
-    """Числовая сетка запаса для объёмного рельефа на экране.
+    """Числовая сетка запаса по годам для объёмного рельефа на экране.
 
     Карты рисуются в PNG, но картинку нельзя выдавить в объём: в ней уже
     только цвет. Поэтому рядом кладётся та же сетка числами — те же
     пиксели, из которых считается ΔC, а не отдельная выгрузка.
 
+    Годы выгружаются все, какие есть в наборе, а не два крайних. Период
+    наблюдения на экране выбирается пользователем, и если рельеф знает
+    только 2019 и 2024, то при любом другом выборе он показывает не то,
+    что подписано сверху.
+
     Значения округляются до целых т C/га. Точность продукта — единицы
-    процентов, дробная часть здесь ничего не добавила бы, а размер файла
-    выросла бы втрое.
+    процентов, дробная часть ничего не добавила бы, а вес вырос бы втрое.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
-    start = read_geotiff(str(data_dir / aoi / "CCI_Biomass_2019.tif"))
-    end = read_geotiff(str(data_dir / aoi / "CCI_Biomass_2024.tif"))
-    weights = pixel_intersection_weights(start, box)
+
+    years = sorted(
+        int(path.stem.split("_")[-1])
+        for path in (data_dir / aoi).glob("CCI_Biomass_*.tif")
+    )
+    if not years:
+        return None
+
+    first = read_geotiff(str(data_dir / aoi / f"CCI_Biomass_{years[0]}.tif"))
+    weights = pixel_intersection_weights(first, box)
     inside = weights > 0
     if not inside.any():
         return None
-
-    c_start = carbon_density_t_ha(start.band(0), config)
-    c_end = carbon_density_t_ha(end.band(0), config)
 
     def grid(values: np.ndarray) -> list[int]:
         """Вне контура пишется −1, а не ноль: ноль — это тоже значение,
@@ -201,18 +209,23 @@ def render_terrain(
         out = np.where(inside, np.rint(np.nan_to_num(values)), -1)
         return [int(v) for v in out.ravel()]
 
-    rows, cols = c_start.shape
-    peak = float(np.percentile(c_end[inside], 99)) if inside.any() else 0.0
+    grids: dict[str, list[int]] = {}
+    peak = 0.0
+    for year in years:
+        raster = read_geotiff(str(data_dir / aoi / f"CCI_Biomass_{year}.tif"))
+        density = carbon_density_t_ha(raster.band(0), config)
+        grids[str(year)] = grid(density)
+        peak = max(peak, float(np.percentile(density[inside], 99)))
+
+    rows, cols = weights.shape
     return {
         "width": int(cols),
         "height": int(rows),
         "unit": "т C/га",
         "peak_t_ha": round(peak, 1),
         "pixel_area_ha": round(float(weights[inside].mean()), 4),
-        "start_year": 2019,
-        "end_year": 2024,
-        "start": grid(c_start),
-        "end": grid(c_end),
+        "years": [int(y) for y in years],
+        "grids": grids,
     }
 
 

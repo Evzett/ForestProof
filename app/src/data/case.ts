@@ -342,12 +342,11 @@ export type Terrain = {
   unit: string;
   peak_t_ha: number;
   pixel_area_ha: number;
-  start_year: number;
-  end_year: number;
-  /* Значение -1 означает «пиксель вне контура». Ноль тоже значение,
-     и путать «здесь нет леса» с «сюда не спрашивали» нельзя. */
-  start: number[];
-  end: number[];
+  years: number[];
+  /* Сетка на каждый год набора, ключ — год строкой. Значение -1 означает
+     «пиксель вне контура»: ноль тоже значение, и путать «здесь нет леса»
+     с «сюда не спрашивали» нельзя. */
+  grids: Record<string, number[]>;
 };
 
 export type ModelForecast = {

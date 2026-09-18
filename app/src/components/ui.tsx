@@ -209,16 +209,27 @@ export function FilterSelect({
   label: string;
 }) {
   const on = value !== options[0].value;
+  const current = options.find((o) => o.value === value)?.label ?? value;
+  /* Нативный select растянут на всю плашку и невидим, а подпись рисуется
+     отдельным текстом. Раньше select был строчным: кликалась только сама
+     надпись, а поля плашки не реагировали — плашка выглядела кнопкой и
+     на нажатие не отвечала. */
   return (
     <span className={`filter filter--select ${on ? "filter--on" : ""}`.trim()}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
+      <span className="filter__value">{current}</span>
+      <span aria-hidden="true">▾</span>
+      <select
+        className="filter__native"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+      >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
       </select>
-      <span aria-hidden="true">▾</span>
     </span>
   );
 }
