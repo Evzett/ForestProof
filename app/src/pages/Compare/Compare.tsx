@@ -1,6 +1,6 @@
-import { Fragment } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, formatDecimal, formatNumber } from "../../components/ui";
+import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS } from "../../data/case";
 import "./Compare.css";
@@ -123,7 +123,69 @@ const GROUPS: { title: string; rows: Row[] }[] = [
   },
 ];
 
+/* Справка по выбранным участкам. Как и в обзоре, собирается шаблоном
+   из посчитанного: языковой модели здесь нет, и сказать что-то, чего
+   нет в числах, справка не может по устройству. */
+function buildCompareSummary(picked: (typeof AREAS)[number][]): string[] {
+  if (picked.length < 2) return [];
+  const worst = [...picked].sort(
+    (a, b) => b.period_2019_2024.e_tco2e - a.period_2019_2024.e_tco2e
+  )[0];
+  const best = [...picked].sort(
+    (a, b) => a.period_2019_2024.e_tco2e - b.period_2019_2024.e_tco2e
+  )[0];
+  const losing = picked.filter((a) => a.period_2019_2024.e_tco2e > 0);
+  const spread = picked.map(
+    (a) => a.period_2019_2024.upper_tco2e - a.period_2019_2024.lower_tco2e
+  );
+  const widest = picked[spread.indexOf(Math.max(...spread))];
+  const control = picked.find((a) => a.role === "контрольный участок");
+
+  const lines = [
+    `Сравниваются ${picked.length} ${plural(picked.length, [
+      "участок",
+      "участка",
+      "участков",
+    ])}. Потерю углерода за 2019—2024 показывают ${losing.length} из ${picked.length}.`,
+    `Наибольшая потеря — ${worst.name}: ${formatNumber(
+      Math.round(worst.period_2019_2024.e_tco2e)
+    )} т CO₂-экв. Наименьшая — ${best.name}: ${formatNumber(
+      Math.round(best.period_2019_2024.e_tco2e)
+    )} т CO₂-экв.`,
+    `Самый широкий диапазон неопределённости у «${widest.name}» — ${formatNumber(
+      Math.round(Math.max(...spread))
+    )} т CO₂-экв. Это ширина интервала, а не ошибка расчёта: чем она больше, тем меньше разница между участками значит.`,
+  ];
+
+  if (control) {
+    lines.push(
+      `В выборке есть контрольный участок «${control.name}» — на нём нарушений не ожидается, и он показывает, как ведёт себя метод там, где терять нечего.`
+    );
+  } else {
+    lines.push(
+      "Контрольного участка в выборке нет. Без него не с чем сравнить поведение метода там, где нарушений заведомо не было."
+    );
+  }
+
+  lines.push(
+    "Сводного балла нет и не будет: группы отвечают на разные вопросы, и сложить их в одно число значит скрыть, какой именно вопрос вызвал сомнение."
+  );
+  return lines;
+}
+
 export default function Compare() {
+  /* Раньше в таблицу сразу попадали все участки набора. При четырёх это
+     ещё читалось, но сравнение — это выбор, а не список всего, что есть:
+     как только участков станет двенадцать, таблица перестанет помещаться
+     на экран, и выбирать всё равно придётся. */
+  const [picked, setPicked] = useState<string[]>(() => AREAS.slice(0, 2).map((a) => a.aoi_id));
+
+  const rows = useMemo(() => AREAS.filter((a) => picked.includes(a.aoi_id)), [picked]);
+  const summary = useMemo(() => buildCompareSummary(rows), [rows]);
+
+  const toggle = (id: string) =>
+    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
   return (
     <>
       <PageHead
@@ -138,7 +200,10 @@ export default function Compare() {
 
       <div className="cmp-cards">
         {AREAS.map((a) => (
-          <Card key={a.aoi_id} className="cmp-card">
+          <Card
+            key={a.aoi_id}
+            className={`cmp-card ${picked.includes(a.aoi_id) ? "cmp-card--on" : ""}`.trim()}
+          >
             {a.maps && <img className="cmp-card__img" src={`/maps/${a.maps.change}`} alt="" />}
             <div className="cmp-card__body">
               <b>{a.name}</b>
@@ -148,10 +213,42 @@ export default function Compare() {
               <span className={a.role === "контрольный участок" ? "lvl lvl--low" : "lvl lvl--none"}>
                 {a.role}
               </span>
+              <span className="cmp-card__pick">
+                <Checkbox
+                  checked={picked.includes(a.aoi_id)}
+                  onChange={() => toggle(a.aoi_id)}
+                  label={`сравнивать ${a.name}`}
+                />
+                <span>в сравнении</span>
+              </span>
             </div>
           </Card>
         ))}
       </div>
+
+      {rows.length < 2 ? (
+        <Card className="cmp-empty">
+          <p>
+            Выберите хотя бы два участка. Сравнение одного участка с самим собой ничего не
+            показывает, а таблица со всеми участками сразу — это уже не сравнение, а каталог.
+          </p>
+        </Card>
+      ) : (
+        <>
+          <Card className="cmp-summary">
+            <div className="ov-summary__head">
+              <h2 className="card__title">Краткая справка по выбранным</h2>
+              <span className="lvl lvl--outline">собрано шаблоном</span>
+            </div>
+            <ul className="cmp-summary__list">
+              {summary.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <p className="ov-note">
+              собрано из посчитанного · без языковой модели · пересобирается при смене выбора
+            </p>
+          </Card>
 
       <Card>
         <div className="tbl__scroll">
@@ -159,7 +256,7 @@ export default function Compare() {
             <thead>
               <tr>
                 <th>показатель</th>
-                {AREAS.map((a) => (
+                {rows.map((a) => (
                   <th key={a.aoi_id} className="num">
                     {a.aoi_id.replace("RU_", "")}
                   </th>
@@ -180,7 +277,7 @@ export default function Compare() {
                         {row.label}
                         {row.hint && <span className="cmp-hint">{row.hint}</span>}
                       </td>
-                      {AREAS.map((a) => (
+                      {rows.map((a) => (
                         <td key={a.aoi_id} className="num">
                           {row.value(a)}
                         </td>
@@ -198,6 +295,8 @@ export default function Compare() {
           результат уезжает и там, дело в методе, а не в нарушении.
         </p>
       </Card>
+        </>
+      )}
     </>
   );
 }

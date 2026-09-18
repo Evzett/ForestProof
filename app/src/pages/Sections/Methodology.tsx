@@ -229,14 +229,16 @@ const LIMITS: [string, string][] = [
 export function Methodology() {
   const [active, setActive] = useState("what");
 
+  /* Разделы показываются по одному. Раньше страница выводила все восемь
+     подряд, и оглавление работало как прокрутка по простыне: выбранный
+     пункт подсвечивался, но рядом с ним стояло ещё семь разделов, и
+     понять, где кончается один и начинается другой, было нельзя. */
   const go = (id: string) => {
     setActive(id);
-    /* Плавная прокрутка игнорируется, если у пользователя отключены анимации
-       или браузер их не поддерживает — тогда прыгаем сразу, а не стоим на месте. */
     const smooth = window.matchMedia?.("(prefers-reduced-motion: no-preference)").matches ?? false;
     document
       .getElementById(id)
-      ?.scrollIntoView(smooth ? { behavior: "smooth", block: "start" } : { block: "start" });
+      ?.scrollIntoView(smooth ? { behavior: "smooth", block: "nearest" } : { block: "nearest" });
   };
 
   return (
@@ -268,7 +270,7 @@ export function Methodology() {
         </Card>
 
         <div className="meth__body">
-          <div id="what">
+          <div id="what" className="meth__sec" hidden={active !== "what"}>
             <Card title="Что мы считаем" note="шесть групп" className="mb20">
               <dl className="meth__list">
                 {WHAT.map(([t, d, src]) => (
@@ -284,7 +286,7 @@ export function Methodology() {
             </Card>
           </div>
 
-          <div id="rules">
+          <div id="rules" className="meth__sec" hidden={active !== "rules"}>
             <Card
               title="Правила и где они соблюдаются"
               note="приняты до данных, подтверждены постановкой"
@@ -321,7 +323,7 @@ export function Methodology() {
           </div>
 
           <div className="meth__pair">
-            <div id="formulas">
+            <div id="formulas" className="meth__sec" hidden={active !== "formulas"}>
               <Card title="Формулы и коэффициенты" note="в конфигурации, не в коде">
                 <dl className="meth__formulas">
                   {FORMULAS.map(([f, d, src]) => (
@@ -341,7 +343,7 @@ export function Methodology() {
               </Card>
             </div>
 
-            <div id="not">
+            <div id="not" className="meth__sec" hidden={active !== "not"}>
               <Card tone="dark" title="Чего мы не считаем">
                 <ul className="meth__not">
                   {NOT.map((n) => (
@@ -359,7 +361,7 @@ export function Methodology() {
             </div>
           </div>
 
-          <div id="sources">
+          <div id="sources" className="meth__sec" hidden={active !== "sources"}>
             <Card title="Источники данных" note="все открытые" className="mb20">
               <div className="tbl__scroll">
                 <table className="tbl">
@@ -395,7 +397,7 @@ export function Methodology() {
             </Card>
           </div>
 
-          <div id="chain">
+          <div id="chain" className="meth__sec" hidden={active !== "chain"}>
             <Card title="Порядок расчёта" note="шесть шагов" className="mb20">
               <ol className="meth__steps">
                 {CHAIN.map(([t, d]) => (
@@ -408,7 +410,7 @@ export function Methodology() {
             </Card>
           </div>
 
-          <div id="units">
+          <div id="units" className="meth__sec" hidden={active !== "units"}>
             <Card title="Когда единиц нет и почему" className="mb20">
               <div className="tbl__scroll">
                 <table className="tbl">
@@ -440,7 +442,7 @@ export function Methodology() {
             </Card>
           </div>
 
-          <div id="limits">
+          <div id="limits" className="meth__sec" hidden={active !== "limits"}>
             <Card title="Границы применимости" className="mb20">
               <dl className="meth__list">
                 {LIMITS.map(([t, d]) => (

@@ -65,3 +65,60 @@
 .cmp-table th:first-child {
   min-width: 210px;
 }
+
+/* Выбранная карточка обведена: без этого непонятно, какие участки
+   попали в таблицу ниже, а какие только показаны. */
+.cmp-card {
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.cmp-card--on {
+  border-color: var(--c-ink);
+}
+
+.cmp-card__pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.cmp-empty {
+  max-width: 640px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--c-muted-alt);
+}
+
+.cmp-summary {
+  margin-bottom: 20px;
+}
+
+.cmp-summary__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+.cmp-summary__list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-ink-black);
+}
+
+.cmp-summary__list li::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-lime);
+}
