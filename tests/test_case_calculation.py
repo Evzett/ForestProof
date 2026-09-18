@@ -268,6 +268,7 @@ def test_extractor_assembles_from_supplied_baseline_without_raster_io(monkeypatc
     economics = result["period_2019_2024"]["scenario_economics"]
     assert economics["q"] == 0
     assert [row["value_rub"] for row in economics["scenarios"]] == [0, 0, 0]
+    assert "потенциальные единицы не сформированы" in result["summary"]["text"]
     assert result["baseline_stock_t_ha"]["2029"] == pytest.approx(
         area["baseline_stock_t_ha"]["2029"], abs=1e-8
     )
@@ -285,6 +286,7 @@ def test_extractor_assembles_from_supplied_baseline_without_raster_io(monkeypatc
     assert incomplete["period_2019_2024"]["value_rub"] == {
         "low": None, "base": None, "high": None
     }
+    assert "summary" not in incomplete
 
     no_baseline = extract_case_data.build_aoi(Path("unused"), meta, [], [], None)
     assert no_baseline["baseline_rate_tc_ha_year"] is None
