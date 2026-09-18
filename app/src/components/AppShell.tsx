@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { AREAS, GENERATED_FROM } from "../data/case";
+import { plural } from "./ui";
 import { WizardProvider, useWizard } from "./Wizard";
 import { ScenarioProvider } from "../data/scenario";
 import "./AppShell.css";
@@ -28,6 +29,7 @@ const NAV = [
   { to: "/app/projects", label: "Проекты", icon: "projects" },
   { to: "/app/calculations", label: "Расчёты", icon: "calc" },
   { to: "/app/monitoring", label: "Что изменилось", icon: "monitoring" },
+  { to: "/app/research", label: "Исследование", icon: "calc" },
   { to: "/app/methodology", label: "Методика", icon: "method" },
 ];
 
@@ -71,7 +73,7 @@ function Shell() {
         <div className="sidebar__foot">
           <span>набор данных</span>
           <span className="sidebar__foot-strong">
-            {AREAS.length} участка · 2019—2024
+            {AREAS.length} {plural(AREAS.length, ["участок", "участка", "участков"])} · 2019—2024
           </span>
           <span>{GENERATED_FROM}</span>
         </div>

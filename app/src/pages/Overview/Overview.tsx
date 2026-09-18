@@ -462,7 +462,7 @@ export default function Overview() {
       </div>
 
       <Card title="Что в наборе" className="ov-attention">
-        <ul className="attention">
+        <ul className="attention scrollbox">
           {AREAS.map((a) => (
             <li key={a.aoi_id}>
               <Link to={`/app/area/${a.aoi_id}`} className="attention__name">
@@ -481,8 +481,9 @@ export default function Overview() {
           ))}
         </ul>
         <p className="ov-note">
-          Все четыре участка имеют статус исследовательских и не являются зарегистрированными
-          климатическими проектами — это записано в самом наборе.
+          {AREAS.length === 1 ? "Участок имеет" : "Все участки имеют"} статус
+          исследовательских и не являются зарегистрированными климатическими проектами — это
+          записано в самом наборе.
         </p>
       </Card>
     </>
