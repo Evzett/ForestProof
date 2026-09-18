@@ -1243,47 +1243,96 @@ function StabilityTab({ area }: { area: Area }) {
    выдавать регуляризованный компромисс за оценку. */
 function ModelOpinion({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: string }) {
   const prediction = modelFor(aoiId);
-  if (!prediction) return null;
-
-  const agrees = prediction.category === rulesLevel;
-  const ranked = Object.entries(MODEL.weights).sort(
-    (a, b) => Math.abs(b[1]) - Math.abs(a[1])
-  );
-  const separating = MODEL.separability.filter((f) => f.separates);
+  const ranked = Object.entries(MODEL.weights).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  const quality = MODEL.quality;
+  const singleAuc = Math.max(quality.best_single_auc, 1 - quality.best_single_auc);
 
   return (
     <>
       <div className="plot-row plot-row--even">
-        <Card title="Модель · второе мнение" note={MODEL.method} className="plot-block">
-          <div className="vuln">
-            <LevelPill level={prediction.category as "low" | "medium" | "high"} />
-            {agrees ? (
-              <span className="lvl lvl--low">совпадает с правилами</span>
-            ) : (
-              <span className="lvl lvl--medium">расходится с правилами</span>
-            )}
-          </div>
-          <dl className="kv">
-            <div>
-              <dt>вероятность положительного класса</dt>
-              <dd className="tabular">{formatDecimal(prediction.probability, 3)}</dd>
-            </div>
-            <div>
-              <dt>скользящий контроль по одному</dt>
-              <dd className="tabular">
-                {prediction.leave_one_out_degenerate
-                  ? "вырожден: в обучении остаётся один класс"
-                  : formatDecimal(prediction.leave_one_out ?? 0, 3)}
-              </dd>
-            </div>
-            <div>
-              <dt>разметка участка</dt>
-              <dd>{prediction.label === 1 ? "нарушение было" : "нарушения не было"}</dd>
-            </div>
-          </dl>
+        <Card title="Модель · обучена на выборке" note={MODEL.method} className="plot-block">
+          {prediction?.available ? (
+            <>
+              <div className="vuln">
+                <LevelPill level={(prediction.category ?? "low") as "low" | "medium" | "high"} />
+                {prediction.category === rulesLevel ? (
+                  <span className="lvl lvl--low">совпадает с правилами</span>
+                ) : (
+                  <span className="lvl lvl--medium">расходится с правилами</span>
+                )}
+              </div>
+              <dl className="kv">
+                <div>
+                  <dt>вероятность нарушения в 2020—2024</dt>
+                  <dd className="tabular">{formatDecimal(prediction.probability ?? 0, 3)}</dd>
+                </div>
+                <div>
+                  <dt>что было на самом деле</dt>
+                  <dd>
+                    {prediction.label === 1 ? "нарушение было" : "нарушения не было"} · потеря{" "}
+                    {formatDecimal(prediction.future_loss_pct ?? 0, 2)} %
+                  </dd>
+                </div>
+              </dl>
+            </>
+          ) : (
+            <>
+              <div className="vuln">
+                <span className="lvl lvl--none">оценка недоступна</span>
+              </div>
+              <p className="ov-note" style={{ marginTop: 0 }}>
+                {prediction?.reason ??
+                  "участок не попал в покрытие тайла, по которому собиралась выборка"}
+              </p>
+            </>
+          )}
           <div className="disclaimer">{MODEL.verdict}</div>
         </Card>
 
+        <Card title="Как модель проверена" note="отложенная выборка" className="plot-block">
+          <dl className="kv">
+            <div>
+              <dt>участков в выборке</dt>
+              <dd className="tabular">
+                {MODEL.sample.size} · обучение {MODEL.sample.train}, отложенная {MODEL.sample.test}
+              </dd>
+            </div>
+            <div>
+              <dt>меньший класс</dt>
+              <dd className="tabular">
+                {MODEL.sample.minority_class} при нужных {MODEL.sample.required_minority}
+              </dd>
+            </div>
+            <div>
+              <dt>ROC-AUC на отложенной</dt>
+              <dd className="tabular">
+                <b>{formatDecimal(quality.roc_auc_test, 3)}</b>
+              </dd>
+            </div>
+            <div>
+              <dt>лучший одиночный признак</dt>
+              <dd className="tabular">{formatDecimal(singleAuc, 3)}</dd>
+            </div>
+            <div>
+              <dt>модель лучше одного признака</dt>
+              <dd>
+                {quality.beats_single_feature ? (
+                  <span className="lvl lvl--low">да</span>
+                ) : (
+                  <span className="lvl lvl--medium">нет</span>
+                )}
+              </dd>
+            </div>
+          </dl>
+          <p className="ov-note">
+            Качество меряется ROC-AUC, а не точностью: при неравных классах точность показывает
+            долю большего класса и ничего больше. Стандартизация считается только по обучающей
+            части — иначе отложенная подсматривает через среднее и разброс.
+          </p>
+        </Card>
+      </div>
+
+      <div className="plot-row plot-row--even">
         <Card title="Вклад признаков" note="стандартизованные коэффициенты" className="plot-block">
           <dl className="meth__formulas">
             {ranked.map(([key, weight]) => (
@@ -1297,48 +1346,34 @@ function ModelOpinion({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: string
             ))}
           </dl>
           <p className="ov-note">
-            {separating.length} признака из {MODEL.features.length} разделяют классы поодиночке
-            {separating.length > 0 &&
-              `: ${separating.map((f) => FEATURE_LABEL[f.feature] ?? f.feature).join(", ")}`}
-            . Когда классы разделяет любой отдельный признак, совместная модель не добавляет
-            знания — она лишь переписывает то же разделение другими словами.
+            Признак «{FEATURE_LABEL[quality.best_single_feature] ?? quality.best_single_feature}»
+            в одиночку даёт почти всё разделение. Остальные пять добавляют{" "}
+            {formatDecimal(quality.roc_auc_test - singleAuc, 3)} — то есть ничего.
+          </p>
+        </Card>
+
+        <Card title="Почему здесь нет утечки" tone="soft" className="plot-block">
+          <dl className="kv">
+            <div>
+              <dt>признаки считаются по</dt>
+              <dd>{MODEL.design.feature_window}</dd>
+            </div>
+            <div>
+              <dt>метка берётся за</dt>
+              <dd>{MODEL.design.label_window}</dd>
+            </div>
+            <div>
+              <dt>правило метки</dt>
+              <dd>{MODEL.design.label_rule}</dd>
+            </div>
+          </dl>
+          <p className="ov-note">
+            Если бы метка и признак считались по одному периоду, модель предсказывала бы
+            собственный вход: точность вышла бы прекрасная и бессмысленная. Периоды разведены,
+            поэтому задача настоящая — предсказать будущее по прошлому.
           </p>
         </Card>
       </div>
-
-      <Card title="Что нужно, чтобы модели можно было верить" className="plot-block">
-        <dl className="kv">
-          <div>
-            <dt>участков в выборке</dt>
-            <dd className="tabular">{MODEL.sample.size}</dd>
-          </div>
-          <div>
-            <dt>меньший класс</dt>
-            <dd className="tabular">{MODEL.sample.minority_class}</dd>
-          </div>
-          <div>
-            <dt>нужно в меньшем классе</dt>
-            <dd className="tabular">
-              {MODEL.sample.required_minority} — десять наблюдений на признак
-            </dd>
-          </div>
-          <div>
-            <dt>выборка достаточна</dt>
-            <dd>
-              {MODEL.sample.sufficient ? (
-                <span className="lvl lvl--low">да</span>
-              ) : (
-                <span className="lvl lvl--high">нет</span>
-              )}
-            </dd>
-          </div>
-        </dl>
-        <p className="ov-note">
-          Это не отговорка, а условие приёмки: до шестидесяти участков меньшего класса модель
-          показывается как второе мнение и на решения не влияет. Считает по-прежнему то, что
-          можно проверить, — пороговые правила с открытыми порогами.
-        </p>
-      </Card>
     </>
   );
 }

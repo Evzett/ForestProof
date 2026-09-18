@@ -127,6 +127,8 @@ def main() -> None:
     parser.add_argument("--data", type=Path, default=Path("data/training_set.csv"))
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--out", type=Path, default=Path("app/src/data/stability-model.json"))
+    parser.add_argument("--score-areas", type=Path, default=Path("data/areas.csv"))
+    parser.add_argument("--hansen", type=Path, default=Path("data/cache/hansen-gfc"))
     args = parser.parse_args()
 
     with open(args.data, encoding="utf-8-sig") as handle:
@@ -174,30 +176,94 @@ def main() -> None:
     for key, weight in sorted(zip(FEATURES, weights), key=lambda p: abs(p[1]), reverse=True):
         print(f"  {key:<28} {weight:+.4f}")
 
-    if test_auc >= 0.75 and beats:
-        verdict = (
-            f"Модель обучена на {len(train)} участках и проверена на {len(test)} отложенных: "
-            f"ROC-AUC {test_auc:.3f}. Признаки считаются строго до 2019 года, метка — за "
-            "2020–2024, поэтому утечки между ними нет."
-        )
-        status = "обучена и проверена на отложенной выборке"
-    elif not np.isnan(test_auc):
-        verdict = (
-            f"Модель обучена на {len(train)} участках, ROC-AUC на отложенной {test_auc:.3f}"
-            f" против {max(best_single, 1 - best_single):.3f} у лучшего одиночного признака. "
-            "Разделение слабое: по истории потерь будущие потери предсказываются плохо, и это "
-            "содержательный результат, а не недоработка. В продукт по умолчанию идут пороговые "
-            "правила."
-        )
-        status = "обучена, но разделение слабое"
-    else:
+    single_auc = max(best_single, 1 - best_single)
+    if np.isnan(test_auc):
         verdict = "На отложенной выборке не оказалось обоих классов — оценка невозможна."
         status = "не проверена"
+    elif test_auc < 0.65:
+        verdict = (
+            f"ROC-AUC на отложенной {test_auc:.3f} — разделения практически нет. "
+            "По истории потерь будущие потери не предсказываются, и это содержательный "
+            "результат, а не недоработка модели."
+        )
+        status = "разделения нет"
+    elif beats:
+        verdict = (
+            f"Модель обучена на {len(train)} участках и проверена на {len(test)} отложенных: "
+            f"ROC-AUC {test_auc:.3f} против {single_auc:.3f} у лучшего одиночного признака. "
+            "Совместная модель даёт больше, чем любой признак по отдельности. Признаки "
+            "считаются строго до 2019 года, метка — за 2020–2024, утечки между ними нет."
+        )
+        status = "обучена и проверена на отложенной выборке"
+    else:
+        verdict = (
+            f"Разделение сильное: ROC-AUC на отложенной {test_auc:.3f} при {len(test)} "
+            f"участках. Но почти всё оно даётся одним признаком — «{best_key}» в одиночку "
+            f"даёт {single_auc:.3f}. Совместная модель добавляет {test_auc - single_auc:+.3f}, "
+            "то есть ничего. Вывод: недавнее нарушение предсказывает будущее нарушение, "
+            "и для этого модель не нужна — достаточно одного правила. В продукт идут "
+            "пороговые правила, модель остаётся как проверка этого вывода."
+        )
+        status = "обучена; разделение сильное, но сводится к одному признаку"
 
     print()
     print(verdict)
 
+    # Прогоняем обученную модель по участкам кейса теми же признаками,
+    # что и обучающую выборку: иначе показывать на экране нечего,
+    # а сравнивать признаки разных определений — значит обманывать себя.
+    predictions = []
+    try:
+        import build_training_set as builder
+
+        loss_path = args.hansen / "Hansen_GFC-2024-v1.12_lossyear_60N_030E.tif"
+        cover_path = args.hansen / "Hansen_GFC-2024-v1.12_treecover2000_60N_030E.tif"
+        with open(args.score_areas, encoding="utf-8-sig") as handle:
+            for meta in csv.DictReader(handle):
+                box = (
+                    float(meta["bbox_west"]),
+                    float(meta["bbox_south"]),
+                    float(meta["bbox_east"]),
+                    float(meta["bbox_north"]),
+                )
+                try:
+                    row = builder.sample_plot(loss_path, cover_path, box)
+                except (ValueError, IndexError, FileNotFoundError):
+                    row = None
+                if row is None:
+                    # Участок вне тайла или не лесной — это штатный случай,
+                    # и молча ставить ему категорию нельзя.
+                    predictions.append(
+                        {"aoi_id": meta["aoi_id"], "available": False,
+                         "reason": "участок вне покрытия тайла обучающей выборки"}
+                    )
+                    continue
+                vector = np.array([[float(row[k]) for k in FEATURES]])
+                probability = float(sigmoid(((vector - mean) / scale) @ weights + bias)[0])
+                predictions.append(
+                    {
+                        "aoi_id": meta["aoi_id"],
+                        "available": True,
+                        "probability": probability,
+                        "category": "high" if probability >= 0.65 else "medium" if probability >= 0.35 else "low",
+                        "label": row["label"],
+                        "future_loss_pct": row["future_loss_2020_2024_pct"],
+                    }
+                )
+    except FileNotFoundError:
+        pass
+
+    if predictions:
+        print()
+        print("участки кейса по обученной модели:")
+        for p in predictions:
+            if p.get("available"):
+                print(f"  {p['aoi_id']:<16} p={p['probability']:.3f} {p['category']:<7} факт={p['label']}")
+            else:
+                print(f"  {p['aoi_id']:<16} {p['reason']}")
+
     payload = {
+        "predictions": predictions,
         "method": "логистическая регрессия с L2, подбор регуляризации по скользящему контролю",
         "features": FEATURES,
         "l2": l2,

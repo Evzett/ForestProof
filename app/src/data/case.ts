@@ -331,26 +331,41 @@ export const ASSUMPTIONS = [
 
 export type ModelPrediction = {
   aoi_id: string;
-  label: number;
-  probability: number;
-  category: "low" | "medium" | "high";
-  leave_one_out: number | null;
-  leave_one_out_degenerate: boolean;
+  available: boolean;
+  reason?: string;
+  probability?: number;
+  category?: "low" | "medium" | "high";
+  label?: number;
+  future_loss_pct?: number;
 };
 
 export type StabilityModel = {
   method: string;
   features: string[];
+  l2: number;
   weights: Record<string, number>;
-  thresholds: { medium: number; high: number };
   predictions: ModelPrediction[];
-  separability: { feature: string; separates: boolean | null; gap?: number }[];
   sample: {
     size: number;
     positives: number;
     minority_class: number;
+    train: number;
+    test: number;
     required_minority: number;
     sufficient: boolean;
+  };
+  quality: {
+    roc_auc_train: number;
+    roc_auc_test: number;
+    best_single_feature: string;
+    best_single_auc: number;
+    beats_single_feature: boolean;
+  };
+  design: {
+    feature_window: string;
+    label_window: string;
+    leakage: string;
+    label_rule: string;
   };
   verdict: string;
   status: string;
@@ -364,10 +379,10 @@ export function modelFor(aoiId: string): ModelPrediction | undefined {
 
 /* Подписи признаков — те же, что в tools/stability_features.py */
 export const FEATURE_LABEL: Record<string, string> = {
-  loss_share_pct: "доля площади, потерявшей покров",
-  loss_years: "число лет с заметной потерей",
-  fire_share: "доля пикселей с признаком горения",
-  volatility_rel: "волатильность годового ряда запаса",
-  sd_to_stock: "отношение погрешности продукта к запасу",
-  baseline_decline: "падение исторической динамики",
+  loss_share_2001_2019_pct: "доля площади, потерявшей покров за 2001—2019",
+  loss_years_2001_2019: "число лет с заметной потерей",
+  recent_loss_2017_2019_pct: "потери за последние три года перед прогнозом",
+  peak_year_loss_pct: "потеря в самый тяжёлый год",
+  mean_treecover_pct: "средняя сомкнутость крон на 2000 год",
+  forest_share: "доля лесной площади участка",
 };

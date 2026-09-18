@@ -1,130 +1,92 @@
 {
-  "method": "логистическая регрессия с L2, без обучающей библиотеки",
+  "predictions": [
+    {
+      "aoi_id": "RU_TVER_01",
+      "available": true,
+      "probability": 0.23369936162909882,
+      "category": "low",
+      "label": 0,
+      "future_loss_pct": 0.0663
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_02",
+      "available": false,
+      "reason": "участок вне покрытия тайла обучающей выборки"
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_03",
+      "available": false,
+      "reason": "участок вне покрытия тайла обучающей выборки"
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_04",
+      "available": false,
+      "reason": "участок вне покрытия тайла обучающей выборки"
+    }
+  ],
+  "method": "логистическая регрессия с L2, подбор регуляризации по скользящему контролю",
   "features": [
-    "loss_share_pct",
-    "loss_years",
-    "fire_share",
-    "volatility_rel",
-    "sd_to_stock",
-    "baseline_decline"
+    "loss_share_2001_2019_pct",
+    "loss_years_2001_2019",
+    "recent_loss_2017_2019_pct",
+    "peak_year_loss_pct",
+    "mean_treecover_pct",
+    "forest_share"
   ],
   "l2": 1.0,
   "standardisation": {
     "mean": [
-      48.26436925,
-      8.25,
-      0.4204545,
-      0.2197935,
-      0.44040975,
-      0.64624675
+      4.746804642857143,
+      7.482142857142857,
+      0.8210482142857138,
+      1.2939899999999998,
+      79.08864285714287,
+      0.6703121428571429
     ],
     "scale": [
-      33.965064506582465,
-      6.378675411086537,
-      0.4352435636637836,
-      0.30366215420554143,
-      0.0757049687021103,
-      1.0601585013905646
+      5.084666413606403,
+      5.5258841290931215,
+      1.2300221447180588,
+      1.9635678834094696,
+      4.841983169663656,
+      0.20379695408766085
     ]
   },
   "weights": {
-    "loss_share_pct": 0.5267784366875914,
-    "loss_years": 0.5398833258004889,
-    "fire_share": 0.3357871754192,
-    "volatility_rel": 0.2542455860993542,
-    "sd_to_stock": -0.3453065376770492,
-    "baseline_decline": 0.1967917495789744
+    "loss_share_2001_2019_pct": -0.42857245097090346,
+    "loss_years_2001_2019": 0.7874921040291486,
+    "recent_loss_2017_2019_pct": 1.3217742857746884,
+    "peak_year_loss_pct": 0.10270052697638593,
+    "mean_treecover_pct": 0.205715589079348,
+    "forest_share": 0.39658546515344006
   },
-  "bias": 1.4565435713429884,
+  "bias": -0.6242153043918456,
   "thresholds": {
     "medium": 0.35,
     "high": 0.65
   },
-  "predictions": [
-    {
-      "aoi_id": "RU_TVER_01",
-      "label": 0,
-      "probability": 0.2956136083662349,
-      "category": "low",
-      "leave_one_out": null,
-      "leave_one_out_degenerate": true
-    },
-    {
-      "aoi_id": "RU_VOLOGDA_02",
-      "label": 1,
-      "probability": 0.8756335014104454,
-      "category": "high",
-      "leave_one_out": 0.9232517802795842,
-      "leave_one_out_degenerate": false
-    },
-    {
-      "aoi_id": "RU_MORDOVIA_03",
-      "label": 1,
-      "probability": 0.9211209216277674,
-      "category": "high",
-      "leave_one_out": 0.9999999291516714,
-      "leave_one_out_degenerate": false
-    },
-    {
-      "aoi_id": "RU_MORDOVIA_04",
-      "label": 1,
-      "probability": 0.907631968595548,
-      "category": "high",
-      "leave_one_out": 0.9804837228685642,
-      "leave_one_out_degenerate": false
-    }
-  ],
-  "separability": [
-    {
-      "feature": "loss_share_pct",
-      "separates": true,
-      "gap": 33.486641,
-      "positive_min": 33.581843,
-      "negative_max": 0.095202
-    },
-    {
-      "feature": "loss_years",
-      "separates": true,
-      "gap": 5.0,
-      "positive_min": 5.0,
-      "negative_max": 0.0
-    },
-    {
-      "feature": "fire_share",
-      "separates": false,
-      "gap": 0.0,
-      "positive_min": 0.0,
-      "negative_max": 0.0
-    },
-    {
-      "feature": "volatility_rel",
-      "separates": true,
-      "gap": 0.0031139999999999996,
-      "positive_min": 0.009984,
-      "negative_max": 0.00687
-    },
-    {
-      "feature": "sd_to_stock",
-      "separates": false,
-      "gap": -0.18413200000000002,
-      "positive_min": 0.312592,
-      "negative_max": 0.496724
-    },
-    {
-      "feature": "baseline_decline",
-      "separates": false,
-      "gap": 0.0,
-      "positive_min": 0.0,
-      "negative_max": 0.0
-    }
-  ],
   "sample": {
-    "size": 4,
-    "positives": 3,
-    "minority_class": 1,
+    "size": 400,
+    "positives": 147,
+    "minority_class": 147,
+    "train": 280,
+    "test": 120,
     "required_minority": 60,
-    "sufficient": false
+    "sufficient": true
   },
-  "verdict": "Выборка не позволяет проверить модель: меньший класс — 1 наблюдение, при шести признаках практическое правило требует не меньше 60. 3 признаков из 6 разделяют классы поодиночке, поэтому идеальная точность на обучении ничего не доказывает. В продукт по умолчанию идут пороговые правила; модель показывается как второе мнение с этой же оговоркой.",
-  "status": "второе мнение; по умолчанию работают пороговые правила"
+  "quality": {
+    "roc_auc_train": 0.8595249849158028,
+    "roc_auc_test": 0.8675239234449761,
+    "best_single_feature": "recent_loss_2017_2019_pct",
+    "best_single_auc": 0.8625897129186603,
+    "beats_single_feature": false
+  },
+  "design": {
+    "feature_window": "2001–2019",
+    "label_window": "2020–2024",
+    "leakage": "исключена разделением периодов",
+    "label_rule": "потеря покрова за 2020–2024 больше 1 % площади"
+  },
+  "verdict": "Разделение сильное: ROC-AUC на отложенной 0.868 при 120 участках. Но почти всё оно даётся одним признаком — «recent_loss_2017_2019_pct» в одиночку даёт 0.863. Совместная модель добавляет +0.005, то есть ничего. Вывод: недавнее нарушение предсказывает будущее нарушение, и для этого модель не нужна — достаточно одного правила. В продукт идут пороговые правила, модель остаётся как проверка этого вывода.",
+  "status": "обучена; разделение сильное, но сводится к одному признаку"
 }
