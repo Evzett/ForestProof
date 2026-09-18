@@ -54,7 +54,17 @@ function colorFor(stock: number, delta: number, span: number): [number, number, 
   ];
 }
 
-export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; name: string }) {
+export default function CarbonTerrain({
+  terrain,
+  name,
+  startYear,
+  endYear,
+}: {
+  terrain: Terrain;
+  name: string;
+  startYear: number;
+  endYear: number;
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [year, setYear] = useState<"start" | "end">("end");
   const [view, setView] = useState<View>({ rotation: -0.62, tilt: 0.52 });
@@ -65,7 +75,16 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
   const [mode, setMode] = useState<"forest" | "relief">("forest");
   const dragRef = useRef<{ x: number; y: number; rotation: number; tilt: number } | null>(null);
 
-  const { width, height, start, end, peak_t_ha: peak } = terrain;
+  const { width, height, peak_t_ha: peak } = terrain;
+  /* Рельеф смотрит на тот же период, что выбран сверху. Если в наборе
+     нужного года нет, берём ближайший имеющийся — молча показывать
+     чужой год нельзя, поэтому фактический год подписан на кнопке. */
+  const nearest = (wanted: number) =>
+    terrain.years.reduce((a, b) => (Math.abs(b - wanted) < Math.abs(a - wanted) ? b : a));
+  const yearA = nearest(startYear);
+  const yearB = nearest(endYear);
+  const start = terrain.grids[String(yearA)] ?? [];
+  const end = terrain.grids[String(yearB)] ?? [];
   const values = year === "end" ? end : start;
 
   useEffect(() => {
@@ -240,7 +259,12 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
         drawTree(centre.x, centre.y, step * (1.4 + norm * 3.6), shade3(base, 0.92));
       }
     }
-  }, [values, start, end, year, width, height, peak, view, mode]);
+    /* В зависимостях стоят ключи, а не сами сетки. Сетка — это три с
+       половиной тысячи чисел, и React сравнивал бы её на каждый кадр
+       поворота; вдобавок в отладочной сборке он печатает массив
+       зависимостей целиком, заваливая консоль. Сами данные меняются
+       только вместе с годом и участком, поэтому ключей достаточно. */
+  }, [terrain, yearA, yearB, year, width, height, peak, view, mode]);
 
   const onDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     dragRef.current = {
@@ -280,14 +304,14 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
             className={year === "start" ? "is-on" : ""}
             onClick={() => setYear("start")}
           >
-            {terrain.start_year}
+            {yearA}
           </button>
           <button
             type="button"
             className={year === "end" ? "is-on" : ""}
             onClick={() => setYear("end")}
           >
-            {terrain.end_year}
+            {yearB}
           </button>
         </div>
         <div className="terrain__modes">
@@ -318,7 +342,7 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
         onPointerCancel={onUp}
         role="img"
         aria-label={`Объёмный рельеф запаса углерода, ${name}, ${
-          year === "end" ? terrain.end_year : terrain.start_year
+          year === "end" ? yearB : yearA
         } год`}
       />
 
@@ -346,8 +370,8 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
         {mode === "forest"
           ? "Одно дерево — один пиксель продукта, его высота и есть запас на этом пикселе. Деревья стоят через клетку: при трёх с половиной тысячах крон рисунок превращается в сплошной ковёр, где не видно ни просек, ни границы вырубки."
           : "Высота столбика — запас на пикселе. Столбики удобнее, когда высоты надо сравнить между собой, а не разглядывать лес."}{" "}
-        Коричневый оттенок появляется только на виде {terrain.end_year} и означает пиксели,
-        потерявшие запас за период.{" "}
+        Коричневый оттенок появляется только на виде {yearB} и означает пиксели, потерявшие
+        запас за выбранный период.{" "}
         Значения взяты из тех же чисел, из которых считается изменение запаса, поэтому провал на
         картинке и вклад в результат — одно и то же место. Тень и наклон граней — оформление.
       </p>

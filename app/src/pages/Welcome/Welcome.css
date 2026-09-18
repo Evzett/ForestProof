@@ -276,17 +276,20 @@
      кончается примерно на 93 % ширины и 86 % высоты файла. Смещения
      подобраны так, чтобы этот конец пришёлся ровно в нижний правый угол
      блока, как в макете, а не повис над ним. */
-  right: -7%;
-  bottom: -15%;
-  width: min(1180px, 64%);
+  /* Показываем не всю полосу, а её плотную правую часть: картинка
+     крупнее блока и выходит за оба края, поэтому в кадр попадает
+     сплошной лес, а не диагональ через всю карточку. */
+  right: -26%;
+  bottom: -34%;
+  width: min(1700px, 96%);
   height: auto;
   aspect-ratio: 1360 / 768;
   /* В макете лес виден, а не угадывается: прежние 22 % прозрачности
      превращали его в пятно чуть светлее фона. */
   opacity: 0.8;
   pointer-events: none;
-  mask-image: linear-gradient(100deg, transparent 4%, #000 34%);
-  -webkit-mask-image: linear-gradient(100deg, transparent 4%, #000 34%);
+  mask-image: linear-gradient(105deg, transparent 22%, #000 46%);
+  -webkit-mask-image: linear-gradient(105deg, transparent 22%, #000 46%);
 }
 
 @media (max-width: 900px) {

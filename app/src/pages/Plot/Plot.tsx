@@ -151,11 +151,18 @@ export default function Plot() {
 
 /* ------------------------------------------------------------ Запас ---- */
 
+/* Знак результата. Крупно — сам знак, потому что вопрос здесь
+   двоичный: прибавилось или убыло. Слово под ним поясняет, что этот
+   знак означает в наших единицах, где положительное E — это потеря. */
 function Sign({ value }: { value: number }) {
-  return value > 0 ? (
-    <span className="lvl lvl--high">потеря углерода</span>
-  ) : (
-    <span className="lvl lvl--low">накопление</span>
+  const glyph = value > 0 ? "+" : value < 0 ? "−" : "0";
+  const word = value > 0 ? "потеря углерода" : value < 0 ? "накопление" : "без изменения";
+  const tone = value > 0 ? "is-loss" : value < 0 ? "is-gain" : "is-zero";
+  return (
+    <span className={`sign ${tone}`}>
+      <b className="sign__glyph">{glyph}</b>
+      <span className="sign__word">{word}</span>
+    </span>
   );
 }
 
@@ -199,9 +206,7 @@ function StockTab({ area, period }: { area: Area; period: Period }) {
         </Card>
         <Card tone="soft">
           <span className="tile__label">знак результата</span>
-          <div style={{ margin: "10px 0" }}>
-            <Sign value={period.e_tco2e} />
-          </div>
+          <Sign value={period.e_tco2e} />
           <span className="tile__note">
             Положительное E — потеря из учитываемого пула. Это не объём выброса в атмосферу.
           </span>
@@ -426,10 +431,15 @@ function ChangesTab({
       {area.terrain && (
         <Card
           title="Запас углерода в объёме"
-          note={`${area.terrain.start_year} и ${area.terrain.end_year}`}
+          note={`${period.year_start} и ${period.year_end}`}
           className="plot-block mb20"
         >
-          <CarbonTerrain terrain={area.terrain} name={area.name} />
+          <CarbonTerrain
+            terrain={area.terrain}
+            name={area.name}
+            startYear={period.year_start}
+            endYear={period.year_end}
+          />
         </Card>
       )}
 

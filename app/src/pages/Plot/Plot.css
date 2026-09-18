@@ -803,3 +803,41 @@
 .plot-row--even {
   align-items: stretch;
 }
+
+/* Знак результата: сам знак крупно, слово под ним. */
+.sign {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0;
+}
+
+.sign__glyph {
+  font-size: clamp(40px, 3.3vw, 60px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.sign__word {
+  font-size: 14px;
+  color: var(--c-muted-alt);
+}
+
+.sign.is-loss .sign__glyph {
+  color: #9c3f66;
+}
+
+.sign.is-gain .sign__glyph {
+  color: var(--c-ink);
+}
+
+.sign.is-zero .sign__glyph {
+  color: var(--c-muted-alt);
+}
+
+/* Краткая справка от ядра — светлая зелёная с лёгкой обводкой, как в обзоре. */
+.plot-summary {
+  border: 1px solid #cfdcb0;
+  background: #f4f8ea;
+}

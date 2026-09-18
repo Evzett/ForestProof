@@ -57,8 +57,8 @@ export default function Welcome() {
                 caption="участка посчитано на реальных растрах"
               />
               <StatPill
-                value="0"
-                caption="участков дали единицы — расчёт умеет отвечать «нет»"
+                value="547 га"
+                caption="потеряли древесный покров за 2020—2024"
               />
             </div>
             <p className="hero__lead">
