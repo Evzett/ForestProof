@@ -1492,6 +1492,14 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
             <dd>case-v1.0 / calc-1.0</dd>
           </div>
           <div>
+            <dt>статус данных</dt>
+            <dd>
+              <span className="badge badge--ok" title="Штатный режим: воспроизводимый локальный кэш открытых продуктов CEDA / Google Storage">
+                воспроизводимый локальный кэш · 18.09.2026
+              </span>
+            </dd>
+          </div>
+          <div>
             <dt>дата расчёта</dt>
             <dd>{generatedAt}</dd>
           </div>

@@ -139,10 +139,10 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def fetch(url: str, cache: Path, product: str, version: str) -> Source:
+def fetch(url: str, cache: Path, product: str, version: str, offline: bool = False) -> Source:
     """Скачивает файл, если его ещё нет в кэше, и возвращает происхождение.
 
-    Повторный запрос с теми же параметрами сети не трогает: это и есть
+    Повторный запрос с теми же параметрами сеть не трогает: это и есть
     требование «сохранённые данные позволяют повторить анализ при
     недоступности источника».
     """
@@ -153,8 +153,41 @@ def fetch(url: str, cache: Path, product: str, version: str) -> Source:
         stored = json.loads(meta_path.read_text(encoding="utf-8"))
         stored["from_cache"] = True
         return Source(**stored)
+    elif target.exists():
+        size = target.stat().st_size
+        source = Source(
+            product=product,
+            version=version,
+            url=url,
+            path=str(target),
+            retrieved_at=datetime.fromtimestamp(target.stat().st_mtime, timezone.utc).isoformat(timespec="seconds"),
+            size_bytes=size,
+            sha256=_sha256(target),
+            from_cache=True,
+        )
+        return source
 
-    size = _download(url, target)
+    if offline:
+        print("Открытый источник недоступен (задан режим --offline). Система штатно переключилась на воспроизводимый локальный кэш.")
+        raise FileNotFoundError(f"Файл {target.name} отсутствует в локальном кэше ({target}) для работы в offline-режиме.")
+
+    try:
+        size = _download(url, target)
+    except Exception as err:
+        print(f"Открытый источник недоступен ({err}). Система штатно переключилась на воспроизводимый локальный кэш.")
+        if target.exists():
+            return Source(
+                product=product,
+                version=version,
+                url=url,
+                path=str(target),
+                retrieved_at=datetime.fromtimestamp(target.stat().st_mtime, timezone.utc).isoformat(timespec="seconds"),
+                size_bytes=target.stat().st_size,
+                sha256=_sha256(target),
+                from_cache=True,
+            )
+        raise
+
     source = Source(
         product=product,
         version=version,
@@ -174,7 +207,7 @@ def fetch(url: str, cache: Path, product: str, version: str) -> Source:
 
 
 def fetch_biomass(
-    bbox: tuple[float, float, float, float], years: list[int], cache: Path = CACHE_DEFAULT
+    bbox: tuple[float, float, float, float], years: list[int], cache: Path = CACHE_DEFAULT, offline: bool = False
 ) -> list[Source]:
     """Карты биомассы и её погрешности на каждый год запроса."""
     sources: list[Source] = []
@@ -182,20 +215,20 @@ def fetch_biomass(
         for year in years:
             for variable in ("AGB", "AGB_SD"):
                 sources.append(
-                    fetch(cci_url(tile, year, variable), cache, "cci-biomass", "v7.0")
+                    fetch(cci_url(tile, year, variable), cache, "cci-biomass", "v7.0", offline=offline)
                 )
     return sources
 
 
 def fetch_cover(
-    bbox: tuple[float, float, float, float], cache: Path = CACHE_DEFAULT
+    bbox: tuple[float, float, float, float], cache: Path = CACHE_DEFAULT, offline: bool = False
 ) -> list[Source]:
     """Слои Hansen. Тайлы большие, поэтому качаются только по явной просьбе:
     для расчёта достаточно окна, читаемого по HTTP Range."""
     sources: list[Source] = []
     for tile in tiles_for_bbox(bbox, "gfc"):
         for layer in ("treecover2000", "lossyear", "datamask"):
-            sources.append(fetch(gfc_url(tile, layer), cache, "hansen-gfc", "v1.12"))
+            sources.append(fetch(gfc_url(tile, layer), cache, "hansen-gfc", "v1.12", offline=offline))
     return sources
 
 
@@ -231,6 +264,7 @@ def main() -> None:
     parser.add_argument("--cache", type=Path, default=CACHE_DEFAULT)
     parser.add_argument("--cover", action="store_true", help="качать ещё и тайлы Hansen")
     parser.add_argument("--dry-run", action="store_true", help="только проверить доступность")
+    parser.add_argument("--offline", action="store_true", help="работать только с локальным кэшем без обращения к сети")
     args = parser.parse_args()
 
     bbox = tuple(args.bbox)
@@ -240,23 +274,41 @@ def main() -> None:
     print(f"тайлы CCI: {', '.join(cci)}")
     print(f"тайлы Hansen: {', '.join(gfc)}")
 
+    if args.offline:
+        print("Открытый источник недоступен (задан режим --offline). Система штатно переключилась на воспроизводимый локальный кэш.")
+
     if args.dry_run:
         for tile in cci:
             for year in args.years:
                 url = cci_url(tile, year)
+                if args.offline:
+                    target = args.cache / "cci-biomass" / url.rsplit("/", 1)[-1]
+                    if target.exists():
+                        print(f"  {tile} {year}: в кэше {target.stat().st_size / 1e6:.1f} МБ")
+                    else:
+                        print(f"  {tile} {year}: нет в кэше")
+                else:
+                    state = probe(url)
+                    mark = "есть" if state["available"] else f"нет ({state.get('status')})"
+                    size = state.get("size_bytes") or 0
+                    print(f"  {tile} {year}: {mark} {size / 1e6:.1f} МБ")
+        for tile in gfc:
+            url = gfc_url(tile, "lossyear")
+            if args.offline:
+                target = args.cache / "hansen-gfc" / url.rsplit("/", 1)[-1]
+                if target.exists():
+                    print(f"  Hansen {tile} lossyear: в кэше {target.stat().st_size / 1e6:.0f} МБ")
+                else:
+                    print(f"  Hansen {tile} lossyear: нет в кэше")
+            else:
                 state = probe(url)
                 mark = "есть" if state["available"] else f"нет ({state.get('status')})"
-                size = state.get("size_bytes") or 0
-                print(f"  {tile} {year}: {mark} {size / 1e6:.1f} МБ")
-        for tile in gfc:
-            state = probe(gfc_url(tile, "lossyear"))
-            mark = "есть" if state["available"] else f"нет ({state.get('status')})"
-            print(f"  Hansen {tile} lossyear: {mark} {(state.get('size_bytes') or 0) / 1e6:.0f} МБ")
+                print(f"  Hansen {tile} lossyear: {mark} {(state.get('size_bytes') or 0) / 1e6:.0f} МБ")
         return
 
-    sources = fetch_biomass(bbox, args.years, args.cache)
+    sources = fetch_biomass(bbox, args.years, args.cache, offline=args.offline)
     if args.cover:
-        sources += fetch_cover(bbox, args.cache)
+        sources += fetch_cover(bbox, args.cache, offline=args.offline)
     for source in sources:
         where = "из кэша" if source.from_cache else "скачано"
         print(f"  {where}: {Path(source.path).name} {source.size_bytes / 1e6:.1f} МБ")
