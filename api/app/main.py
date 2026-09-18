@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
+from app.routers import calculations, plots, projects, registry, watchlist
 
 app = FastAPI(title="ForestProof API", version="0.1.0")
 
@@ -13,6 +15,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(projects.router)
+app.include_router(calculations.router)
+app.include_router(registry.router)
+app.include_router(plots.router)
+app.include_router(watchlist.router)
+
+# Раздел 11 / NFR-01: превью и геометрия отдаются статикой с диска, без
+# обращений во внешнюю сеть — демо обязано работать офлайн.
+settings.data_root.mkdir(parents=True, exist_ok=True)
+app.mount("/data", StaticFiles(directory=settings.data_root), name="data")
 
 
 @app.get("/")

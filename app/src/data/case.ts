@@ -9,6 +9,7 @@
    форма объектов совпадает с ответом расчёта. */
 
 import raw from "./case-data.json";
+import modelRaw from "./stability-model.json";
 
 export type YearPoint = {
   year: number;
@@ -96,27 +97,42 @@ export type Stability = {
   limitation: string;
 };
 
-export type SentinelScene = { file: string; date: string; usable_pct: number };
+export type SentinelObservation = {
+  role: "before" | "immediate_after" | "recovery";
+  date: string;
+  scene_id: string;
+  image: string;
+  valid_fraction: number;
+  usable: boolean;
+  scl_valid_classes: number[];
+  /** Версия обработки L2A: с 04.00 у продукта другой ноль отражения */
+  processing_baseline: string;
+  harmonised: boolean;
+};
 
-export type SentinelPair = {
-  before: SentinelScene;
-  after: SentinelScene;
-  dnbr: {
-    file: string;
-    span: number;
-    median: number | null;
-    share_above_threshold_pct: number | null;
-  };
-  composite: string;
-  size: [number, number];
-  scenes_total: number;
-  source: string;
+export type SentinelComparison = {
+  comparable_fraction: number;
+  delta_ndvi: number | null;
+  delta_nbr: number | null;
+  note?: string;
+  baselines?: string[];
+  before_role?: string;
+  after_role?: string;
+};
+
+export type SentinelEvidence = {
+  observations: SentinelObservation[];
+  comparison: SentinelComparison | null;
+  quality_rule?: string;
+  display_note?: string;
+  interpretation?: string;
+  unavailable?: string;
 };
 
 export type Area = {
   aoi_id: string;
   maps: AreaMaps | null;
-  sentinel: SentinelPair | null;
+  sentinel: SentinelEvidence | null;
   stability: Stability;
   name: string;
   region: string;
@@ -306,3 +322,52 @@ export const ASSUMPTIONS = [
     kind: "условие кейса" as const,
   },
 ] as const;
+
+/* ---------- Модель устойчивости (KAN-54) ----------
+
+   Второе мнение рядом с пороговыми правилами, а не вместо них.
+   На четырёх участках модель проверить нечем, и она сама это пишет
+   в поле verdict — оно выводится на экран целиком, а не прячется. */
+
+export type ModelPrediction = {
+  aoi_id: string;
+  label: number;
+  probability: number;
+  category: "low" | "medium" | "high";
+  leave_one_out: number | null;
+  leave_one_out_degenerate: boolean;
+};
+
+export type StabilityModel = {
+  method: string;
+  features: string[];
+  weights: Record<string, number>;
+  thresholds: { medium: number; high: number };
+  predictions: ModelPrediction[];
+  separability: { feature: string; separates: boolean | null; gap?: number }[];
+  sample: {
+    size: number;
+    positives: number;
+    minority_class: number;
+    required_minority: number;
+    sufficient: boolean;
+  };
+  verdict: string;
+  status: string;
+};
+
+export const MODEL = modelRaw as unknown as StabilityModel;
+
+export function modelFor(aoiId: string): ModelPrediction | undefined {
+  return MODEL.predictions.find((p) => p.aoi_id === aoiId);
+}
+
+/* Подписи признаков — те же, что в tools/stability_features.py */
+export const FEATURE_LABEL: Record<string, string> = {
+  loss_share_pct: "доля площади, потерявшей покров",
+  loss_years: "число лет с заметной потерей",
+  fire_share: "доля пикселей с признаком горения",
+  volatility_rel: "волатильность годового ряда запаса",
+  sd_to_stock: "отношение погрешности продукта к запасу",
+  baseline_decline: "падение исторической динамики",
+};

@@ -30,6 +30,31 @@ docker compose exec api alembic upgrade head
 (или локально, если Postgres поднят отдельно: `alembic upgrade head`,
 предварительно выставив `DATABASE_URL`, см. `.env.example`).
 
+## Загрузить мок-набор (раздел 9 контракта)
+
+После миграций — иначе таблиц ещё нет:
+
+```bash
+docker compose exec api python -m app.seed
+```
+
+Заполняет БД тремя демо-участками (`proj-01/02/03`), каталогом реестра и
+списком наблюдения, плюс пишет геометрии (`data/polygons/`) и превью
+(`data/previews/`) на диск. Идемпотентно — можно гонять повторно, старые
+строки/файлы просто перезаписываются.
+
+**Важно для деплоя на Render (бесплатный план):** диск веб-сервиса не
+персистентный — при засыпании/пробуждении контейнер может пересоздаться "с
+нуля" из образа, и файлы, записанные `python -m app.seed` внутри уже
+запущенного контейнера, тогда пропадут (строки в БД останутся — Postgres
+отдельный persistent-сервис, а вот `data/polygons` и `data/previews` нет).
+Поэтому после локального прогона `python -m app.seed` **закоммитьте**
+получившиеся `api/data/polygons/*.geojson` и `api/data/previews/*.png` в
+репозиторий — тогда они попадут в образ через `COPY . .` на любом деплое,
+без повторного запуска сида на проде. Раздел 11 контракта тоже это
+предполагает: превью "генерируется в момент расчёта и сохраняется на диск",
+то есть живёт до следующего пересчёта, а не пересоздаётся на каждый старт.
+
 ## Сборка "с нуля" (критерий приёмки А5.2)
 
 ```bash
@@ -44,11 +69,24 @@ docker compose build --no-cache
 
 ```
 app/
-  main.py        FastAPI-приложение, /, /health
-  config.py      настройки (DATABASE_URL и т.п.)
-  database.py    engine, Session, Base
-  models.py      ORM-модели — вся схема БД, с аудит-полями (раздел 8 контракта)
-migrations/       Alembic; migrations/versions/0001_initial_schema.py — начальная схема
+  main.py         FastAPI-приложение, роутеры, /health, статика /data
+  config.py       настройки (DATABASE_URL, путь к data/)
+  database.py     engine, Session, Base
+  models.py       ORM-модели — вся схема БД, с аудит-полями (раздел 8 контракта)
+  schemas.py       Pydantic-схемы тел запросов (scenario, plots, watchlist)
+  hashing.py       input_hash — SHA-256 канонического JSON (раздел 8)
+  geometry.py       проверки геометрии для POST /api/plots/validate (раздел 12)
+  previews.py        превью участка, запасной вариант — контур на заливке (раздел 11)
+  ids.py             генерация calc_id/project_id/plot_id
+  seed.py            мок-набор (раздел 9) — см. "Загрузить мок-набор" выше
+  routers/
+    projects.py       раздел 7: /projects, /projects/{id}, /geometry, /scenario
+    calculations.py   раздел 7 + 12: /calculations, /calculations/{id}[/progress]
+    registry.py        раздел 12: /registry/projects (каталог, KAN-43)
+    plots.py            раздел 12: /plots/validate, /plots (мастер создания участка)
+    watchlist.py         раздел 12: /watchlist (список/добавление/удаление)
+  data/            (генерируется) полигоны и превью — см. раздел про деплой на Render
+migrations/       Alembic; versions/0001 — исходная схема, 0002 — каталог/участки/наблюдение
 Dockerfile
 docker-compose.yml
 render.yaml       (в корне репозитория) — деплой на Render

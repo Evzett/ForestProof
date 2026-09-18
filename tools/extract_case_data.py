@@ -27,6 +27,7 @@ import numpy as np
 
 # Keep the documented direct invocation (python tools/extract_case_data.py).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from forestproof_core.case_calculation import (  # noqa: E402
     CaseCalculationConfig,
@@ -40,6 +41,7 @@ from forestproof_core.case_calculation import (  # noqa: E402
     uncertainty_half_width,
 )
 from tools.geotiff import read_geotiff
+from tools.sentinel_evidence import build_event_evidence, build_period_evidence
 
 # ---------------------------------------------------------------- параметры
 
@@ -151,178 +153,6 @@ def render_maps(data_dir: Path, aoi: str, box, out_dir: Path, config: CaseCalcul
     }
 
 
-# Каналы снимка в том порядке, в котором они лежат в файле
-S2_BANDS = {"B02": 0, "B03": 1, "B04": 2, "B8A": 3, "B11": 4, "B12": 5}
-
-# Классы маски SCL, которые считаем пригодными: растительность, голая почва,
-# вода и неклассифицированное. Облака, тени и снег в пригодные не входят.
-SCL_USABLE = {4, 5, 6, 7}
-
-
-def _stretch(band: np.ndarray, lo_pct: float = 2, hi_pct: float = 98) -> np.ndarray:
-    """Линейная растяжка по процентилям. Без неё снимок выходит чёрным:
-    отражение леса лежит в узком нижнем диапазоне шкалы."""
-    valid = band[np.isfinite(band)]
-    if valid.size == 0:
-        return np.zeros_like(band)
-    lo, hi = np.percentile(valid, [lo_pct, hi_pct])
-    if hi <= lo:
-        return np.zeros_like(band)
-    return np.clip((band - lo) / (hi - lo), 0, 1)
-
-
-def _scene_date(name: str) -> str:
-    """Дата съёмки из имени: S2A_38ULF_20210712_1_L2A_reflectance.tif"""
-    for part in name.split("_"):
-        if len(part) == 8 and part.isdigit():
-            return f"{part[:4]}-{part[4:6]}-{part[6:]}"
-    return ""
-
-
-def _nbr(refl: np.ndarray) -> np.ndarray:
-    """Normalized Burn Ratio: (NIR − SWIR2) / (NIR + SWIR2).
-
-    Гарь резко снижает NBR, поэтому разность до и после показывает
-    затронутую площадь. Это признак, а не доказательство пожара:
-    та же картина возникает при сплошной рубке.
-    """
-    nir = refl[S2_BANDS["B8A"]]
-    swir = refl[S2_BANDS["B12"]]
-    denom = nir + swir
-    # Нулевой знаменатель встречается на пикселях без данных: там не ноль
-    # и не бесконечность, а отсутствие значения.
-    # Порог по сумме отражений, а не по машинному нулю: сумма ниже 0,01
-    # это шум или отсутствие данных, и отношение там даёт выбросы в сотни
-    # единиц при физическом диапазоне NBR от −1 до 1.
-    with np.errstate(invalid="ignore", divide="ignore"):
-        ratio = np.where(denom > 0.01, (nir - swir) / denom, np.nan)
-    return np.where(np.abs(ratio) <= 1.5, ratio, np.nan)
-
-
-def render_sentinel(data_dir: Path, aoi: str, event_dates: tuple[str, str] | None, out_dir: Path):
-    """Пара снимков до и после плюс карта dNBR.
-
-    Сцены отбираются по доле пригодных пикселей маски SCL и по близости
-    к событию. Если пригодной сцены в окне нет — так и пишем, а не берём
-    ближайший сезон: снимок другого сезона покажет фенологию, а не потерю.
-    """
-    from PIL import Image
-
-    folder = data_dir / aoi / "Sentinel2"
-    if not folder.exists():
-        return None
-
-    scenes = []
-    for path in sorted(folder.glob("*_reflectance.tif")):
-        scl_path = Path(str(path).replace("_reflectance.tif", "_SCL.tif"))
-        if not scl_path.exists():
-            continue
-        scl = read_geotiff(str(scl_path)).band(0)
-        usable = float(np.isin(scl, list(SCL_USABLE)).mean())
-        scenes.append({"path": path, "date": _scene_date(path.name), "usable": usable})
-
-    if len(scenes) < 2:
-        return None
-
-    # Отбираем пару вокруг события; без события — первая и последняя сцены
-    good = [s for s in scenes if s["usable"] >= 0.6] or scenes
-
-    def month(scene) -> int:
-        return int(scene["date"][5:7])
-
-    def days(a: str, b: str) -> int:
-        from datetime import date
-
-        pa = date(int(a[:4]), int(a[5:7]), int(a[8:]))
-        pb = date(int(b[:4]), int(b[5:7]), int(b[8:]))
-        return abs((pa - pb).days)
-
-    if event_dates:
-        before_pool = [s for s in good if s["date"] < event_dates[0]]
-        after_pool = [s for s in good if s["date"] > event_dates[1]]
-        before = before_pool[-1] if before_pool else good[0]
-        # Пару подбираем по близости месяца, а не просто по времени: снимок
-        # другого сезона покажет фенологию, и разность NBR будет про листву,
-        # а не про потерю. Из подходящих берём ближайший к событию.
-        window = [s for s in after_pool if days(s["date"], event_dates[1]) <= 450]
-        pool = window or after_pool or good[-1:]
-        after = min(pool, key=lambda s: (abs(month(s) - month(before)), s["date"]))
-    else:
-        before = good[0]
-        pool = [s for s in good if s["date"] > before["date"]] or good[-1:]
-        after = min(
-            pool, key=lambda s: (abs(month(s) - month(before)), -days(s["date"], before["date"]))
-        )
-
-    if before["path"] == after["path"]:
-        return None
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-    rasters = {}
-
-    for key, scene in (("before", before), ("after", after)):
-        raster = read_geotiff(str(scene["path"]))
-        refl = raster.data.astype(float)
-        rasters[key] = refl
-        # Композит SWIR2 / NIR / Red: гарь на нём читается однозначно,
-        # в натуральных цветах она сливается с тенью и вспаханным полем.
-        rgb = np.dstack(
-            [
-                _stretch(refl[S2_BANDS["B12"]]),
-                _stretch(refl[S2_BANDS["B8A"]]),
-                _stretch(refl[S2_BANDS["B04"]]),
-            ]
-        )
-        alpha = np.isfinite(refl[S2_BANDS["B04"]]) * 255
-        image = np.dstack([rgb * 255, alpha]).astype(np.uint8)
-        Image.fromarray(image, "RGBA").save(out_dir / f"{aoi}_s2_{key}.png")
-
-    # dNBR: положительное значение — падение NBR, то есть потеря растительности
-    dnbr = _nbr(rasters["before"]) - _nbr(rasters["after"])
-    finite = dnbr[np.isfinite(dnbr)]
-    span = float(np.percentile(np.abs(finite), 98)) if finite.size else 1.0
-    span = max(span, 1e-6)
-    norm = np.clip(dnbr / span, -1, 1)
-    loss = np.clip(norm, 0, 1)
-    gain = np.clip(-norm, 0, 1)
-    rgb = np.dstack(
-        [
-            243 - 60 * loss - 76 * gain,
-            243 - 130 * loss - 24 * gain,
-            240 - 175 * loss - 196 * gain,
-        ]
-    )
-    alpha = np.nan_to_num(np.clip(np.abs(norm), 0.06, 1)) * 255 * np.isfinite(dnbr)
-    Image.fromarray(np.dstack([np.nan_to_num(rgb), alpha]).astype(np.uint8), "RGBA").save(
-        out_dir / f"{aoi}_s2_dnbr.png"
-    )
-
-    return {
-        "before": {
-            "file": f"{aoi}_s2_before.png",
-            "date": before["date"],
-            "usable_pct": round(before["usable"] * 100, 1),
-        },
-        "after": {
-            "file": f"{aoi}_s2_after.png",
-            "date": after["date"],
-            "usable_pct": round(after["usable"] * 100, 1),
-        },
-        "dnbr": {
-            "file": f"{aoi}_s2_dnbr.png",
-            "span": round(span, 3),
-            "median": round(float(np.median(finite)), 4) if finite.size else None,
-            "share_above_threshold_pct": (
-                round(float((finite > 0.27).mean() * 100), 1) if finite.size else None
-            ),
-        },
-        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
-        "size": [int(rasters["before"].shape[2]), int(rasters["before"].shape[1])],
-        "scenes_total": len(scenes),
-        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search",
-    }
-
-
 # Пороги скрининга устойчивости. Это правила, а не обученная модель:
 # четыре участка — не выборка, и назвать такое обучением было бы враньём.
 # Каждый порог виден на экране, и любой из них можно оспорить.
@@ -396,6 +226,18 @@ def stability_screening(series, cover_loss, area_ha, baseline_rate, has_fire) ->
     }
 
 
+def _sentinel_block(data_dir: Path, aoi: str, aoi_events: list[dict], box, maps_dir):
+    """Use the current Sentinel evidence pipeline without affecting G2 stock."""
+    if maps_dir is None:
+        return None
+    try:
+        if aoi_events:
+            return build_event_evidence(data_dir, aoi_events[0], box, maps_dir)
+        return build_period_evidence(data_dir, aoi, box, maps_dir)
+    except (FileNotFoundError, KeyError, ValueError) as error:
+        return {"observations": [], "comparison": None, "unavailable": str(error)}
+
+
 def build_aoi(
     data_dir: Path,
     meta: dict,
@@ -461,17 +303,12 @@ def build_aoi(
 
     aoi_events = [e for e in events if e["aoi_id"] == aoi]
     has_fire = bool(aoi_events)
-    event_window = (
-        (aoi_events[0]["date_min_product"], aoi_events[0]["date_max_product"])
-        if aoi_events
-        else None
-    )
     loss = gfc_loss_by_year(data_dir, aoi, contour)
 
     return {
         "aoi_id": aoi,
         "maps": render_maps(data_dir, aoi, contour, maps_dir, config) if maps_dir else None,
-        "sentinel": render_sentinel(data_dir, aoi, event_window, maps_dir) if maps_dir else None,
+        "sentinel": _sentinel_block(data_dir, aoi, aoi_events, box, maps_dir),
         "stability": (
             stability_screening(series, loss, area, base_rate, has_fire)
             if base_rate is not None

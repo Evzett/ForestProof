@@ -34,29 +34,55 @@
         ]
       },
       "sentinel": {
-        "before": {
-          "file": "RU_TVER_01_s2_before.png",
-          "date": "2019-07-02",
-          "usable_pct": 100.0
-        },
-        "after": {
-          "file": "RU_TVER_01_s2_after.png",
-          "date": "2024-07-08",
-          "usable_pct": 100.0
-        },
-        "dnbr": {
-          "file": "RU_TVER_01_s2_dnbr.png",
-          "span": 0.779,
-          "median": -0.6118,
-          "share_above_threshold_pct": 0.0
-        },
-        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
-        "size": [
-          198,
-          224
+        "observations": [
+          {
+            "date": "2019-07-02",
+            "scene_id": "S2A_36VVH_20190702_0_L2A",
+            "image": "RU_TVER_01_before.png",
+            "valid_fraction": 0.9997519841269841,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "02.12",
+            "harmonised": false,
+            "role": "before"
+          },
+          {
+            "date": "2024-07-08",
+            "scene_id": "S2A_36VVH_20240708_0_L2A",
+            "image": "RU_TVER_01_recovery.png",
+            "valid_fraction": 1.0,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "05.10",
+            "harmonised": true,
+            "role": "recovery"
+          }
         ],
-        "scenes_total": 12,
-        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+        "comparison": {
+          "comparable_fraction": 0.9997519841269841,
+          "delta_ndvi": 0.03217007115680554,
+          "delta_nbr": -0.02701349423677101,
+          "note": "Изменение индексов посчитано только по пикселям, пригодным на обе даты, после приведения сцен к одной версии обработки.",
+          "baselines": [
+            "02.12",
+            "05.10"
+          ],
+          "before_role": "before",
+          "after_role": "recovery"
+        },
+        "quality_rule": "SCL классы 4, 5, 6 и 7; пригодность не ниже 50%",
+        "display_note": "RGB-контраст нормирован отдельно для каждой даты; индексы считаются по исходному отражению.",
+        "interpretation": "Подтверждённого события на участке нет, поэтому пара наблюдений взята по краям периода в один сезон. Изменение индексов показывает, что изменилось, но причину не устанавливает."
       },
       "stability": {
         "level": "low",
@@ -1033,29 +1059,55 @@
         ]
       },
       "sentinel": {
-        "before": {
-          "file": "RU_VOLOGDA_02_s2_before.png",
-          "date": "2019-08-28",
-          "usable_pct": 100.0
-        },
-        "after": {
-          "file": "RU_VOLOGDA_02_s2_after.png",
-          "date": "2024-08-16",
-          "usable_pct": 100.0
-        },
-        "dnbr": {
-          "file": "RU_VOLOGDA_02_s2_dnbr.png",
-          "span": 0.277,
-          "median": 0.0263,
-          "share_above_threshold_pct": 2.2
-        },
-        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
-        "size": [
-          188,
-          228
+        "observations": [
+          {
+            "date": "2019-08-28",
+            "scene_id": "S2A_37VEF_20190828_1_L2A",
+            "image": "RU_VOLOGDA_02_before.png",
+            "valid_fraction": 1.0,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "05.00",
+            "harmonised": true,
+            "role": "before"
+          },
+          {
+            "date": "2024-08-16",
+            "scene_id": "S2B_37VEF_20240816_0_L2A",
+            "image": "RU_VOLOGDA_02_recovery.png",
+            "valid_fraction": 1.0,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "05.11",
+            "harmonised": true,
+            "role": "recovery"
+          }
         ],
-        "scenes_total": 12,
-        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+        "comparison": {
+          "comparable_fraction": 1.0,
+          "delta_ndvi": 0.024048185423153314,
+          "delta_nbr": -0.033363086895571374,
+          "note": "Изменение индексов посчитано только по пикселям, пригодным на обе даты, после приведения сцен к одной версии обработки.",
+          "baselines": [
+            "05.00",
+            "05.11"
+          ],
+          "before_role": "before",
+          "after_role": "recovery"
+        },
+        "quality_rule": "SCL классы 4, 5, 6 и 7; пригодность не ниже 50%",
+        "display_note": "RGB-контраст нормирован отдельно для каждой даты; индексы считаются по исходному отражению.",
+        "interpretation": "Подтверждённого события на участке нет, поэтому пара наблюдений взята по краям периода в один сезон. Изменение индексов показывает, что изменилось, но причину не устанавливает."
       },
       "stability": {
         "level": "medium",
@@ -2118,29 +2170,71 @@
         ]
       },
       "sentinel": {
-        "before": {
-          "file": "RU_MORDOVIA_03_s2_before.png",
-          "date": "2020-08-18",
-          "usable_pct": 99.0
-        },
-        "after": {
-          "file": "RU_MORDOVIA_03_s2_after.png",
-          "date": "2022-08-23",
-          "usable_pct": 100.0
-        },
-        "dnbr": {
-          "file": "RU_MORDOVIA_03_s2_dnbr.png",
-          "span": 1.417,
-          "median": 0.4818,
-          "share_above_threshold_pct": 67.2
-        },
-        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
-        "size": [
-          212,
-          229
+        "observations": [
+          {
+            "date": "2021-06-19",
+            "scene_id": "S2A_38ULF_20210619_1_L2A",
+            "image": "RU_MORDOVIA_03_MODIS_FIRE_202108_before.png",
+            "valid_fraction": 1.0,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "05.00",
+            "harmonised": true,
+            "role": "before"
+          },
+          {
+            "date": "2021-09-12",
+            "scene_id": "S2B_38ULF_20210912_0_L2A",
+            "image": "RU_MORDOVIA_03_MODIS_FIRE_202108_immediate_after.png",
+            "valid_fraction": 0.01700309543532284,
+            "usable": false,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "03.01",
+            "harmonised": false,
+            "role": "immediate_after"
+          },
+          {
+            "date": "2022-06-27",
+            "scene_id": "S2A_38ULF_20220627_0_L2A",
+            "image": "RU_MORDOVIA_03_MODIS_FIRE_202108_recovery.png",
+            "valid_fraction": 1.0,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "04.00",
+            "harmonised": true,
+            "role": "recovery"
+          }
         ],
-        "scenes_total": 13,
-        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+        "comparison": {
+          "comparable_fraction": 1.0,
+          "delta_ndvi": -0.24228609875013402,
+          "delta_nbr": -0.390803178124571,
+          "note": "Изменение индексов посчитано только по пикселям, пригодным на обе даты, после приведения сцен к одной версии обработки.",
+          "baselines": [
+            "05.00",
+            "04.00"
+          ],
+          "before_role": "before",
+          "after_role": "recovery"
+        },
+        "quality_rule": "SCL классы 4, 5, 6 и 7; пригодность не ниже 50%",
+        "display_note": "RGB-контраст нормирован отдельно для каждой даты; индексы считаются по исходному отражению.",
+        "interpretation": "Снимок сразу после события показывается даже при низком качестве, но не используется как самостоятельное подтверждение. Для сопоставления индексов выбрана пригодная сцена 2022 года."
       },
       "stability": {
         "level": "high",
@@ -3221,29 +3315,71 @@
         ]
       },
       "sentinel": {
-        "before": {
-          "file": "RU_MORDOVIA_04_s2_before.png",
-          "date": "2020-08-18",
-          "usable_pct": 99.5
-        },
-        "after": {
-          "file": "RU_MORDOVIA_04_s2_after.png",
-          "date": "2022-08-23",
-          "usable_pct": 100.0
-        },
-        "dnbr": {
-          "file": "RU_MORDOVIA_04_s2_dnbr.png",
-          "span": 1.201,
-          "median": 0.588,
-          "share_above_threshold_pct": 85.4
-        },
-        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
-        "size": [
-          212,
-          229
+        "observations": [
+          {
+            "date": "2021-06-19",
+            "scene_id": "S2A_38ULF_20210619_1_L2A",
+            "image": "RU_MORDOVIA_04_MODIS_FIRE_202108_before.png",
+            "valid_fraction": 1.0,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "05.00",
+            "harmonised": true,
+            "role": "before"
+          },
+          {
+            "date": "2021-09-12",
+            "scene_id": "S2B_38ULF_20210912_0_L2A",
+            "image": "RU_MORDOVIA_04_MODIS_FIRE_202108_immediate_after.png",
+            "valid_fraction": 0.11155957728446499,
+            "usable": false,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "03.01",
+            "harmonised": false,
+            "role": "immediate_after"
+          },
+          {
+            "date": "2022-06-27",
+            "scene_id": "S2A_38ULF_20220627_0_L2A",
+            "image": "RU_MORDOVIA_04_MODIS_FIRE_202108_recovery.png",
+            "valid_fraction": 1.0,
+            "usable": true,
+            "scl_valid_classes": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "processing_baseline": "04.00",
+            "harmonised": true,
+            "role": "recovery"
+          }
         ],
-        "scenes_total": 13,
-        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+        "comparison": {
+          "comparable_fraction": 1.0,
+          "delta_ndvi": -0.30207437224313016,
+          "delta_nbr": -0.418110052713456,
+          "note": "Изменение индексов посчитано только по пикселям, пригодным на обе даты, после приведения сцен к одной версии обработки.",
+          "baselines": [
+            "05.00",
+            "04.00"
+          ],
+          "before_role": "before",
+          "after_role": "recovery"
+        },
+        "quality_rule": "SCL классы 4, 5, 6 и 7; пригодность не ниже 50%",
+        "display_note": "RGB-контраст нормирован отдельно для каждой даты; индексы считаются по исходному отражению.",
+        "interpretation": "Снимок сразу после события показывается даже при низком качестве, но не используется как самостоятельное подтверждение. Для сопоставления индексов выбрана пригодная сцена 2022 года."
       },
       "stability": {
         "level": "high",
