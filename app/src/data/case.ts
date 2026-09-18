@@ -96,27 +96,42 @@ export type Stability = {
   limitation: string;
 };
 
-export type SentinelScene = { file: string; date: string; usable_pct: number };
+export type SentinelObservation = {
+  role: "before" | "immediate_after" | "recovery";
+  date: string;
+  scene_id: string;
+  image: string;
+  valid_fraction: number;
+  usable: boolean;
+  scl_valid_classes: number[];
+  /** Версия обработки L2A: с 04.00 у продукта другой ноль отражения */
+  processing_baseline: string;
+  harmonised: boolean;
+};
 
-export type SentinelPair = {
-  before: SentinelScene;
-  after: SentinelScene;
-  dnbr: {
-    file: string;
-    span: number;
-    median: number | null;
-    share_above_threshold_pct: number | null;
-  };
-  composite: string;
-  size: [number, number];
-  scenes_total: number;
-  source: string;
+export type SentinelComparison = {
+  comparable_fraction: number;
+  delta_ndvi: number | null;
+  delta_nbr: number | null;
+  note?: string;
+  baselines?: string[];
+  before_role?: string;
+  after_role?: string;
+};
+
+export type SentinelEvidence = {
+  observations: SentinelObservation[];
+  comparison: SentinelComparison | null;
+  quality_rule?: string;
+  display_note?: string;
+  interpretation?: string;
+  unavailable?: string;
 };
 
 export type Area = {
   aoi_id: string;
   maps: AreaMaps | null;
-  sentinel: SentinelPair | null;
+  sentinel: SentinelEvidence | null;
   stability: Stability;
   name: string;
   region: string;

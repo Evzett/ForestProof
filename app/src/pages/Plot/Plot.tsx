@@ -40,6 +40,12 @@ const TABS = [
 
 const YEAR_OPTIONS = YEARS.map((y) => ({ value: String(y), label: String(y) }));
 
+const ROLE_LABEL: Record<string, string> = {
+  before: "до",
+  immediate_after: "сразу после",
+  recovery: "следующий сезон",
+};
+
 export default function Plot() {
   const { id } = useParams();
   const area = areaById(id);
@@ -466,68 +472,65 @@ function ChangesTab({
         )}
       </Card>
 
-      {area.sentinel && (
+      {area.sentinel && area.sentinel.observations.length > 0 && (
         <Card
           title="Снимки до и после"
-          note={`${area.sentinel.composite} · Sentinel-2 L2A`}
+          note={`Sentinel-2 L2A · ${area.sentinel.observations.length} наблюдения`}
           className="plot-block"
         >
           <div className="shots">
-            <figure>
-              <img src={`/maps/${area.sentinel.before.file}`} alt="Снимок до события" />
-              <figcaption>
-                до · {area.sentinel.before.date} · пригодных пикселей{" "}
-                {formatDecimal(area.sentinel.before.usable_pct, 0)} %
-              </figcaption>
-            </figure>
-            <figure>
-              <img src={`/maps/${area.sentinel.after.file}`} alt="Снимок после события" />
-              <figcaption>
-                после · {area.sentinel.after.date} · пригодных пикселей{" "}
-                {formatDecimal(area.sentinel.after.usable_pct, 0)} %
-              </figcaption>
-            </figure>
-            <figure>
-              <img src={`/maps/${area.sentinel.dnbr.file}`} alt="Карта изменения NBR" />
-              <figcaption>изменение NBR между этими двумя датами</figcaption>
-            </figure>
+            {area.sentinel.observations.map((o) => (
+              <figure key={o.role}>
+                <img src={`/maps/${o.image}`} alt={`Снимок: ${ROLE_LABEL[o.role]}`} />
+                <figcaption>
+                  <b>{ROLE_LABEL[o.role]}</b> · {o.date}
+                  <br />
+                  пригодных пикселей {formatDecimal(o.valid_fraction * 100, 0)} %
+                  {!o.usable && " — ниже порога 50 %, как подтверждение не используется"}
+                  <br />
+                  версия обработки {o.processing_baseline}
+                  {o.harmonised && " · приведена к общей базе"}
+                </figcaption>
+              </figure>
+            ))}
           </div>
 
-          <dl className="kv">
-            <div>
-              <dt>медиана dNBR по участку</dt>
-              <dd className="tabular">
-                {area.sentinel.dnbr.median === null
-                  ? "—"
-                  : formatDecimal(area.sentinel.dnbr.median, 2)}
-              </dd>
-            </div>
-            <div>
-              <dt>доля площади с dNBR выше 0,27</dt>
-              <dd className="tabular">
-                {area.sentinel.dnbr.share_above_threshold_pct === null
-                  ? "—"
-                  : `${formatDecimal(area.sentinel.dnbr.share_above_threshold_pct, 1)} %`}
-              </dd>
-            </div>
-            <div>
-              <dt>сцен в наборе по участку</dt>
-              <dd className="tabular">{area.sentinel.scenes_total}</dd>
-            </div>
-          </dl>
+          {area.sentinel.comparison && (
+            <dl className="kv">
+              <div>
+                <dt>изменение NDVI</dt>
+                <dd className="tabular">
+                  {area.sentinel.comparison.delta_ndvi === null
+                    ? "—"
+                    : formatDecimal(area.sentinel.comparison.delta_ndvi, 3)}
+                </dd>
+              </div>
+              <div>
+                <dt>изменение NBR</dt>
+                <dd className="tabular">
+                  {area.sentinel.comparison.delta_nbr === null
+                    ? "—"
+                    : formatDecimal(area.sentinel.comparison.delta_nbr, 3)}
+                </dd>
+              </div>
+              <div>
+                <dt>доля площади, пригодной на обе даты</dt>
+                <dd className="tabular">
+                  {formatDecimal(area.sentinel.comparison.comparable_fraction * 100, 0)} %
+                </dd>
+              </div>
+            </dl>
+          )}
 
           <p className="ov-note">
-            Композит SWIR2 · NIR · Red выбран не для красоты: в натуральных цветах гарь сливается
-            с тенью и вспаханным полем, а здесь выгоревшая площадь уходит в пурпур, живая
-            растительность остаётся зелёной. Пара снимков подобрана по близости месяца — снимок
-            другого сезона показал бы фенологию, а не потерю.
+            {area.sentinel.interpretation}
           </p>
           <div className="disclaimer">
-            Порог 0,27 взят из практики оценки гарей и служит ориентиром, а не классификацией.
-            Проверка на контрольном участке в Тверской области: там доля выше порога 0,0 % при
-            той же обработке — значит показатель реагирует на нарушение, а не на разницу съёмок.
-            Само по себе падение NBR причину не устанавливает: сплошная рубка даёт похожую
-            картину.
+            Индексы посчитаны только по пикселям, пригодным на обе даты: разные маски сравнивали
+            бы разные территории. Сцены приведены к одной версии обработки — с версии 04.00 у
+            Sentinel-2 другой ноль отражения, и без приведения NDVI на этих же снимках выходил
+            2,3 при физическом пределе 1. Падение NBR само по себе причину не устанавливает:
+            сплошная рубка даёт похожую картину.
           </div>
         </Card>
       )}
