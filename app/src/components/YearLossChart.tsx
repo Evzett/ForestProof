@@ -20,6 +20,7 @@ export function YearLossChart({
   badgeLabel,
   caption,
   renderPicked,
+  onHoverYear,
   outsideLabel = "вне периода анализа",
   withinLabel = "внутри периода анализа",
 }: {
@@ -30,6 +31,10 @@ export function YearLossChart({
   /* Что показать под выбранным годом. В обзоре это разбор по участкам,
      на карточке участка разбирать нечего — там своя подпись. */
   renderPicked?: (row: LossRow) => ReactNode;
+  /* Наведение на столбец сообщается наружу: на карточке участка рядом
+     стоит объёмный лес, и он подсвечивает те клетки, которые этот
+     столбец и составляют. */
+  onHoverYear?: (year: number | null) => void;
   outsideLabel?: string;
   withinLabel?: string;
 }) {
@@ -108,6 +113,10 @@ export function YearLossChart({
                 style={{ height: `${height}%` }}
                 aria-pressed={picked?.year === l.year}
                 onClick={() => setPickedYear(picked?.year === l.year ? null : l.year)}
+                onMouseEnter={() => onHoverYear?.(l.year)}
+                onMouseLeave={() => onHoverYear?.(null)}
+                onFocus={() => onHoverYear?.(l.year)}
+                onBlur={() => onHoverYear?.(null)}
                 title={`${l.year}: ${formatDecimal(l.area_ha, 1)} га`}
               >
                 {(isPeak || share >= 22) && (

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS } from "../../data/case";
+import CarbonTerrain from "../../components/CarbonTerrain";
 import "./Compare.css";
 
 /* Сравнение участков.
@@ -204,7 +205,17 @@ export default function Compare() {
             key={a.aoi_id}
             className={`cmp-card ${picked.includes(a.aoi_id) ? "cmp-card--on" : ""}`.trim()}
           >
-            {a.maps && <img className="cmp-card__img" src={`/maps/${a.maps.change}`} alt="" />}
+            {a.terrain ? (
+              <CarbonTerrain
+                terrain={a.terrain}
+                name={a.name}
+                startYear={a.period_2019_2024.year_start}
+                endYear={a.period_2019_2024.year_end}
+                compact
+              />
+            ) : (
+              a.maps && <img className="cmp-card__img" src={`/maps/${a.maps.change}`} alt="" />
+            )}
             <div className="cmp-card__body">
               <b>{a.name}</b>
               <span>

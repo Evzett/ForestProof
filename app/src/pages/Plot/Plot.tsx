@@ -421,6 +421,9 @@ function ChangesTab({
     (l) => l.year > period.year_start && l.year <= period.year_end
   );
   const lossArea = inPeriod.reduce((a, b) => a + b.area_ha, 0);
+  /* Год под курсором на диаграмме. Живёт во вкладке, а не внутри
+     диаграммы: его слушает объёмный лес, который стоит выше. */
+  const [hoverYear, setHoverYear] = useState<number | null>(null);
   const share = (lossArea / area.area_ha) * 100;
   /* Вклад затронутой территории: доля площади, помноженная на результат.
      Это оценка вклада, а не измеренная величина по этим же пикселям. */
@@ -439,6 +442,7 @@ function ChangesTab({
             name={area.name}
             startYear={period.year_start}
             endYear={period.year_end}
+            highlightYear={hoverYear}
           />
         </Card>
       )}
@@ -494,6 +498,7 @@ function ChangesTab({
               }
               withinLabel="внутри выбранного периода"
               outsideLabel="вне выбранного периода"
+              onHoverYear={setHoverYear}
               renderPicked={(row) => (
                 <p className="yloss__pickednote">
                   {row.year > period.year_start && row.year <= period.year_end
