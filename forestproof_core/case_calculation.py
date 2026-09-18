@@ -5,6 +5,7 @@ module reads no files and does not use the legacy C1/C2 project contracts.
 """
 
 from dataclasses import dataclass
+from fractions import Fraction
 import math
 from typing import Any, Mapping, Protocol
 
@@ -23,6 +24,7 @@ class CaseCalculationConfig:
     rho_temporal: float = 0.7
     k_sigma: float = 1.645
     unc_threshold: float = 0.10
+    unc_stop_ratio: float = 1.0
     buffer_share: float = 0.15
     leakage_tco2e: float = 0.0
     baseline_start_year: int = 2015
@@ -42,6 +44,7 @@ class CaseCalculationConfig:
             self.rho_temporal,
             self.k_sigma,
             self.unc_threshold,
+            self.unc_stop_ratio,
             self.buffer_share,
             self.leakage_tco2e,
         )
@@ -59,6 +62,8 @@ class CaseCalculationConfig:
             )
         ):
             raise ValueError("Correlations and shares must be between zero and one")
+        if self.unc_stop_ratio <= 0:
+            raise ValueError("UNC stop ratio must be positive")
         if self.leakage_tco2e < 0:
             raise ValueError("Leakage must be nonnegative")
         if self.baseline_anchor_year <= self.baseline_start_year:
@@ -72,6 +77,27 @@ class CaseCalculationConfig:
             raise ValueError("Sensitivity correlations must be between zero and one")
         if not all(math.isfinite(price) and price >= 0 for _, price in self.prices_rub):
             raise ValueError("Scenario prices must be nonnegative")
+
+    @classmethod
+    def from_parameter_rows(cls, rows: list[Mapping[str, str]]) -> "CaseCalculationConfig":
+        """Parse the case methodology CSV; rho and k remain explicit assumptions."""
+        values = {row["parameter"]: row["value"] for row in rows}
+
+        def number(key: str) -> float:
+            return float(Fraction(values[key]))
+
+        return cls(
+            carbon_fraction=number("CF_AGB"),
+            co2_per_carbon=number("CO2_per_C"),
+            unc_threshold=number("UNC_allowance"),
+            unc_stop_ratio=number("UNC_stop_ratio"),
+            buffer_share=number("BUF"),
+            leakage_tco2e=number("LK"),
+            baseline_start_year=int(number("history_start_year")),
+            baseline_anchor_year=int(number("history_end_year")),
+            baseline_end_year=int(number("scenario_end_year")),
+            prices_rub=tuple((name, int(number("price_" + name))) for name in ("low", "base", "high")),
+        )
 
 
 class PixelGrid(Protocol):
@@ -92,14 +118,23 @@ def carbon_density_t_ha(
 
 
 def pixel_intersection_weights(
-    grid: PixelGrid, bbox: tuple[float, float, float, float]
+    grid: PixelGrid, bbox: tuple[float, float, float, float] | Mapping[str, Any]
 ) -> np.ndarray:
-    """Hectares of each grid pixel intersecting a WGS84 rectangle.
+    """Hectares of each grid pixel intersecting a WGS84 rectangle or polygon.
 
     The grid's pixel_area_ha() computes the geometric area by latitude; the
     intersection fraction clips edge pixels. A pixel is never assumed to be
     one hectare.
     """
+    geometry = bbox if isinstance(bbox, Mapping) else None
+    if geometry is not None:
+        if geometry.get("type") not in ("Polygon", "MultiPolygon"):
+            raise ValueError("geometry must be a GeoJSON Polygon or MultiPolygon")
+        polygons = (geometry["coordinates"] if geometry["type"] == "MultiPolygon"
+                    else [geometry["coordinates"]])
+        points = [point for polygon in polygons for ring in polygon for point in ring]
+        bbox = (min(p[0] for p in points), min(p[1] for p in points),
+                max(p[0] for p in points), max(p[1] for p in points))
     west, south, east, north = bbox
     if not all(math.isfinite(v) for v in bbox) or west >= east or south >= north:
         raise ValueError("bbox must be finite and have positive width and height")
@@ -121,7 +156,64 @@ def pixel_intersection_weights(
         raise ValueError("geometric pixel areas must be finite and match the grid")
     if np.any(pixel_area <= 0):
         raise ValueError("geometric pixel areas must be positive")
-    return fraction * pixel_area
+    if geometry is None:
+        return fraction * pixel_area
+
+    # Clip every GeoJSON ring to each touched pixel. The area fraction is
+    # dimensionless, then multiplied by the pixel's geometric hectare area.
+    result = np.zeros((rows, cols), dtype=float)
+    for row, col in np.argwhere(fraction > 0):
+        left, right = lon_left[col], lon_right[col]
+        bottom, top = lat_bottom[row], lat_top[row]
+        fraction_sum = 0.0
+        for polygon in polygons:
+            for ring_index, ring in enumerate(polygon):
+                clipped = [(float(x), float(y)) for x, y in ring]
+                for axis, limit, keep_greater in ((0, left, True), (0, right, False),
+                                                    (1, bottom, True), (1, top, False)):
+                    output = []
+                    for previous, current in zip(clipped[-1:] + clipped[:-1], clipped):
+                        prev_inside = previous[axis] >= limit if keep_greater else previous[axis] <= limit
+                        curr_inside = current[axis] >= limit if keep_greater else current[axis] <= limit
+                        if prev_inside != curr_inside:
+                            share = (limit - previous[axis]) / (current[axis] - previous[axis])
+                            output.append((previous[0] + share * (current[0] - previous[0]),
+                                           previous[1] + share * (current[1] - previous[1])))
+                        if curr_inside:
+                            output.append(current)
+                    clipped = output
+                    if not clipped:
+                        break
+                local = [(x - left, y - bottom) for x, y in clipped]
+                area = abs(sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2)
+                               in zip(local, local[1:] + local[:1]))) / 2 if local else 0.0
+                fraction_sum += area if ring_index == 0 else -area
+        result[row, col] = pixel_area[row, col] * min(1.0, max(0.0, fraction_sum / (grid.lon_step * grid.lat_step)))
+    return result
+
+
+def baseline_stock_by_year(
+    rows: list[Mapping[str, str]], aoi_id: str, baseline_id: str
+) -> dict[int, float]:
+    """Use official per-period baseline endpoints; reject gaps or conflicts."""
+    matched = [r for r in rows if r.get("aoi_id") == aoi_id and r.get("baseline_id") == baseline_id and r.get("pool") == "AGB"]
+    stocks: dict[int, float] = {}
+    periods: set[tuple[int, int]] = set()
+    for row in matched:
+        start, end = int(row["year_start"]), int(row["year_end"])
+        if end != start + 1 or (start, end) in periods:
+            raise ValueError("baseline periods must be unique consecutive years")
+        periods.add((start, end))
+        for year, key in ((start, "baseline_stock_start_tc_ha"), (end, "baseline_stock_end_tc_ha")):
+            value = float(row[key])
+            if not math.isfinite(value) or value < 0:
+                raise ValueError("baseline stock must be finite and nonnegative")
+            if year in stocks and not math.isclose(stocks[year], value, abs_tol=1e-8):
+                raise ValueError("baseline endpoints conflict")
+            stocks[year] = value
+    if periods and len(periods) != max(stocks) - min(stocks):
+        raise ValueError("baseline has missing periods")
+    return stocks
 
 
 def sigma_from_sums(
@@ -293,30 +385,43 @@ def potential_units(
         "r_adjusted_tco2e": None,
         "buffer_tco2e": None,
         "units": None,
+        "available": False,
+        "status": "unavailable",
+        "result_scope": "расчёт по условиям кейса, не сертифицированные углеродные единицы",
         "reason": None,
     }
-    if any(value is None for value in (e_proj_tco2e, e_base_tco2e, half_width_tco2e)):
-        result["reason"] = "входные данные неполные — расчёт единиц недоступен"
+    if e_proj_tco2e is None:
+        result["reason"] = "нет сопоставимых данных AGB за обе даты"
+        return result
+    if e_base_tco2e is None:
+        result["reason"] = "нет базовой линии для участка и периода"
+        return result
+    if half_width_tco2e is None:
+        result["reason"] = "нет полной оценки неопределённости AGB_SD"
         return result
     if half_width_tco2e < 0:
         result["h_tco2e"] = None
-        result["reason"] = "входные данные неполные — расчёт единиц недоступен"
+        result["reason"] = "некорректная оценка неопределённости AGB_SD"
         return result
 
     r = e_base_tco2e - e_proj_tco2e - config.leakage_tco2e
     if not math.isfinite(r):
-        result["reason"] = "входные данные неполные — расчёт единиц недоступен"
+        result["reason"] = "неконечное значение разницы с базовой линией"
         return result
     result["r_tco2e"] = r
     if r <= 0:
         result["units"] = 0
+        result["available"] = True
+        result["status"] = "zero_nonpositive_result"
         result["reason"] = "результат не превышает базовую линию"
         return result
 
     ratio = half_width_tco2e / r
     result["h_over_r"] = ratio
-    if ratio >= 1:
+    if ratio >= config.unc_stop_ratio:
         result["units"] = 0
+        result["available"] = True
+        result["status"] = "zero_uncertainty"
         result["reason"] = "неопределённость не меньше самого результата"
         return result
 
@@ -328,6 +433,8 @@ def potential_units(
         r_adjusted_tco2e=adjusted,
         buffer_tco2e=buffer,
         units=math.floor(adjusted * (1 - config.buffer_share)),
+        available=True,
+        status="calculated",
     )
     return result
 
@@ -336,10 +443,10 @@ def calculate_period(
     start: Mapping[str, Any],
     end: Mapping[str, Any],
     baseline_c_start_tc_ha: float | None,
-    baseline_c_anchor_tc_ha: float | None,
+    baseline_c_end_tc_ha: float | None,
     config: CaseCalculationConfig,
 ) -> dict[str, Any]:
-    """Compare two annual stocks with the parent AOI baseline trajectory."""
+    """Compare annual stocks with official baseline endpoints for this period."""
     year_start, year_end = start["year"], end["year"]
     years = year_end - year_start
     area = start.get("area_ha")
@@ -361,12 +468,8 @@ def calculate_period(
         if not all(math.isfinite(value) for value in (delta_stock, e_proj, e_per_ha_year)):
             delta_stock = e_proj = e_per_ha_year = None
 
-    base_start = baseline_mean(
-        year_start, baseline_c_start_tc_ha, baseline_c_anchor_tc_ha, config
-    )
-    base_end = baseline_mean(
-        year_end, baseline_c_start_tc_ha, baseline_c_anchor_tc_ha, config
-    )
+    base_start = _finite_or_none(baseline_c_start_tc_ha)
+    base_end = _finite_or_none(baseline_c_end_tc_ha)
     e_base = None
     if base_start is not None and base_end is not None:
         e_base = _finite_or_none(

@@ -30,8 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from forestproof_core.case_calculation import (  # noqa: E402
     CaseCalculationConfig,
-    baseline_mean,
-    baseline_rate,
+    baseline_stock_by_year,
     calculate_period,
     calculate_year,
     carbon_density_t_ha,
@@ -52,7 +51,7 @@ TREECOVER_THRESHOLD = 30
 # ------------------------------------------------------------------- расчёт
 
 
-def read_year(data_dir: Path, aoi: str, year: int, box) -> dict:
+def read_year(data_dir: Path, aoi: str, year: int, box, config: CaseCalculationConfig = CONFIG) -> dict:
     raster = read_geotiff(str(data_dir / aoi / f"CCI_Biomass_{year}.tif"))
     weights = pixel_intersection_weights(raster, box)
     agb = raster.band(0).astype(float)
@@ -60,7 +59,7 @@ def read_year(data_dir: Path, aoi: str, year: int, box) -> dict:
     if raster.nodata is not None:
         agb[agb == raster.nodata] = np.nan
         sd[sd == raster.nodata] = np.nan
-    return calculate_year(year, agb, sd, weights, CONFIG)
+    return calculate_year(year, agb, sd, weights, config)
 
 
 def gfc_loss_by_year(data_dir: Path, aoi: str, box) -> list[dict]:
@@ -83,7 +82,7 @@ def gfc_loss_by_year(data_dir: Path, aoi: str, box) -> list[dict]:
     return out
 
 
-def render_maps(data_dir: Path, aoi: str, box, out_dir: Path) -> dict:
+def render_maps(data_dir: Path, aoi: str, box, out_dir: Path, config: CaseCalculationConfig = CONFIG) -> dict:
     """Пишет три PNG на участок: запас, изменение запаса и маска потерь.
 
     Карты рисуются по тем же пикселям, по которым считаются числа, поэтому
@@ -98,8 +97,8 @@ def render_maps(data_dir: Path, aoi: str, box, out_dir: Path) -> dict:
     weights = pixel_intersection_weights(start, box)
     inside = weights > 0
 
-    c_start = carbon_density_t_ha(start.band(0), CONFIG)
-    c_end = carbon_density_t_ha(end.band(0), CONFIG)
+    c_start = carbon_density_t_ha(start.band(0), config)
+    c_end = carbon_density_t_ha(end.band(0), config)
     delta = c_end - c_start
 
     def save(rgb: np.ndarray, alpha: np.ndarray, name: str) -> str:
@@ -403,6 +402,8 @@ def build_aoi(
     baseline: list[dict],
     events: list[dict],
     maps_dir: Path | None,
+    config: CaseCalculationConfig = CONFIG,
+    geometry: dict | None = None,
 ) -> dict:
     box = (
         float(meta["bbox_west"]),
@@ -411,45 +412,32 @@ def build_aoi(
         float(meta["bbox_north"]),
     )
     aoi = meta["aoi_id"]
-    series = [read_year(data_dir, aoi, year, box) for year in range(2015, 2025)]
+    contour = geometry if geometry is not None else box
+    series = [read_year(data_dir, aoi, year, contour, config) for year in range(2015, 2025)]
     by_year = {row["year"]: row for row in series}
     area = series[0]["area_ha"]
 
-    base_rows = [r for r in baseline if r["aoi_id"] == aoi]
-    baseline_row = base_rows[0] if base_rows else {}
-
-    def baseline_value(key: str) -> float | None:
-        raw = baseline_row.get(key)
-        if raw is None or raw == "":
-            return None
-        value = float(raw)
-        return value if math.isfinite(value) else None
-
-    # The CSV provides the parent AOI references. Subareas must use these same
-    # references with their own area, not fit a new baseline to the subarea.
-    baseline_c2015 = baseline_value("reference_mean_2015_tc_ha")
-    baseline_c2019 = baseline_value("reference_mean_2019_tc_ha")
-    base_rate = baseline_rate(baseline_c2015, baseline_c2019, CONFIG)
-    base_stock = {
-        year: baseline_mean(year, baseline_c2015, baseline_c2019, CONFIG)
-        for year in range(CONFIG.baseline_anchor_year, CONFIG.baseline_end_year + 1)
-    }
+    # Official yearly endpoints are the source of truth. Their per-hectare
+    # values are scaled by the measured area inside calculate_period.
+    base_stock = baseline_stock_by_year(baseline, aoi, meta["baseline_id"])
+    base_rows = [r for r in baseline if r.get("aoi_id") == aoi and r.get("baseline_id") == meta["baseline_id"]]
+    base_rate = float(base_rows[0]["historical_rate_tc_ha_yr"]) if base_rows else None
 
     def period(start: int, end: int) -> dict:
         t0, t1 = by_year[start], by_year[end]
-        result = calculate_period(t0, t1, baseline_c2015, baseline_c2019, CONFIG)
+        result = calculate_period(t0, t1, base_stock.get(start), base_stock.get(end), config)
 
         # Чувствительность к допущениям о корреляции: число единиц целиком
         # определяется ими, и это главный вывод, а не техническая деталь.
         grid = []
-        for rs in CONFIG.rho_spatial_grid:
+        for rs in config.rho_spatial_grid:
             row = []
-            for rt in CONFIG.rho_temporal_grid:
-                s0 = sigma_from_sums(t0["_sd_sum"], t0["_sd_sq_sum"], CONFIG, rs)
-                s1 = sigma_from_sums(t1["_sd_sum"], t1["_sd_sq_sum"], CONFIG, rs)
-                _, half = uncertainty_half_width(s0, s1, CONFIG, rt)
+            for rt in config.rho_temporal_grid:
+                s0 = sigma_from_sums(t0["_sd_sum"], t0["_sd_sq_sum"], config, rs)
+                s1 = sigma_from_sums(t1["_sd_sum"], t1["_sd_sq_sum"], config, rs)
+                _, half = uncertainty_half_width(s0, s1, config, rt)
                 cell = potential_units(
-                    result["e_tco2e"], result["e_base_tco2e"], half, CONFIG
+                    result["e_tco2e"], result["e_base_tco2e"], half, config
                 )
                 row.append(
                     {
@@ -466,7 +454,7 @@ def build_aoi(
             **result,
             "value_rub": {
                 name: (None if result["units"] is None else result["units"] * price)
-                for name, price in CONFIG.prices_rub
+                for name, price in config.prices_rub
             },
             "sensitivity": grid,
         }
@@ -478,11 +466,11 @@ def build_aoi(
         if aoi_events
         else None
     )
-    loss = gfc_loss_by_year(data_dir, aoi, box)
+    loss = gfc_loss_by_year(data_dir, aoi, contour)
 
     return {
         "aoi_id": aoi,
-        "maps": render_maps(data_dir, aoi, box, maps_dir) if maps_dir else None,
+        "maps": render_maps(data_dir, aoi, contour, maps_dir, config) if maps_dir else None,
         "sentinel": render_sentinel(data_dir, aoi, event_window, maps_dir) if maps_dir else None,
         "stability": (
             stability_screening(series, loss, area, base_rate, has_fire)
@@ -524,22 +512,29 @@ def main() -> None:
         baseline = list(csv.DictReader(handle))
     with open(args.data / "events.csv", encoding="utf-8-sig") as handle:
         events = list(csv.DictReader(handle))
+    with open(args.data / "methodology" / "parameters.csv", encoding="utf-8-sig") as handle:
+        config = CaseCalculationConfig.from_parameter_rows(list(csv.DictReader(handle)))
+    with open(args.data / "areas.geojson", encoding="utf-8-sig") as handle:
+        geometries = {feature["properties"]["aoi_id"]: feature["geometry"]
+                      for feature in json.load(handle)["features"]}
 
     payload = {
         "generated_from": "ESA CCI Biomass v7.0, Hansen GFC v1.13, MODIS MCD64A1 061",
         "parameters": {
-            "carbon_fraction": CONFIG.carbon_fraction,
-            "co2_per_carbon": CONFIG.co2_per_carbon,
-            "unc_threshold": CONFIG.unc_threshold,
-            "buffer_share": CONFIG.buffer_share,
-            "leakage_tco2e": CONFIG.leakage_tco2e,
-            "rho_spatial": CONFIG.rho_spatial,
-            "rho_temporal": CONFIG.rho_temporal,
-            "k_sigma": CONFIG.k_sigma,
+            "carbon_fraction": config.carbon_fraction,
+            "co2_per_carbon": config.co2_per_carbon,
+            "unc_threshold": config.unc_threshold,
+            "unc_stop_ratio": config.unc_stop_ratio,
+            "buffer_share": config.buffer_share,
+            "leakage_tco2e": config.leakage_tco2e,
+            "rho_spatial": config.rho_spatial,
+            "rho_temporal": config.rho_temporal,
+            "k_sigma": config.k_sigma,
             "treecover_threshold_pct": TREECOVER_THRESHOLD,
-            "prices_rub": dict(CONFIG.prices_rub),
+            "prices_rub": dict(config.prices_rub),
         },
-        "areas": [build_aoi(args.data, meta, baseline, events, args.maps) for meta in areas],
+        "areas": [build_aoi(args.data, meta, baseline, events, args.maps,
+                            config, geometries[meta["aoi_id"]]) for meta in areas],
         "events": [
             {
                 "event_id": e["event_id"],
