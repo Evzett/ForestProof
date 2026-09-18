@@ -325,9 +325,6 @@ function DynamicsTab({ area, period }: { area: Area; period: Period }) {
   const shown = area.series.filter(
     (p) => p.year >= period.year_start && p.year <= period.year_end
   );
-  const values = shown.map((p) => p.c_t_ha);
-  const min = Math.min(...values) * 0.96;
-  const max = Math.max(...values) * 1.02;
   const base = area.baseline_stock_t_ha;
 
   let cumulative = 0;
@@ -995,7 +992,7 @@ function UnitsTab({ area, period }: { area: Area; period: Period }) {
    на уже готовое Q и ни на один физический показатель не влияет.
    Поэтому экономика показывает не одно число, а от чего это число
    зависит — от сценария цены и от допущений о корреляции ошибки. */
-function Economics({ area, period }: { area: Area; period: Period }) {
+function Economics({ period }: { area: Area; period: Period }) {
   const { priceKey, price, label, setPriceKey } = useScenario();
 
   const units = period.units ?? 0;
