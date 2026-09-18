@@ -442,3 +442,22 @@
   padding-top: 16px;
   border-top: 1px solid var(--c-page);
 }
+
+/* Коротко по разделу: светлая зелёная карточка, как справка в обзоре. */
+.mon-summary {
+  border: 1px solid #cfdcb0;
+  background: #f4f8ea;
+}
+
+.mon-summary__text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-ink-black);
+}
+
+/* Список карточек прокручивается: на десяти участках он уже длиннее
+   экрана втрое, и баннер с выводом уезжает из поля зрения. */
+.mon-list {
+  --scrollbox: clamp(480px, 58vh, 900px);
+  padding-right: 6px;
+}

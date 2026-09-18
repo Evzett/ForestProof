@@ -304,7 +304,7 @@ export default function Overview() {
             <FilterSelect value={range} onChange={setRange} options={PERIODS} label="период" />
           </div>
 
-          <div className="tbl__scroll">
+          <div className="tbl__scroll tbl__scroll--tall">
             <table className="tbl">
               <thead>
                 <tr>

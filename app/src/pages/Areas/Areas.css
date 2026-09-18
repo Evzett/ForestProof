@@ -3,6 +3,10 @@
   grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
+  /* Высота под два ряда карточек: третий ряд уже уводит фильтры за
+     верхний край, и выбирать приходится вслепую. */
+  --scrollbox: clamp(520px, 62vh, 940px);
+  padding-right: 6px;
 }
 
 .area {

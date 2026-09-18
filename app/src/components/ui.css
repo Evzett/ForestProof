@@ -382,8 +382,9 @@
 }
 
 /* Действие в строке каталога */
-/* Высота как у остальных кнопок приложения, обводка тоньше: полтора
-   пикселя на маленькой кнопке читались как жирная рамка. */
+/* Размер действия внутри списка и панели — этот. Крупные кнопки
+   приветственного экрана здесь неуместны: там кнопка единственная и
+   ведёт со страницы, а тут она одна из многих и стоит рядом с текстом. */
 .row-action {
   display: inline-flex;
   align-items: center;
@@ -470,6 +471,16 @@
   color: transparent;
   cursor: pointer;
   opacity: 0;
+}
+
+/* Список раскрывает браузер, и он же берёт цвет у самого select — а у
+   того текст прозрачный, чтобы не двоиться с нашей подписью. Поэтому
+   пункты оказывались белым по белому: видно было только выделенный.
+   Цвет задаётся пунктам напрямую. */
+.filter__native option {
+  background: #fff;
+  color: var(--c-ink-black);
+  opacity: 1;
 }
 
 .filter--select:focus-within {
@@ -666,4 +677,54 @@
 .card--ink {
   background: #0a0f03;
   color: #fff;
+}
+
+/* Действие внутри панели выбора: тот же размер, что «открыть расчёт».
+   Кнопка обложки рядом со строкой списка выглядела вдвое крупнее всего
+   остального и перетягивала на себя внимание с самих участков. */
+.btn--inline {
+  min-height: 0;
+  padding: 12px 22px;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+}
+
+/* ---------- Прокручиваемые списки ----------
+   Десять участков ещё помещаются на экран, сто — нет, и страница
+   превращается в ленту, по которой нечем ориентироваться. Список
+   держится в своих границах и прокручивается внутри. */
+.scrollbox {
+  max-height: var(--scrollbox, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.scrollbox::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbox::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background: rgb(46 62 40 / 28%);
+  background-clip: content-box;
+}
+
+.scrollbox::-webkit-scrollbar-thumb:hover {
+  background: rgb(46 62 40 / 45%);
+  background-clip: content-box;
+}
+
+/* Таблица прокручивается и по вертикали, шапка остаётся на месте:
+   без неё в длинной таблице непонятно, что за колонка перед глазами. */
+.tbl__scroll--tall {
+  max-height: var(--scrollbox, 560px);
+  overflow-y: auto;
+}
+
+.tbl__scroll--tall thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--c-surface);
 }
