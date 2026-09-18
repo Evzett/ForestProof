@@ -291,7 +291,10 @@ def test_extractor_assembles_from_supplied_baseline_without_raster_io(monkeypatc
     assert no_baseline["period_2019_2024"]["units"] is None
 
 
-@pytest.mark.skipif(not (REAL_DATA / "methodology/baseline.csv").exists(), reason="local case data is not distributed with Git")
+@pytest.mark.skipif(
+    not (REAL_DATA / "RU_TVER_01/CCI_Biomass_2019.tif").exists(),
+    reason="local case rasters are not distributed with Git",
+)
 def test_real_case_methodology_and_rasters():
     with (REAL_DATA / "methodology/parameters.csv").open(encoding="utf-8-sig") as handle:
         config = CaseCalculationConfig.from_parameter_rows(list(csv.DictReader(handle)))
