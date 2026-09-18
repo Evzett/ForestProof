@@ -342,14 +342,6 @@ export default function Overview() {
           </span>
 
           <div className="ov-market__divider" />
-          <span className="ov-market__label">базовая линия</span>
-          <span className="ov-market__value tabular">2019 — 2029</span>
-          <span className="ov-market__note">
-            продолжение исторической динамики 2015—2019, задана набором и не
-            устанавливает дополнительность
-          </span>
-
-          <div className="ov-market__divider" />
           <Link to="/app/methodology" className="ov-market__cta">
             Как это считается
           </Link>
