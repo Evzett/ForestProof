@@ -11,7 +11,7 @@ import {
   formatNumber,
 } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
-import { AREAS, EVENTS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
+import { AREAS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
 import { useScenario } from "../../data/scenario";
 import { YearLossChart } from "../../components/YearLossChart";
 import "./Overview.css";
@@ -36,10 +36,19 @@ const PERIODS = [
   { value: "2023-2024", label: "2023 — 2024" },
 ];
 
-/* Справка собирается шаблоном из посчитанного, без языковой модели:
-   так свойство «ничего не выдумывает» держится конструкцией.
 
-   Возвращается не склеенный абзац, а строки с выделенной величиной:
+/* Справка по набору целиком: на скольких участках расчёт дал результат,
+   где потеря наибольшая и чем подтверждена причина.
+
+   С карточкой «Краткая справка» на странице участка это не дубль: там
+   генератор ядра отвечает про один участок за один период, здесь —
+   про весь набор сразу. Вопросы разные, и свести их в один нельзя:
+   первый нужен при разборе участка, второй при первом взгляде на набор.
+
+   Собирается шаблоном из посчитанного, без языковой модели: так
+   свойство «ничего не выдумывает» держится конструкцией.
+
+   Возвращаются не склеенный абзац, а строки с выделенной величиной:
    сплошным текстом справка читалась как дисклеймер, и числа в ней
    терялись — а числа в ней и есть содержание. */
 type SummaryLine = { value: string; unit?: string; text: string };
@@ -58,26 +67,19 @@ function buildSummary(startYear: number, endYear: number): SummaryLine[] {
   return [
     {
       value: `${losing.length} из ${rows.length}`,
-      text: `участков показывают потерю углерода из учитываемого пула за ${startYear}—${endYear}`,
+      text: `участков теряют углерод из учитываемого пула за ${startYear}—${endYear}`,
     },
     {
       value: formatNumber(Math.round(worst.period.e_tco2e)),
       unit: "т CO₂-экв.",
-      text: `наибольшая потеря — ${worst.area.name}, то есть ${formatDecimal(
-        worst.period.e_per_ha_year,
-        2
-      )} т CO₂-экв./га/год`,
+      text: `наибольшая потеря — ${worst.area.name}`,
     },
     {
       value: withUnits.length === 0 ? "ни один" : `${withUnits.length} из ${rows.length}`,
       text:
         withUnits.length === 0
-          ? "участок не даёт потенциальных единиц: результат либо не превышает базовую линию, либо не отличим от неё в пределах неопределённости"
+          ? "участок не даёт потенциальных единиц: результат не превышает базовую линию либо не отличим от неё"
           : "участков дают потенциальные единицы",
-    },
-    {
-      value: `${EVENTS.length} из ${rows.length}`,
-      text: "участков имеют подтверждение причины изменения покрова внешним продуктом; на остальных статус причины остаётся неустановленным",
     },
   ];
 }
@@ -99,10 +101,8 @@ export default function Overview() {
     [startYear, endYear]
   );
 
-  const [summary, setSummary] = useState(() => ({
-    lines: buildSummary(2019, 2024),
-    at: "—",
-  }));
+
+  const [summary, setSummary] = useState(() => ({ lines: buildSummary(2019, 2024), at: "—" }));
   const [rebuilding, setRebuilding] = useState(false);
 
   const regenerate = () => {
@@ -192,7 +192,7 @@ export default function Overview() {
         <div className="ov-row2">
           <Card className="ov-summary">
             <div className="ov-summary__head">
-              <h2 className="card__title">Краткая справка</h2>
+              <h2 className="card__title">Краткая справка по набору</h2>
               <span className="lvl lvl--outline">собрано шаблоном</span>
               <span className="ov-summary__spacer" />
               <CircleBtn
@@ -213,9 +213,9 @@ export default function Overview() {
                 </li>
               ))}
             </ul>
-            <div className="ov-summary__foot">
-              <span>собрано из посчитанного · без языковой модели · обновлено {summary.at}</span>
-            </div>
+            <p className="ov-note">
+              собрано из посчитанного · без языковой модели · обновлено {summary.at}
+            </p>
           </Card>
 
           <Card className="ov-assets">
@@ -308,7 +308,7 @@ export default function Overview() {
           </p>
         </Card>
 
-        <Card tone="dark" className="ov-market">
+        <Card tone="dark" className="ov-market card--ink">
           <div className="ov-market__head">
             <h2 className="card__title">Условия расчёта</h2>
             <span className="ov-summary__spacer" />
@@ -348,27 +348,6 @@ export default function Overview() {
             продолжение исторической динамики 2015—2019, задана набором и не
             устанавливает дополнительность
           </span>
-
-          <div className="ov-market__divider" />
-          <span className="ov-market__label">вычеты и резерв</span>
-          <dl className="ov-market__kv">
-            <div>
-              <dt>порог неопределённости</dt>
-              <dd className="tabular">{PARAMETERS.unc_threshold * 100} %</dd>
-            </div>
-            <div>
-              <dt>резерв BUF</dt>
-              <dd className="tabular">{PARAMETERS.buffer_share * 100} %</dd>
-            </div>
-            <div>
-              <dt>утечка LK</dt>
-              <dd className="tabular">{PARAMETERS.leakage_tco2e}</dd>
-            </div>
-            <div>
-              <dt>углеродная доля CF</dt>
-              <dd className="tabular">{PARAMETERS.carbon_fraction}</dd>
-            </div>
-          </dl>
 
           <div className="ov-market__divider" />
           <Link to="/app/methodology" className="ov-market__cta">

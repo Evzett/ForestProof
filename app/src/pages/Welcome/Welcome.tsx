@@ -56,7 +56,10 @@ export default function Welcome() {
                 value={String(AREAS.length)}
                 caption="участка посчитано на реальных растрах"
               />
-              <StatPill value="2019—2024" caption="период анализа, базовая линия до 2029" />
+              <StatPill
+                value="0"
+                caption="участков дали единицы — расчёт умеет отвечать «нет»"
+              />
             </div>
             <p className="hero__lead">
               Считаем по открытым спутниковым данным, сколько углерода лежит в лесу и как эта

@@ -74,6 +74,60 @@ class CaseSet:
     geometries: dict[str, dict]
 
 
+# Обученная модель устойчивости. Лежит рядом с фронтом, потому что её
+# туда пишет tools/train_stability.py; API читает тот же самый файл, а не
+# свою копию — иначе экран и ответ службы разошлись бы молча.
+MODEL_PATH = REPO_ROOT / "app" / "src" / "data" / "stability-model.json"
+
+
+@lru_cache(maxsize=1)
+def load_stability_model() -> dict | None:
+    """Прогноз обученной модели по участкам набора.
+
+    Возвращает None, если файла нет: модель обучается отдельной командой
+    и в репозитории может отсутствовать. Отдавать вместо неё пороговые
+    правила под видом модели нельзя — это разные методы.
+    """
+    if not MODEL_PATH.exists():
+        return None
+    with open(MODEL_PATH, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def stability_forecast(aoi_id: str) -> dict | None:
+    """Прогноз на 2025–2029 по одному участку, вместе с тем, чем он подкреплён."""
+    model = load_stability_model()
+    if not model:
+        return None
+    prediction = next(
+        (p for p in model.get("predictions", []) if p.get("aoi_id") == aoi_id), None
+    )
+    if not prediction or not prediction.get("available"):
+        return {
+            "available": False,
+            "reason": (prediction or {}).get("reason", "участок вне покрытия обучающих данных"),
+        }
+    return {
+        "available": True,
+        "method": model.get("method"),
+        "forecast": prediction.get("forecast"),
+        "backtest": {
+            "probability": prediction.get("probability"),
+            "category": prediction.get("category"),
+            "actual_label": prediction.get("label"),
+            "actual_loss_pct": prediction.get("future_loss_pct"),
+        },
+        "quality": model.get("quality"),
+        "sample": model.get("sample"),
+        "design": model.get("design"),
+        "verdict": model.get("verdict"),
+        "limitation": (
+            "Прогноз не влияет на число потенциальных единиц: вычет за "
+            "неопределённость выводится из H/R, резерв фиксирован условиями кейса."
+        ),
+    }
+
+
 @lru_cache(maxsize=1)
 def load_case_set() -> CaseSet:
     """Описания набора. Кэшируются: читаются с диска, меняются только вместе
@@ -215,6 +269,7 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
         "series": area.get("series"),
         "cover_loss": area.get("cover_loss"),
         "stability": area.get("stability"),
+        "stability_model": stability_forecast(meta["aoi_id"]),
         "period": periods[0],
         "baseline_id": meta.get("baseline_id"),
         "baseline_note": (

@@ -21,10 +21,10 @@ import "./AppShell.css";
 const NAV = [
   { to: "/app/overview", label: "Обзор", icon: "overview" },
   { to: "/app/areas", label: "Участки", icon: "areas" },
-  /* Иконок в макете шесть, разделов у нас семь. «Сравнение» повторяет
-     значок «Участков» — из всех повторов этот самый безобидный: оба
-     раздела про одни и те же территории. */
-  { to: "/app/compare", label: "Сравнение", icon: "areas" },
+  /* В макете иконки «Сравнения» нет — разделов у нас семь, а значков
+     там шесть. Взят carbon:compare из той же библиотеки Carbon, откуда
+     в макете взята «Методика», поэтому рисунок не выбивается из ряда. */
+  { to: "/app/compare", label: "Сравнение", icon: "compare" },
   { to: "/app/projects", label: "Проекты", icon: "projects" },
   { to: "/app/calculations", label: "Расчёты", icon: "calc" },
   { to: "/app/monitoring", label: "Наблюдение", icon: "monitoring" },

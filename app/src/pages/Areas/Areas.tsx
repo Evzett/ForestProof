@@ -147,11 +147,6 @@ export default function Areas() {
                 </span>
                 <span className="area__role">{a.role}</span>
               </div>
-              <p className="area__legend">
-                <b>изменение запаса 2019 → 2024.</b> Один квадрат — один пиксель продукта
-                ESA CCI, около 0,54 га. Коричневый — потеря, зелёный — накопление. Картинка
-                не сглажена намеренно: сглаживание дорисовало бы детали, которых в данных нет.
-              </p>
 
               <h3 className="area__name">
                 <Link to={`/app/area/${a.aoi_id}`}>{a.name}</Link>
@@ -211,6 +206,12 @@ export default function Areas() {
                 {events.length > 0 && ` · событие с подтверждением: ${events[0].cause_supported}`}
               </p>
               <p className="area__bbox">контур {formatBbox(a.bbox)}</p>
+
+              <p className="area__legend">
+                <b>изменение запаса 2019 → 2024.</b> Один квадрат — один пиксель продукта
+                ESA CCI, около 0,54 га. Коричневый — потеря, зелёный — накопление. Картинка
+                не сглажена намеренно: сглаживание дорисовало бы детали, которых в данных нет.
+              </p>
 
               <Link to={`/app/area/${a.aoi_id}`} className="row-action area__open">
                 открыть расчёт →

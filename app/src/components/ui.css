@@ -1,13 +1,16 @@
 /* ---------- Кнопка ---------- */
+/* Подпись кнопки набрана как ведущий абзац: тот же кегль и та же
+   плотность. Прежние 16 px рядом с лидом в 24 выглядели мелочью,
+   хотя кнопка — главное действие экрана. */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-height: var(--h-btn);
-  padding: 14px clamp(18px, 1.67vw, 32px);
+  padding: 14px clamp(20px, 1.9vw, 36px);
   border-radius: var(--r-pill);
-  font-size: var(--t-body);
-  letter-spacing: -0.2px;
+  font-size: var(--t-lead);
+  letter-spacing: -0.04em;
   transition: filter 0.15s ease;
 }
 
@@ -638,6 +641,16 @@
 .ic--projects { mask-image: url("/icons/projects.svg"); }
 .ic--monitoring { mask-image: url("/icons/monitoring.svg"); }
 .ic--calc { mask-image: url("/icons/calc.svg"); }
+.ic--compare { mask-image: url("/icons/compare.svg"); }
 .ic--method { mask-image: url("/icons/method.svg"); }
 .ic--plus { mask-image: url("/icons/plus.svg"); width: 22px; height: 22px; }
 .ic--arrow { mask-image: url("/icons/arrow.svg"); width: 14px; height: 14px; }
+
+/* Самая правая карточка обзора в макете не тёмно-зелёная, а почти
+   чёрная (#0a0f03): рядом с ней стоят зелёная и лаймовая плитки, и на
+   их фоне тёмно-зелёный читался как ещё один оттенок того же, а не как
+   отдельный блок. */
+.card--ink {
+  background: #0a0f03;
+  color: #fff;
+}
