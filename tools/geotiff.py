@@ -169,10 +169,15 @@ def _undo_predictor(
     побайтово. Без обратного преобразования float-растр читается как шум
     порядка 1e38, и это самая незаметная поломка из возможных.
     """
+    itemsize = np.dtype(dtype).itemsize
+    # Распаковщик вправе вернуть больше байтов, чем занимает полоса:
+    # LZW добивает поток до границы кода, и лишние байты — padding, а не
+    # данные. Обрезаем здесь, иначе reshape падает на случайных участках.
+    block = block[: rows * width * depth * itemsize]
+
     if predictor == 1:
         return block
 
-    itemsize = np.dtype(dtype).itemsize
     if predictor == 2:
         arr = np.frombuffer(block, dtype=dtype).reshape(rows, width, depth).copy()
         np.cumsum(arr, axis=1, dtype=dtype, out=arr)

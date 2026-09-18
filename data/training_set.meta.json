@@ -1,10 +1,13 @@
 {
-  "tile": "60N_030E",
-  "plots": 400,
-  "positives": 147,
-  "negatives": 253,
-  "minority_class": 147,
-  "skipped_non_forest": 327,
+  "tiles": [
+    "60N_030E",
+    "60N_040E"
+  ],
+  "plots": 800,
+  "positives": 326,
+  "negatives": 474,
+  "minority_class": 326,
+  "skipped_non_forest": 704,
   "plot_size_deg": [
     0.064,
     0.04
@@ -13,5 +16,5 @@
   "feature_window": "2001–2019",
   "label_window": "2020–2024",
   "leakage_note": "Признаки считаются строго до 2019 года, метка — за 2020–2024. Пересечения периодов нет, поэтому модель предсказывает будущее, а не пересказывает собственный вход.",
-  "source": "Hansen GFC v1.12, тайл 60N_030E"
+  "source": "Hansen GFC v1.12, тайлы 60N_030E, 60N_040E"
 }
