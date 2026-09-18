@@ -35,6 +35,32 @@
   color: #fff;
 }
 
+.terrain__modes {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgb(46 62 40 / 28%);
+  border-radius: var(--r-pill);
+}
+
+.terrain__modes button {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.terrain__modes button.is-on {
+  background: var(--c-lime);
+  color: var(--c-ink-deep);
+  font-weight: 500;
+}
+
 .terrain__hint {
   font-size: 12px;
   color: var(--c-muted-alt);
@@ -44,7 +70,7 @@
    вкладка открывается, и ужимать его нечем. */
 .terrain__canvas {
   width: 100%;
-  height: clamp(320px, 30vw, 520px);
+  height: clamp(380px, 36vw, 620px);
   border-radius: var(--r-img-md);
   background: linear-gradient(180deg, #f3f4ef 0%, #e8eae3 100%);
   cursor: grab;

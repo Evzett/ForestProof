@@ -22,6 +22,10 @@ const EMPTY = -1;
 
 type View = { rotation: number; tilt: number };
 
+function shade3(base: [number, number, number], k: number): [number, number, number] {
+  return [base[0] * k, base[1] * k, base[2] * k];
+}
+
 function shade(base: [number, number, number], k: number): string {
   const [r, g, b] = base;
   return `rgb(${Math.round(r * k)} ${Math.round(g * k)} ${Math.round(b * k)})`;
@@ -54,6 +58,11 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [year, setYear] = useState<"start" | "end">("end");
   const [view, setView] = useState<View>({ rotation: -0.62, tilt: 0.52 });
+  /* Два прочтения одних и тех же чисел. «Лес» показывает запас деревьями:
+     их высота и густота — это т C/га, и на вырубке их просто нет.
+     «Рельеф» — те же значения столбиками, когда нужно сравнить высоты,
+     а не впечатлиться. */
+  const [mode, setMode] = useState<"forest" | "relief">("forest");
   const dragRef = useRef<{ x: number; y: number; rotation: number; tilt: number } | null>(null);
 
   const { width, height, start, end, peak_t_ha: peak } = terrain;
@@ -137,18 +146,60 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
     });
 
     const deltaSpan = Math.max(peak * 0.35, 1);
+
+    /* Дерево в изометрии: ствол и три яруса кроны. Рисуется сразу после
+       своей клетки, поэтому порядок «от дальних к ближним» соблюдается
+       и для деревьев — иначе ближние оказались бы за дальними. */
+    const drawTree = (
+      px: number,
+      py: number,
+      size: number,
+      base: [number, number, number]
+    ) => {
+      const trunkW = Math.max(1, size * 0.09);
+      const trunkH = size * 0.28;
+      ctx.fillStyle = "rgb(92 68 48)";
+      ctx.fillRect(px - trunkW / 2, py - trunkH, trunkW, trunkH);
+
+      const tiers = 3;
+      for (let i = 0; i < tiers; i++) {
+        const t = i / tiers;
+        const halfW = size * (0.34 - t * 0.09);
+        const bottom = py - trunkH - size * 0.42 * i;
+        const top = bottom - size * 0.46;
+        ctx.fillStyle = shade(base, 1 - i * 0.12);
+        ctx.beginPath();
+        ctx.moveTo(px, top);
+        ctx.lineTo(px + halfW, bottom);
+        ctx.lineTo(px - halfW, bottom);
+        ctx.closePath();
+        ctx.fill();
+      }
+    };
+
     for (const [gx, gy] of backToFront) {
       const index = gy * width + gx;
       const value = values[index];
       if (value === EMPTY) continue;
 
-      const delta = end[index] === EMPTY || start[index] === EMPTY ? 0 : end[index] - start[index];
+      /* Коричневый оттенок означает «этот пиксель потерял запас между
+         2019 и 2024». Это свойство пары лет, а не года, поэтому на виде
+         2019 он не наносится: иначе картинка утверждала бы, что лес уже
+         повреждён, хотя тогда он ещё стоял. */
+      const delta =
+        year === "start" || end[index] === EMPTY || start[index] === EMPTY
+          ? 0
+          : end[index] - start[index];
       const norm = Math.max(0, Math.min(1, value / (peak || 1)));
       const base = colorFor(norm, delta, deltaSpan);
 
-      const top = project(gx, gy, norm);
-      const topRight = project(gx + 1, gy, norm);
-      const topDown = project(gx, gy + 1, norm);
+      /* В режиме леса рельеф приземляется: высоту показывают деревья,
+         и если поднимать ещё и землю, одно и то же число считалось бы
+         дважды, а лес поехал бы по склону. */
+      const groundH = mode === "forest" ? norm * 0.18 : norm;
+      const top = project(gx, gy, groundH);
+      const topRight = project(gx + 1, gy, groundH);
+      const topDown = project(gx, gy + 1, groundH);
       const bottom = project(gx, gy, 0);
 
       // верхняя грань
@@ -179,8 +230,17 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
       ctx.lineTo(bottom.x, bottom.y);
       ctx.closePath();
       ctx.fill();
+
+      /* Дерево ставится не на каждый пиксель: при трёх с половиной тысячах
+         крон рисунок превращается в сплошной ковёр, где не видно ни
+         просек, ни границы вырубки. Шахматная выборка оставляет половину
+         и сохраняет рисунок нарушений. */
+      if (mode === "forest" && (gx + gy) % 2 === 0 && norm > 0.08) {
+        const centre = project(gx + 0.5, gy + 0.5, groundH);
+        drawTree(centre.x, centre.y, step * (1.4 + norm * 3.6), shade3(base, 0.92));
+      }
     }
-  }, [values, start, end, width, height, peak, view]);
+  }, [values, start, end, year, width, height, peak, view, mode]);
 
   const onDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
     dragRef.current = {
@@ -230,6 +290,22 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
             {terrain.end_year}
           </button>
         </div>
+        <div className="terrain__modes">
+          <button
+            type="button"
+            className={mode === "forest" ? "is-on" : ""}
+            onClick={() => setMode("forest")}
+          >
+            лес
+          </button>
+          <button
+            type="button"
+            className={mode === "relief" ? "is-on" : ""}
+            onClick={() => setMode("relief")}
+          >
+            рельеф
+          </button>
+        </div>
         <span className="terrain__hint">тяните мышью, чтобы повернуть</span>
       </div>
 
@@ -267,9 +343,13 @@ export default function CarbonTerrain({ terrain, name }: { terrain: Terrain; nam
       </dl>
 
       <p className="ov-note">
-        Высоты взяты из тех же чисел, из которых считается изменение запаса, поэтому провал на
-        рельефе и вклад в результат — одно и то же место. Наклон граней и тень — оформление,
-        значение несут только высота и цвет.
+        {mode === "forest"
+          ? "Одно дерево — один пиксель продукта, его высота и есть запас на этом пикселе. Деревья стоят через клетку: при трёх с половиной тысячах крон рисунок превращается в сплошной ковёр, где не видно ни просек, ни границы вырубки."
+          : "Высота столбика — запас на пикселе. Столбики удобнее, когда высоты надо сравнить между собой, а не разглядывать лес."}{" "}
+        Коричневый оттенок появляется только на виде {terrain.end_year} и означает пиксели,
+        потерявшие запас за период.{" "}
+        Значения взяты из тех же чисел, из которых считается изменение запаса, поэтому провал на
+        картинке и вклад в результат — одно и то же место. Тень и наклон граней — оформление.
       </p>
     </div>
   );
