@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -37,6 +38,18 @@ FEATURES = [
     "mean_treecover_pct",
     "forest_share",
 ]
+
+
+def tile_for(box: tuple[float, float, float, float]) -> str:
+    """Имя тайла Hansen по участку: сетка 10°×10°, широта по верхнему краю."""
+    lon = (box[0] + box[2]) / 2
+    lat = (box[1] + box[3]) / 2
+    lon_left = int(math.floor(lon / 10) * 10)
+    lat_top = int(math.ceil(lat / 10) * 10)
+    lon_str = f"{abs(lon_left):03d}{'E' if lon_left >= 0 else 'W'}"
+    lat_str = f"{abs(lat_top):02d}{'N' if lat_top >= 0 else 'S'}"
+    return f"{lat_str}_{lon_str}"
+
 
 TEST_SHARE = 0.30
 FOLDS = 5
@@ -216,8 +229,6 @@ def main() -> None:
     try:
         import build_training_set as builder
 
-        loss_path = args.hansen / "Hansen_GFC-2024-v1.12_lossyear_60N_030E.tif"
-        cover_path = args.hansen / "Hansen_GFC-2024-v1.12_treecover2000_60N_030E.tif"
         with open(args.score_areas, encoding="utf-8-sig") as handle:
             for meta in csv.DictReader(handle):
                 box = (
@@ -226,16 +237,22 @@ def main() -> None:
                     float(meta["bbox_east"]),
                     float(meta["bbox_north"]),
                 )
+                # Тайл выбирается по самому участку. Раньше он был вписан
+                # в код, и три участка из четырёх оставались без оценки
+                # просто потому, что лежали восточнее 40°.
+                tile = tile_for(box)
+                loss_path = args.hansen / f"Hansen_GFC-2024-v1.12_lossyear_{tile}.tif"
+                cover_path = args.hansen / f"Hansen_GFC-2024-v1.12_treecover2000_{tile}.tif"
                 try:
                     row = builder.sample_plot(loss_path, cover_path, box)
                 except (ValueError, IndexError, FileNotFoundError):
                     row = None
                 if row is None:
-                    # Участок вне тайла или не лесной — это штатный случай,
+                    # Тайл не скачан или участок не лесной — штатный случай,
                     # и молча ставить ему категорию нельзя.
                     predictions.append(
                         {"aoi_id": meta["aoi_id"], "available": False,
-                         "reason": "участок вне покрытия тайла обучающей выборки"}
+                         "reason": f"нет данных Hansen по тайлу {tile} либо участок не лесной"}
                     )
                     continue
                 vector = np.array([[float(row[k]) for k in FEATURES]])

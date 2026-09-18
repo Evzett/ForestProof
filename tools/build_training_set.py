@@ -142,50 +142,66 @@ def sample_plot(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tile", default="60N_030E")
+    parser.add_argument(
+        "--tile",
+        nargs="+",
+        default=["60N_030E"],
+        help="один или несколько тайлов; участки нарезаются из каждого поровну",
+    )
     parser.add_argument("--cache", type=Path, default=Path("data/cache/hansen-gfc"))
     parser.add_argument("--count", type=int, default=400, help="сколько участков нарезать")
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--out", type=Path, default=Path("data/training_set.csv"))
     args = parser.parse_args()
 
-    loss_path = args.cache / f"Hansen_GFC-2024-v1.12_lossyear_{args.tile}.tif"
-    cover_path = args.cache / f"Hansen_GFC-2024-v1.12_treecover2000_{args.tile}.tif"
-    for path in (loss_path, cover_path):
-        if not path.exists():
-            raise SystemExit(
-                f"нет файла {path}\nсначала: python tools/fetch.py --bbox <W S E N> --cover"
-            )
-
-    west, south, east, north = tile_bounds(args.tile)
-    # Отступаем от краёв тайла: участок на границе вылезет за его пределы,
-    # и окно придёт обрезанным без предупреждения.
-    west, south = west + 0.2, south + 0.2
-    east, north = east - 0.2 - PLOT_LON, north - 0.2 - PLOT_LAT
-
     rng = random.Random(args.seed)
     rows: list[dict] = []
     skipped = 0
-    attempts = 0
-    limit = args.count * 6
 
-    while len(rows) < args.count and attempts < limit:
-        attempts += 1
-        lon = rng.uniform(west, east)
-        lat = rng.uniform(south, north)
-        box = (lon, lat, lon + PLOT_LON, lat + PLOT_LAT)
-        try:
-            row = sample_plot(loss_path, cover_path, box)
-        except (ValueError, IndexError):
-            skipped += 1
-            continue
-        if row is None:
-            skipped += 1
-            continue
-        rows.append(row)
-        if len(rows) % 50 == 0:
-            positives = sum(r["label"] for r in rows)
-            print(f"  {len(rows)} участков, положительных {positives}")
+    # Квота на тайл. Один регион — это один тип хозяйства и один режим
+    # рубок; модель, обученная на нём, описывает его, а не лес вообще.
+    # Поэтому участки берутся из каждого тайла поровну.
+    per_tile = math.ceil(args.count / len(args.tile))
+
+    for tile in args.tile:
+        loss_path = args.cache / f"Hansen_GFC-2024-v1.12_lossyear_{tile}.tif"
+        cover_path = args.cache / f"Hansen_GFC-2024-v1.12_treecover2000_{tile}.tif"
+        for path in (loss_path, cover_path):
+            if not path.exists():
+                raise SystemExit(
+                    f"нет файла {path}\nсначала: python tools/fetch.py --bbox <W S E N> --cover"
+                )
+
+        west, south, east, north = tile_bounds(tile)
+        # Отступаем от краёв тайла: участок на границе вылезет за его пределы,
+        # и окно придёт обрезанным без предупреждения.
+        west, south = west + 0.2, south + 0.2
+        east, north = east - 0.2 - PLOT_LON, north - 0.2 - PLOT_LAT
+
+        taken = 0
+        attempts = 0
+        limit = per_tile * 8
+
+        while taken < per_tile and attempts < limit:
+            attempts += 1
+            lon = rng.uniform(west, east)
+            lat = rng.uniform(south, north)
+            box = (lon, lat, lon + PLOT_LON, lat + PLOT_LAT)
+            try:
+                row = sample_plot(loss_path, cover_path, box)
+            except (ValueError, IndexError):
+                skipped += 1
+                continue
+            if row is None:
+                skipped += 1
+                continue
+            row["tile"] = tile
+            rows.append(row)
+            taken += 1
+            if taken % 50 == 0:
+                print(f"  {tile}: {taken} участков, положительных {sum(r['label'] for r in rows)}")
+
+        print(f"{tile}: взято {taken}, пропущено нелесных за проход {attempts - taken}")
 
     if not rows:
         raise SystemExit("не удалось набрать ни одного лесного участка")
@@ -198,7 +214,7 @@ def main() -> None:
 
     positives = sum(r["label"] for r in rows)
     meta = {
-        "tile": args.tile,
+        "tiles": list(args.tile),
         "plots": len(rows),
         "positives": positives,
         "negatives": len(rows) - positives,
@@ -213,7 +229,7 @@ def main() -> None:
             "Пересечения периодов нет, поэтому модель предсказывает будущее, "
             "а не пересказывает собственный вход."
         ),
-        "source": f"Hansen GFC v1.12, тайл {args.tile}",
+        "source": f"Hansen GFC v1.12, тайлы {', '.join(args.tile)}",
     }
     args.out.with_suffix(".meta.json").write_text(
         json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
