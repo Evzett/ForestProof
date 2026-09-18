@@ -1,16 +1,28 @@
-version: "3.9"
+# Запуск: из КОРНЯ репозитория
+#     docker compose -f api/docker-compose.yml up --build
+#
+# Контекст сборки — корень, а не api/: расчётное ядро, инструменты и
+# описания набора лежат там, и без них API не посчитает ничего.
 
 services:
   api:
-    build: .
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg2://forestproof:forestproof@db:5432/forestproof
       ENVIRONMENT: development
+      FORESTPROOF_ROOT: /repo
     volumes:
+      # Код — живьём, чтобы --reload имел смысл.
       - .:/app
+      - ../forestproof_core:/repo/forestproof_core
+      - ../tools:/repo/tools
+      # Растры набора (44 МБ) и кэш скачанного: томом, а не в образе.
+      - ../data:/repo/data
     depends_on:
       db:
         condition: service_healthy

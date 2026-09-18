@@ -247,7 +247,9 @@ class Calculation(Base):
 
     # --- обязательные аудит-поля, раздел 8 контракта — не переименовывать ---
     calc_id: Mapped[str] = mapped_column(String(32), primary_key=True)  # "CALC-0148"
-    project_id: Mapped[str] = mapped_column(
+    # Расчёт по контуру проекту не принадлежит: в постановке кейса проекта
+    # нет ни в данных, ни по смыслу (миграция 0003).
+    project_id: Mapped[str | None] = mapped_column(
         String(32), ForeignKey("projects.project_id", ondelete="RESTRICT"), index=True
     )
     calculated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
