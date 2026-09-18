@@ -13,6 +13,7 @@ import {
 import { PageHead } from "../../components/AppShell";
 import { AREAS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
 import { useScenario } from "../../data/scenario";
+import RiskSummary from "../../components/RiskSummary";
 import { YearLossChart } from "../../components/YearLossChart";
 import { composeSummary } from "../../data/aiSummary";
 import "./Overview.css";
@@ -460,6 +461,8 @@ export default function Overview() {
           </p>
         </Card>
       </div>
+
+      <RiskSummary />
 
       <Card title="Что в наборе" className="ov-attention">
         <ul className="attention scrollbox">

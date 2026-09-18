@@ -1,0 +1,118 @@
+/* Три ступени рядом: высокая, средняя, низкая. Порядок от худшего к
+   лучшему — читают такие сводки ради плохих новостей. */
+.risk__levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.risk__level {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid rgb(46 62 40 / 14%);
+  border-radius: 24px;
+}
+
+.risk__count {
+  font-size: clamp(30px, 2.4vw, 44px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--c-ink);
+}
+
+.risk__names {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.risk__names a {
+  color: var(--c-muted-alt);
+  text-decoration: none;
+}
+
+.risk__names a:hover {
+  color: var(--c-ink);
+  text-decoration: underline;
+}
+
+.risk__empty {
+  font-style: italic;
+  color: #9b9b93;
+}
+
+.risk__subhead {
+  margin-bottom: 12px;
+}
+
+.risk__drivers {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  list-style: none;
+}
+
+.risk__drivers li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 30%) auto;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.risk__driver-name {
+  color: var(--c-ink-black);
+}
+
+/* Полоса — доля участков, а не шкала риска: длина считается от самого
+   частого признака, и числом рядом подписана честно. Градиента нет
+   намеренно, он читался бы как величина риска. */
+.risk__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgb(46 62 40 / 8%);
+  overflow: hidden;
+}
+
+.risk__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--c-ink);
+}
+
+.risk__driver-count {
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--c-muted-alt);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .risk__drivers li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .risk__bar {
+    display: none;
+  }
+}
