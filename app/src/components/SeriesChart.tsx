@@ -76,6 +76,17 @@ export default function SeriesChart({
   const baseValid = (baseline ?? []).filter((p) => p.value !== null);
 
   /* Заливка между наблюдением и базовой линией — визуальный R */
+  /* Подложка под линией наблюдения. Сама по себе она ничего не
+     сообщает — это та же линия, только залитая вниз, — но без неё
+     график из тонких штрихов на белом читался как чертёж, а не как
+     показатель. Поэтому заливка бледная и без подписи. */
+  const underlay =
+    observed.filter((pp) => pp.value !== null).length > 1
+      ? `${path(observed)} L${x(observed[observed.length - 1].year)} ${H - PAD.bottom} L${x(
+          observed[0].year
+        )} ${H - PAD.bottom} Z`
+      : null;
+
   const band =
     baseValid.length === observed.length && observed.every((p) => p.value !== null)
       ? `${path(observed)} L${x(baseValid[baseValid.length - 1].year)} ${y(
@@ -94,6 +105,12 @@ export default function SeriesChart({
   return (
     <div className="chart">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Годовой ряд, ${unit}`}>
+        <defs>
+          <linearGradient id="chart-underlay" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--c-ink)" stopOpacity="0.20" />
+            <stop offset="100%" stopColor="var(--c-ink)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
         {ticks.map((t) => (
           <g key={t}>
             <line className="chart__grid" x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} />
@@ -102,6 +119,8 @@ export default function SeriesChart({
             </text>
           </g>
         ))}
+
+        {underlay && <path className="chart__underlay" d={underlay} />}
 
         {band && <path className={`chart__band ${above ? "is-above" : "is-below"}`} d={band} />}
 
@@ -120,7 +139,8 @@ export default function SeriesChart({
             </text>
           ) : (
             <g key={p.year}>
-              <circle className="chart__dot" cx={x(p.year)} cy={y(p.value)} r="4.5" />
+              <circle className="chart__halo" cx={x(p.year)} cy={y(p.value)} r="9" />
+              <circle className="chart__dot" cx={x(p.year)} cy={y(p.value)} r="5" />
               <text
                 className="chart__value"
                 x={x(p.year)}

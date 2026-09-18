@@ -24,14 +24,15 @@
 .chart__line {
   fill: none;
   stroke: var(--c-ink);
-  stroke-width: 2.5;
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
+  filter: drop-shadow(0 2px 3px rgb(27 27 23 / 18%));
 }
 
 .chart__baseline {
   fill: none;
-  stroke: #9a5240;
+  stroke: #7a6aa8;
   stroke-width: 2;
   stroke-dasharray: 6 5;
   stroke-linecap: round;
@@ -39,9 +40,14 @@
 
 /* Заливка между наблюдением и базовой линией: выше — накопление,
    ниже — отставание. Это визуальный R, и цвет здесь значащий. */
+.chart__underlay {
+  fill: url(#chart-underlay);
+  stroke: none;
+}
+
 .chart__band {
   stroke: none;
-  opacity: 0.16;
+  opacity: 0.26;
 }
 
 .chart__band.is-above {
@@ -49,7 +55,7 @@
 }
 
 .chart__band.is-below {
-  fill: #9a5240;
+  fill: #7a6aa8;
 }
 
 .chart__dot {
@@ -92,10 +98,25 @@
 }
 
 .chart__key--base {
-  border-top: 2px dashed #9a5240;
+  border-top: 2px dashed #7a6aa8;
 }
 
 .chart__scale {
   color: #8d9188;
   font-variant-numeric: tabular-nums;
+}
+
+/* Ореол под точкой: на залитом фоне белая точка с тонкой обводкой
+   пропадала, а точки здесь — это годы, то есть сами данные. */
+.chart__halo {
+  fill: #fff;
+  opacity: 0.85;
+}
+
+.chart__grid {
+  stroke: #e7e7e1;
+}
+
+.chart__value {
+  font-weight: 600;
 }
