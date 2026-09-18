@@ -251,7 +251,12 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
       <div className="wz__panel">
         <header className="wz__head">
           <div>
-            <h2 className="wz__title">{TITLES[step]}</h2>
+            {/* На последнем шаге заголовок обязан совпадать с тем, что ниже:
+                «Участок добавлен» над сообщением об отказе — ровно та ложь,
+                которую замечают первой. */}
+            <h2 className="wz__title">
+              {step === 4 && calc === null ? "Участок не посчитан" : TITLES[step]}
+            </h2>
             <p className="wz__step">
               {step < 3
                 ? `шаг ${step + 1} из 3`
