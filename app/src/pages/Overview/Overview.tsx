@@ -11,7 +11,7 @@ import {
   formatNumber,
 } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
-import { AREAS, EVENTS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
+import { AREAS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
 import { useScenario } from "../../data/scenario";
 import { YearLossChart } from "../../components/YearLossChart";
 import "./Overview.css";
@@ -36,51 +36,6 @@ const PERIODS = [
   { value: "2023-2024", label: "2023 — 2024" },
 ];
 
-/* Справка собирается шаблоном из посчитанного, без языковой модели:
-   так свойство «ничего не выдумывает» держится конструкцией.
-
-   Возвращается не склеенный абзац, а строки с выделенной величиной:
-   сплошным текстом справка читалась как дисклеймер, и числа в ней
-   терялись — а числа в ней и есть содержание. */
-type SummaryLine = { value: string; unit?: string; text: string };
-
-function buildSummary(startYear: number, endYear: number): SummaryLine[] {
-  const rows = AREAS.map((a) => {
-    const p =
-      a.periods.find((x) => x.year_start === startYear && x.year_end === endYear) ??
-      a.period_2019_2024;
-    return { area: a, period: p };
-  });
-  const losing = rows.filter((r) => r.period.e_tco2e > 0);
-  const withUnits = rows.filter((r) => (r.period.units ?? 0) > 0);
-  const worst = [...rows].sort((a, b) => b.period.e_tco2e - a.period.e_tco2e)[0];
-
-  return [
-    {
-      value: `${losing.length} из ${rows.length}`,
-      text: `участков показывают потерю углерода из учитываемого пула за ${startYear}—${endYear}`,
-    },
-    {
-      value: formatNumber(Math.round(worst.period.e_tco2e)),
-      unit: "т CO₂-экв.",
-      text: `наибольшая потеря — ${worst.area.name}, то есть ${formatDecimal(
-        worst.period.e_per_ha_year,
-        2
-      )} т CO₂-экв./га/год`,
-    },
-    {
-      value: withUnits.length === 0 ? "ни один" : `${withUnits.length} из ${rows.length}`,
-      text:
-        withUnits.length === 0
-          ? "участок не даёт потенциальных единиц: результат либо не превышает базовую линию, либо не отличим от неё в пределах неопределённости"
-          : "участков дают потенциальные единицы",
-    },
-    {
-      value: `${EVENTS.length} из ${rows.length}`,
-      text: "участков имеют подтверждение причины изменения покрова внешним продуктом; на остальных статус причины остаётся неустановленным",
-    },
-  ];
-}
 
 export default function Overview() {
   const { priceKey, price, label, setPriceKey } = useScenario();
@@ -99,27 +54,6 @@ export default function Overview() {
     [startYear, endYear]
   );
 
-  const [summary, setSummary] = useState(() => ({
-    lines: buildSummary(2019, 2024),
-    at: "—",
-  }));
-  const [rebuilding, setRebuilding] = useState(false);
-
-  const regenerate = () => {
-    if (rebuilding) return;
-    setRebuilding(true);
-    window.setTimeout(() => {
-      const now = new Date();
-      setSummary({
-        lines: buildSummary(startYear, endYear),
-        at: `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
-      });
-      setRebuilding(false);
-    }, 450);
-  };
 
   const totalArea = AREAS.reduce((s, a) => s + a.area_ha, 0);
   const losing = rows.filter((r) => r.period.e_tco2e > 0).length;
@@ -190,33 +124,6 @@ export default function Overview() {
         </div>
 
         <div className="ov-row2">
-          <Card className="ov-summary">
-            <div className="ov-summary__head">
-              <h2 className="card__title">Краткая справка</h2>
-              <span className="lvl lvl--outline">собрано шаблоном</span>
-              <span className="ov-summary__spacer" />
-              <CircleBtn
-                glyph="⟳"
-                onClick={regenerate}
-                spinning={rebuilding}
-                label="Пересобрать справку"
-              />
-            </div>
-            <ul className="ov-summary__list">
-              {summary.lines.map((line) => (
-                <li key={line.text}>
-                  <span className="ov-summary__value tabular">
-                    {line.value}
-                    {line.unit && <small>{line.unit}</small>}
-                  </span>
-                  <span className="ov-summary__why">{line.text}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="ov-summary__foot">
-              <span>собрано из посчитанного · без языковой модели · обновлено {summary.at}</span>
-            </div>
-          </Card>
 
           <Card className="ov-assets">
             <div className="ov-summary__head">

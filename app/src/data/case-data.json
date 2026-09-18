@@ -1477,7 +1477,20 @@
             "high": 0
           }
         }
-      ]
+      ],
+      "summary": {
+        "text": "Участок RU_TVER_01 рассчитан за период 2019–2024. По условиям расчёта потенциальные единицы не сформированы; сценарная стоимость при цене 1500 ₽ составляет 0 ₽. Эти значения не являются прогнозом рыночной цены.",
+        "source_fields": [
+          "aoi_id",
+          "period_2019_2024.year_start",
+          "period_2019_2024.year_end",
+          "period_2019_2024.units",
+          "period_2019_2024.scenario_economics.q",
+          "period_2019_2024.scenario_economics.scenarios[1].price_rub",
+          "period_2019_2024.scenario_economics.scenarios[1].value_rub",
+          "period_2019_2024.scenario_economics.disclaimer"
+        ]
+      }
     },
     {
       "aoi_id": "RU_VOLOGDA_02",
@@ -3024,7 +3037,20 @@
             "high": 0
           }
         }
-      ]
+      ],
+      "summary": {
+        "text": "Участок RU_VOLOGDA_02 рассчитан за период 2019–2024. По условиям расчёта потенциальные единицы не сформированы; сценарная стоимость при цене 1500 ₽ составляет 0 ₽. Эти значения не являются прогнозом рыночной цены.",
+        "source_fields": [
+          "aoi_id",
+          "period_2019_2024.year_start",
+          "period_2019_2024.year_end",
+          "period_2019_2024.units",
+          "period_2019_2024.scenario_economics.q",
+          "period_2019_2024.scenario_economics.scenarios[1].price_rub",
+          "period_2019_2024.scenario_economics.scenarios[1].value_rub",
+          "period_2019_2024.scenario_economics.disclaimer"
+        ]
+      }
     },
     {
       "aoi_id": "RU_MORDOVIA_03",
@@ -4605,7 +4631,20 @@
             "high": 0
           }
         }
-      ]
+      ],
+      "summary": {
+        "text": "Участок RU_MORDOVIA_03 рассчитан за период 2019–2024. По условиям расчёта потенциальные единицы не сформированы; сценарная стоимость при цене 1500 ₽ составляет 0 ₽. Эти значения не являются прогнозом рыночной цены.",
+        "source_fields": [
+          "aoi_id",
+          "period_2019_2024.year_start",
+          "period_2019_2024.year_end",
+          "period_2019_2024.units",
+          "period_2019_2024.scenario_economics.q",
+          "period_2019_2024.scenario_economics.scenarios[1].price_rub",
+          "period_2019_2024.scenario_economics.scenarios[1].value_rub",
+          "period_2019_2024.scenario_economics.disclaimer"
+        ]
+      }
     },
     {
       "aoi_id": "RU_MORDOVIA_04",
@@ -6135,7 +6174,20 @@
             "high": 0
           }
         }
-      ]
+      ],
+      "summary": {
+        "text": "Участок RU_MORDOVIA_04 рассчитан за период 2019–2024. По условиям расчёта потенциальные единицы не сформированы; сценарная стоимость при цене 1500 ₽ составляет 0 ₽. Эти значения не являются прогнозом рыночной цены.",
+        "source_fields": [
+          "aoi_id",
+          "period_2019_2024.year_start",
+          "period_2019_2024.year_end",
+          "period_2019_2024.units",
+          "period_2019_2024.scenario_economics.q",
+          "period_2019_2024.scenario_economics.scenarios[1].price_rub",
+          "period_2019_2024.scenario_economics.scenarios[1].value_rub",
+          "period_2019_2024.scenario_economics.disclaimer"
+        ]
+      }
     }
   ],
   "events": [

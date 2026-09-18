@@ -9,6 +9,7 @@ import {
   plural,
 } from "../../components/ui";
 import ChangeMap from "../../components/ChangeMap";
+import CalculationSummary from "../../components/CalculationSummary";
 import SeriesChart from "../../components/SeriesChart";
 import {
   ASSUMPTIONS,
@@ -24,6 +25,7 @@ import {
   periodFor,
 } from "../../data/case";
 import { useScenario } from "../../data/scenario";
+import { summaryForPeriod } from "../../data/summary";
 import { COVERAGE, recompute } from "../../data/units";
 import type { Area, Period } from "../../data/case";
 import { YearLossChart } from "../../components/YearLossChart";
@@ -83,6 +85,8 @@ export default function Plot() {
     );
   }
 
+  const summary = summaryForPeriod(area, period);
+
   return (
     <>
       <header className="plot-head">
@@ -117,6 +121,8 @@ export default function Plot() {
           {period.years} годовых перехода · учитываемый пул — живая надземная древесная биомасса
         </span>
       </div>
+
+      <CalculationSummary summary={summary} />
 
       <nav className="tabs">
         {TABS.map((t) => (
@@ -325,9 +331,6 @@ function DynamicsTab({ area, period }: { area: Area; period: Period }) {
   const shown = area.series.filter(
     (p) => p.year >= period.year_start && p.year <= period.year_end
   );
-  const values = shown.map((p) => p.c_t_ha);
-  const min = Math.min(...values) * 0.96;
-  const max = Math.max(...values) * 1.02;
   const base = area.baseline_stock_t_ha;
 
   let cumulative = 0;
@@ -995,7 +998,7 @@ function UnitsTab({ area, period }: { area: Area; period: Period }) {
    на уже готовое Q и ни на один физический показатель не влияет.
    Поэтому экономика показывает не одно число, а от чего это число
    зависит — от сценария цены и от допущений о корреляции ошибки. */
-function Economics({ area, period }: { area: Area; period: Period }) {
+function Economics({ area: _area, period }: { area: Area; period: Period }) {
   const { priceKey, price, label, setPriceKey } = useScenario();
 
   const units = period.units ?? 0;
@@ -1440,6 +1443,7 @@ function ModelEvidence({ aoiId }: { aoiId: string }) {
 /* ------------------------------------------------------------- Отчёт ---- */
 
 function ReportTab({ area, period }: { area: Area; period: Period }) {
+  const summary = summaryForPeriod(area, period);
   const calcId = useMemo(
     () => `CALC-${area.aoi_id}-${period.year_start}-${period.year_end}`,
     [area.aoi_id, period.year_start, period.year_end]
@@ -1498,6 +1502,7 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
       status: "расчёт по условиям кейса, не сертифицированные единицы",
       value_rub: period.value_rub,
     },
+    ...(summary ? { summary } : {}),
     parameters: PARAMETERS,
     assumptions: ASSUMPTIONS,
     datasets: DATASETS,
