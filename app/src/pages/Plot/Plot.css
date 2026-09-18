@@ -601,3 +601,74 @@
   border-radius: 1px;
   background: #9a5240;
 }
+
+/* ---------- Ползунки допущений ---------- */
+.knobs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 22px 28px;
+}
+
+.knob {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.knob__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.knob__head b {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.knob__head em {
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--c-ink-deep);
+}
+
+.knob input[type="range"] {
+  width: 100%;
+  accent-color: var(--c-ink);
+  cursor: pointer;
+}
+
+.knob__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.knob__hint {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}
+
+/* Выбор периода должен читаться как управление, а не как подпись */
+.period {
+  padding: 14px 18px;
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+}
+
+.period .filter {
+  background: var(--c-page);
+  font-weight: 500;
+}
+
+.period .filter:hover {
+  background: #d9dcd3;
+}
+
+.period__label {
+  font-weight: 500;
+  color: var(--c-ink);
+}

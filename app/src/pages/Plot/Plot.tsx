@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Card, FilterSelect, LevelPill, formatDecimal, formatNumber } from "../../components/ui";
 import ChangeMap from "../../components/ChangeMap";
+import SeriesChart from "../../components/SeriesChart";
 import {
   ASSUMPTIONS,
   DATASETS,
@@ -13,6 +14,7 @@ import {
   periodFor,
 } from "../../data/case";
 import { useScenario } from "../../data/scenario";
+import { COVERAGE, recompute } from "../../data/units";
 import type { Area, Period } from "../../data/case";
 import "./Plot.css";
 
@@ -115,7 +117,7 @@ export default function Plot() {
       {tab === "Запас" && <StockTab area={area} period={period} />}
       {tab === "Динамика" && <DynamicsTab area={area} period={period} />}
       {tab === "Изменения" && <ChangesTab area={area} period={period} events={events} />}
-      {tab === "Неопределённость" && <UncertaintyTab period={period} />}
+      {tab === "Неопределённость" && <UncertaintyTab area={area} period={period} />}
       {tab === "Единицы" && <UnitsTab area={area} period={period} />}
       {tab === "Устойчивость" && <StabilityTab area={area} />}
       {tab === "Отчёт" && <ReportTab area={area} period={period} />}
@@ -320,30 +322,18 @@ function DynamicsTab({ area, period }: { area: Area; period: Period }) {
         note={`ESA CCI Biomass v7.0 · ${period.year_start}—${period.year_end}`}
         className="plot-block"
       >
-        <div className="cover">
-          {shown.map((p) => {
-            const h = ((p.c_t_ha - min) / (max - min)) * 190 + 14;
-            const baseline = base[String(p.year)];
-            return (
-              <div key={p.year} className="cover__col">
-                <span className="cover__bar" style={{ height: `${h}px` }}>
-                  <em className="tabular">{formatDecimal(p.c_t_ha, 1)}</em>
-                </span>
-                {baseline !== undefined && (
-                  <span
-                    className="cover__baseline"
-                    style={{ bottom: `${((baseline - min) / (max - min)) * 190 + 14 + 22}px` }}
-                    title={`базовая линия ${formatDecimal(baseline, 2)} т C/га`}
-                  />
-                )}
-                <span className="bars__year">{p.year}</span>
-              </div>
-            );
-          })}
-        </div>
+        <SeriesChart
+          observed={shown.map((p) => ({ year: p.year, value: p.c_t_ha }))}
+          baseline={shown.map((p) => ({
+            year: p.year,
+            value: base[String(p.year)] ?? null,
+          }))}
+        />
         <p className="ov-note">
-          Столбик — наблюдение, штрих — сценарный запас базовой линии на тот же год. Карты CCI
-          содержат годовые модельные оценки состояния, а не даты съёмки.
+          Сплошная линия — наблюдение, пунктир — сценарный запас базовой линии на тот же год.
+          Заливка между ними и есть то, из чего получается R: выше базовой линии — накопление
+          сверх сценария, ниже — отставание от него. Шкала подписана, потому что запас меняется
+          на единицы процентов и без неё график выглядел бы ровным.
         </p>
       </Card>
 
@@ -528,28 +518,129 @@ function ChangesTab({
 
 /* -------------------------------------------- Неопределённость ---- */
 
-function UncertaintyTab({ period }: { period: Period }) {
-  const relative = Math.abs(period.h_tco2e / (period.e_tco2e || 1)) * 100;
+function UncertaintyTab({ area, period }: { area: Area; period: Period }) {
+  /* Допущения переноса ошибки крутятся прямо здесь: суммы по растрам
+     посчитаны заранее, поэтому σ, диапазон и число единиц пересчитываются
+     мгновенно. Это не украшение — это единственный способ показать, что
+     число единиц на этих данных определяется допущениями, а не лесом. */
+  const [rhoS, setRhoS] = useState(PARAMETERS.rho_spatial);
+  const [rhoT, setRhoT] = useState(PARAMETERS.rho_temporal);
+  const [k, setK] = useState<number>(PARAMETERS.k_sigma);
+
+  const start = area.series.find((p) => p.year === period.year_start);
+  const end = area.series.find((p) => p.year === period.year_end);
+  const live = recompute(period, start, end, rhoS, rhoT, k);
+
+  const changed =
+    rhoS !== PARAMETERS.rho_spatial ||
+    rhoT !== PARAMETERS.rho_temporal ||
+    k !== PARAMETERS.k_sigma;
+
+  const reset = () => {
+    setRhoS(PARAMETERS.rho_spatial);
+    setRhoT(PARAMETERS.rho_temporal);
+    setK(PARAMETERS.k_sigma);
+  };
+
+  const relative = Math.abs(live.h / (period.e_tco2e || 1)) * 100;
 
   return (
     <>
+      <Card
+        title="Допущения переноса ошибки"
+        note={changed ? "изменены — расчёт пересобран" : "значения по умолчанию"}
+        className="plot-block"
+      >
+        <div className="knobs">
+          <label className="knob">
+            <span className="knob__head">
+              <b>корреляция между пикселями, ρs</b>
+              <em className="tabular">{formatDecimal(rhoS, 2)}</em>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={rhoS}
+              onChange={(e) => setRhoS(Number(e.target.value))}
+            />
+            <span className="knob__hint">
+              0 — ошибки соседних пикселей независимы и в сумме гасятся; 1 — складываются целиком
+            </span>
+          </label>
+
+          <label className="knob">
+            <span className="knob__head">
+              <b>корреляция между годами, ρt</b>
+              <em className="tabular">{formatDecimal(rhoT, 2)}</em>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={0.99}
+              step={0.01}
+              value={rhoT}
+              onChange={(e) => setRhoT(Number(e.target.value))}
+            />
+            <span className="knob__hint">
+              чем выше, тем сильнее ошибка повторяется на обеих датах и гасится в разности
+            </span>
+          </label>
+
+          <div className="knob">
+            <span className="knob__head">
+              <b>охват интервала</b>
+              <em className="tabular">k = {formatDecimal(k, 3)}</em>
+            </span>
+            <div className="knob__pills">
+              {COVERAGE.map((c) => (
+                <button
+                  key={c.k}
+                  type="button"
+                  className={`filter filter--btn ${k === c.k ? "filter--on" : ""}`.trim()}
+                  aria-pressed={k === c.k}
+                  onClick={() => setK(c.k)}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <span className="knob__hint">
+              нормальное приближение; статус диапазона от выбора не меняется — он остаётся
+              сценарным
+            </span>
+          </div>
+        </div>
+
+        {changed && (
+          <button className="link-btn" type="button" onClick={reset} style={{ marginTop: 14 }}>
+            вернуть значения по умолчанию
+          </button>
+        )}
+      </Card>
+
       <div className="plot-row plot-row--even">
-        <Card title="Диапазон результата" note="охват 90 %, нормальное приближение" className="plot-block">
+        <Card
+          title="Диапазон результата"
+          note="пересчитывается при изменении допущений"
+          className="plot-block"
+        >
           <div className="range">
-            <span className="range__end tabular">{formatNumber(Math.round(period.lower_tco2e))}</span>
+            <span className="range__end tabular">{formatNumber(Math.round(live.lower))}</span>
             <span className="range__bar">
               <span className="range__dot" />
             </span>
-            <span className="range__end tabular">{formatNumber(Math.round(period.upper_tco2e))}</span>
+            <span className="range__end tabular">{formatNumber(Math.round(live.upper))}</span>
           </div>
           <p className="range__mid tabular">
             оценка {formatNumber(Math.round(period.e_tco2e))} т CO₂-экв. · полуширина H ={" "}
-            {formatNumber(Math.round(period.h_tco2e))}
+            {formatNumber(Math.round(live.h))}
           </p>
           <dl className="kv">
             <div>
               <dt>σ результата</dt>
-              <dd className="tabular">{formatNumber(Math.round(period.sigma_e_tco2e))} т CO₂-экв.</dd>
+              <dd className="tabular">{formatNumber(Math.round(live.h / k))} т CO₂-экв.</dd>
             </div>
             <div>
               <dt>H к величине результата</dt>
@@ -566,34 +657,67 @@ function UncertaintyTab({ period }: { period: Period }) {
           </div>
         </Card>
 
-        <Card title="Как перенесена ошибка" className="plot-block">
-          <ol className="chain">
-            <li>
-              <span>ошибка пикселя</span>
-              <b className="tabular">AGB_SD × CF</b>
-            </li>
-            <li>
-              <span>сумма по территории с корреляцией ρs</span>
-              <b className="tabular">
-                σ² = (1−ρs)Σ(aᵢsᵢ)² + ρs(Σaᵢsᵢ)²
-              </b>
-            </li>
-            <li>
-              <span>разность двух лет с корреляцией ρt</span>
-              <b className="tabular">σΔ² = σ₀² + σ₁² − 2ρtσ₀σ₁</b>
-            </li>
-            <li>
-              <span>полуширина интервала</span>
-              <b className="tabular">H = {PARAMETERS.k_sigma} × σΔ × 44/12</b>
-            </li>
-          </ol>
+        <Card
+          tone={live.units ? "dark" : "soft"}
+          title="Что получается при этих допущениях"
+          className="plot-block"
+        >
+          <div className="econ__big tabular">
+            {live.units === null ? "—" : formatNumber(live.units)}{" "}
+            <small>{live.units === null ? "расчёт недоступен" : "единиц"}</small>
+          </div>
+          <dl className="kv">
+            <div>
+              <dt>R относительно базовой линии</dt>
+              <dd className="tabular">{formatNumber(Math.round(period.r_tco2e))}</dd>
+            </div>
+            <div>
+              <dt>H / R</dt>
+              <dd className="tabular">
+                {live.hOverR === null ? "не вычисляется при R ≤ 0" : formatDecimal(live.hOverR, 2)}
+              </dd>
+            </div>
+            <div>
+              <dt>вычет UNC</dt>
+              <dd className="tabular">
+                {live.unc === null ? "—" : `${formatDecimal(live.unc * 100, 0)} %`}
+              </dd>
+            </div>
+          </dl>
+          {live.reason && <p className="ov-note">{live.reason}</p>}
           <p className="ov-note">
-            Пространственная корреляция ρs = {PARAMETERS.rho_spatial} и временная ρt ={" "}
-            {PARAMETERS.rho_temporal} — допущения. Их влияние показано ниже и оказывается
-            решающим.
+            Двигайте ползунки выше и смотрите, что происходит. Физика при этом не меняется: E, R и
+            базовая линия остаются теми же. Меняется только то, во что мы решили верить про ошибку
+            продукта.
           </p>
         </Card>
       </div>
+
+      <Card title="Как перенесена ошибка" className="plot-block">
+        <ol className="chain">
+          <li>
+            <span>ошибка пикселя</span>
+            <b className="tabular">AGB_SD × CF</b>
+          </li>
+          <li>
+            <span>сумма по территории с корреляцией ρs</span>
+            <b className="tabular">σ² = (1−ρs)Σ(aᵢsᵢ)² + ρs(Σaᵢsᵢ)²</b>
+          </li>
+          <li>
+            <span>разность двух лет с корреляцией ρt</span>
+            <b className="tabular">σΔ² = σ₀² + σ₁² − 2ρtσ₀σ₁</b>
+          </li>
+          <li>
+            <span>полуширина интервала</span>
+            <b className="tabular">H = {formatDecimal(k, 3)} × σΔ × 44/12</b>
+          </li>
+        </ol>
+        <p className="ov-note">
+          Погрешность продукта на этих участках составляет около половины значения биомассы.
+          Именно поэтому при любой заметной корреляции между пикселями диапазон получается шире
+          самого результата — и число единиц обнуляется по правилу кейса.
+        </p>
+      </Card>
 
       {period.sensitivity && (
         <Card
@@ -662,11 +786,7 @@ function UncertaintyTab({ period }: { period: Period }) {
                   <td>{a.label}</td>
                   <td className="tabular">{a.value}</td>
                   <td>
-                    <span
-                      className={
-                        a.kind === "допущение" ? "lvl lvl--medium" : "lvl lvl--none"
-                      }
-                    >
+                    <span className={a.kind === "допущение" ? "lvl lvl--medium" : "lvl lvl--none"}>
                       {a.kind}
                     </span>
                   </td>

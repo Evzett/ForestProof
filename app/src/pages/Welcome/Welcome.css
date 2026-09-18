@@ -266,24 +266,29 @@
   overflow: hidden;
 }
 
-/* Полоса леса прижата к правому краю блока и подрезана им.
-   Картинка — диагональная полоса, поэтому вертикально центрируем её,
-   а не сажаем на нижнюю границу: снизу у неё прозрачный угол. */
+/* Полоса леса прижата к правому краю и подрезана блоком.
+   Картинка — диагональная полоса 1360×768 с прозрачными углами,
+   поэтому её правый край выводим за границу блока: иначе в кадр
+   попадает пустой угол, и лес «висит» посередине. */
 .closing__art {
   position: absolute;
-  right: -4%;
-  top: 50%;
-  width: min(1180px, 64%);
-  transform: translateY(-46%);
-  opacity: 0.3;
+  right: -3%;
+  bottom: -18%;
+  width: min(940px, 56%);
+  height: auto;
+  aspect-ratio: 1360 / 768;
+  opacity: 0.22;
   pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent, #000 22%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%);
 }
 
 @media (max-width: 900px) {
   .closing__art {
-    right: -14%;
-    width: 90%;
-    opacity: 0.22;
+    right: -10%;
+    bottom: -12%;
+    width: 78%;
+    opacity: 0.16;
   }
 }
 

@@ -36,7 +36,7 @@
 }
 
 .ov-chart {
-  grid-column: 1;
+  grid-column: 1 / -1;
   grid-row: 3;
 }
 
@@ -48,9 +48,10 @@
   margin-left: auto;
 }
 
+/* Ряд из 25 лет требует ширины: в узкой колонке столбики не помещались */
 .ov-gauge {
-  grid-column: 2;
-  grid-row: 3;
+  grid-column: 1 / -1;
+  grid-row: 4;
 }
 
 /* ---------- Плитки ---------- */
@@ -80,8 +81,16 @@
 }
 
 .tile__label {
-  font-size: 12px;
-  color: var(--c-muted-alt);
+  padding-right: 52px;
+  font-size: var(--t-body);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--c-ink);
+}
+
+.tile--dark .tile__label,
+.tile--lime .tile__label {
+  padding-right: 0;
 }
 
 .tile__value {
@@ -108,9 +117,12 @@
   color: var(--c-muted-alt);
 }
 
-.tile--dark .tile__label,
 .tile--dark .tile__note {
   color: #b9c2ae;
+}
+
+.tile--dark .tile__label {
+  color: #fff;
 }
 
 .tile--dark .tile__value {
@@ -121,10 +133,13 @@
   color: #b9c2ae;
 }
 
-.tile--lime .tile__label,
 .tile--lime .tile__note,
 .tile--lime .tile__unit {
   color: #3d4a1f;
+}
+
+.tile--lime .tile__label {
+  color: var(--c-ink-deep);
 }
 
 .tile--lime .tile__value {
@@ -471,7 +486,8 @@
 
 .bars__col {
   display: flex;
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 10px;

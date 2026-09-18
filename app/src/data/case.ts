@@ -18,6 +18,10 @@ export type YearPoint = {
   c_t_ha: number;
   stock_tc: number;
   sigma_stock_tc: number;
+  /* Суммы Σ(a·sd) и Σ(a·sd)², по которым σ пересчитывается для любой
+     корреляции без повторного чтения растров. Служебные, поэтому с _. */
+  _sd_sum?: number;
+  _sd_sq_sum?: number;
 };
 
 export type SensitivityCell = {
