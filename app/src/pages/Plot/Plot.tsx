@@ -6,11 +6,14 @@ import SeriesChart from "../../components/SeriesChart";
 import {
   ASSUMPTIONS,
   DATASETS,
+  FEATURE_LABEL,
+  MODEL,
   PARAMETERS,
   PRICE_SCENARIOS,
   YEARS,
   areaById,
   eventsFor,
+  modelFor,
   periodFor,
 } from "../../data/case";
 import { useScenario } from "../../data/scenario";
@@ -1224,6 +1227,116 @@ function StabilityTab({ area }: { area: Area }) {
         <p className="ov-note">
           Категория получена суммой баллов по шести признакам, посчитанным по тем же растрам, что
           и основной расчёт. Порог до 4 баллов — низкая, до 8 — средняя, выше — высокая.
+        </p>
+      </Card>
+
+      <ModelOpinion aoiId={area.aoi_id} rulesLevel={s.level} />
+    </>
+  );
+}
+
+/* ------------------------------------------------- Модель как второе мнение -- */
+
+/* Модель считается на тех же шести признаках и показывается РЯДОМ
+   с правилами, а не вместо них. Её собственный вывод о том, что
+   проверить её нечем, выводится целиком: прятать такое — значит
+   выдавать регуляризованный компромисс за оценку. */
+function ModelOpinion({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: string }) {
+  const prediction = modelFor(aoiId);
+  if (!prediction) return null;
+
+  const agrees = prediction.category === rulesLevel;
+  const ranked = Object.entries(MODEL.weights).sort(
+    (a, b) => Math.abs(b[1]) - Math.abs(a[1])
+  );
+  const separating = MODEL.separability.filter((f) => f.separates);
+
+  return (
+    <>
+      <div className="plot-row plot-row--even">
+        <Card title="Модель · второе мнение" note={MODEL.method} className="plot-block">
+          <div className="vuln">
+            <LevelPill level={prediction.category as "low" | "medium" | "high"} />
+            {agrees ? (
+              <span className="lvl lvl--low">совпадает с правилами</span>
+            ) : (
+              <span className="lvl lvl--medium">расходится с правилами</span>
+            )}
+          </div>
+          <dl className="kv">
+            <div>
+              <dt>вероятность положительного класса</dt>
+              <dd className="tabular">{formatDecimal(prediction.probability, 3)}</dd>
+            </div>
+            <div>
+              <dt>скользящий контроль по одному</dt>
+              <dd className="tabular">
+                {prediction.leave_one_out_degenerate
+                  ? "вырожден: в обучении остаётся один класс"
+                  : formatDecimal(prediction.leave_one_out ?? 0, 3)}
+              </dd>
+            </div>
+            <div>
+              <dt>разметка участка</dt>
+              <dd>{prediction.label === 1 ? "нарушение было" : "нарушения не было"}</dd>
+            </div>
+          </dl>
+          <div className="disclaimer">{MODEL.verdict}</div>
+        </Card>
+
+        <Card title="Вклад признаков" note="стандартизованные коэффициенты" className="plot-block">
+          <dl className="meth__formulas">
+            {ranked.map(([key, weight]) => (
+              <div key={key}>
+                <dt style={{ fontSize: 13 }}>{FEATURE_LABEL[key] ?? key}</dt>
+                <dd className="tabular">
+                  {weight > 0 ? "+" : ""}
+                  {formatDecimal(weight, 3)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="ov-note">
+            {separating.length} признака из {MODEL.features.length} разделяют классы поодиночке
+            {separating.length > 0 &&
+              `: ${separating.map((f) => FEATURE_LABEL[f.feature] ?? f.feature).join(", ")}`}
+            . Когда классы разделяет любой отдельный признак, совместная модель не добавляет
+            знания — она лишь переписывает то же разделение другими словами.
+          </p>
+        </Card>
+      </div>
+
+      <Card title="Что нужно, чтобы модели можно было верить" className="plot-block">
+        <dl className="kv">
+          <div>
+            <dt>участков в выборке</dt>
+            <dd className="tabular">{MODEL.sample.size}</dd>
+          </div>
+          <div>
+            <dt>меньший класс</dt>
+            <dd className="tabular">{MODEL.sample.minority_class}</dd>
+          </div>
+          <div>
+            <dt>нужно в меньшем классе</dt>
+            <dd className="tabular">
+              {MODEL.sample.required_minority} — десять наблюдений на признак
+            </dd>
+          </div>
+          <div>
+            <dt>выборка достаточна</dt>
+            <dd>
+              {MODEL.sample.sufficient ? (
+                <span className="lvl lvl--low">да</span>
+              ) : (
+                <span className="lvl lvl--high">нет</span>
+              )}
+            </dd>
+          </div>
+        </dl>
+        <p className="ov-note">
+          Это не отговорка, а условие приёмки: до шестидесяти участков меньшего класса модель
+          показывается как второе мнение и на решения не влияет. Считает по-прежнему то, что
+          можно проверить, — пороговые правила с открытыми порогами.
         </p>
       </Card>
     </>

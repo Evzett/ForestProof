@@ -1,0 +1,44 @@
+[
+  {
+    "key": "loss_share_pct",
+    "label": "доля площади, потерявшей покров",
+    "unit": "%",
+    "source": "Hansen GFC v1.13, канал lossyear",
+    "years": "2001—2024"
+  },
+  {
+    "key": "loss_years",
+    "label": "число лет с заметной потерей",
+    "unit": "лет",
+    "source": "Hansen GFC v1.13, порог 0.1 % площади за год",
+    "years": "2001—2024"
+  },
+  {
+    "key": "fire_share",
+    "label": "доля пикселей с признаком горения",
+    "unit": "",
+    "source": "MODIS MCD64A1 061, поле burned_pixel_centers_in_aoi",
+    "years": "события нет"
+  },
+  {
+    "key": "volatility_rel",
+    "label": "волатильность годового ряда запаса",
+    "unit": "",
+    "source": "ESA CCI Biomass v7.0, σ приростов к среднему запасу",
+    "years": "2015—2024"
+  },
+  {
+    "key": "sd_to_stock",
+    "label": "отношение погрешности продукта к запасу",
+    "unit": "",
+    "source": "ESA CCI Biomass v7.0, канал AGB_SD",
+    "years": "2024"
+  },
+  {
+    "key": "baseline_decline",
+    "label": "падение исторической динамики",
+    "unit": "т C/га/год",
+    "source": "базовая линия HIST-AGB-2015-2019-v1, коэффициент g",
+    "years": "2015—2019"
+  }
+]

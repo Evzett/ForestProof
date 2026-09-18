@@ -1,0 +1,130 @@
+{
+  "method": "логистическая регрессия с L2, без обучающей библиотеки",
+  "features": [
+    "loss_share_pct",
+    "loss_years",
+    "fire_share",
+    "volatility_rel",
+    "sd_to_stock",
+    "baseline_decline"
+  ],
+  "l2": 1.0,
+  "standardisation": {
+    "mean": [
+      48.26436925,
+      8.25,
+      0.4204545,
+      0.2197935,
+      0.44040975,
+      0.64624675
+    ],
+    "scale": [
+      33.965064506582465,
+      6.378675411086537,
+      0.4352435636637836,
+      0.30366215420554143,
+      0.0757049687021103,
+      1.0601585013905646
+    ]
+  },
+  "weights": {
+    "loss_share_pct": 0.5267784366875914,
+    "loss_years": 0.5398833258004889,
+    "fire_share": 0.3357871754192,
+    "volatility_rel": 0.2542455860993542,
+    "sd_to_stock": -0.3453065376770492,
+    "baseline_decline": 0.1967917495789744
+  },
+  "bias": 1.4565435713429884,
+  "thresholds": {
+    "medium": 0.35,
+    "high": 0.65
+  },
+  "predictions": [
+    {
+      "aoi_id": "RU_TVER_01",
+      "label": 0,
+      "probability": 0.2956136083662349,
+      "category": "low",
+      "leave_one_out": null,
+      "leave_one_out_degenerate": true
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_02",
+      "label": 1,
+      "probability": 0.8756335014104454,
+      "category": "high",
+      "leave_one_out": 0.9232517802795842,
+      "leave_one_out_degenerate": false
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_03",
+      "label": 1,
+      "probability": 0.9211209216277674,
+      "category": "high",
+      "leave_one_out": 0.9999999291516714,
+      "leave_one_out_degenerate": false
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_04",
+      "label": 1,
+      "probability": 0.907631968595548,
+      "category": "high",
+      "leave_one_out": 0.9804837228685642,
+      "leave_one_out_degenerate": false
+    }
+  ],
+  "separability": [
+    {
+      "feature": "loss_share_pct",
+      "separates": true,
+      "gap": 33.486641,
+      "positive_min": 33.581843,
+      "negative_max": 0.095202
+    },
+    {
+      "feature": "loss_years",
+      "separates": true,
+      "gap": 5.0,
+      "positive_min": 5.0,
+      "negative_max": 0.0
+    },
+    {
+      "feature": "fire_share",
+      "separates": false,
+      "gap": 0.0,
+      "positive_min": 0.0,
+      "negative_max": 0.0
+    },
+    {
+      "feature": "volatility_rel",
+      "separates": true,
+      "gap": 0.0031139999999999996,
+      "positive_min": 0.009984,
+      "negative_max": 0.00687
+    },
+    {
+      "feature": "sd_to_stock",
+      "separates": false,
+      "gap": -0.18413200000000002,
+      "positive_min": 0.312592,
+      "negative_max": 0.496724
+    },
+    {
+      "feature": "baseline_decline",
+      "separates": false,
+      "gap": 0.0,
+      "positive_min": 0.0,
+      "negative_max": 0.0
+    }
+  ],
+  "sample": {
+    "size": 4,
+    "positives": 3,
+    "minority_class": 1,
+    "required_minority": 60,
+    "sufficient": false
+  },
+  "verdict": "Выборка не позволяет проверить модель: меньший класс — 1 наблюдение, при шести признаках практическое правило требует не меньше 60. 3 признаков из 6 разделяют классы поодиночке, поэтому идеальная точность на обучении ничего не доказывает. В продукт по умолчанию идут пороговые правила; модель показывается как второе мнение с этой же оговоркой.",
+  "status": "второе мнение; по умолчанию работают пороговые правила"
+}

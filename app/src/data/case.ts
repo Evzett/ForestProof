@@ -9,6 +9,7 @@
    форма объектов совпадает с ответом расчёта. */
 
 import raw from "./case-data.json";
+import modelRaw from "./stability-model.json";
 
 export type YearPoint = {
   year: number;
@@ -321,3 +322,52 @@ export const ASSUMPTIONS = [
     kind: "условие кейса" as const,
   },
 ] as const;
+
+/* ---------- Модель устойчивости (KAN-54) ----------
+
+   Второе мнение рядом с пороговыми правилами, а не вместо них.
+   На четырёх участках модель проверить нечем, и она сама это пишет
+   в поле verdict — оно выводится на экран целиком, а не прячется. */
+
+export type ModelPrediction = {
+  aoi_id: string;
+  label: number;
+  probability: number;
+  category: "low" | "medium" | "high";
+  leave_one_out: number | null;
+  leave_one_out_degenerate: boolean;
+};
+
+export type StabilityModel = {
+  method: string;
+  features: string[];
+  weights: Record<string, number>;
+  thresholds: { medium: number; high: number };
+  predictions: ModelPrediction[];
+  separability: { feature: string; separates: boolean | null; gap?: number }[];
+  sample: {
+    size: number;
+    positives: number;
+    minority_class: number;
+    required_minority: number;
+    sufficient: boolean;
+  };
+  verdict: string;
+  status: string;
+};
+
+export const MODEL = modelRaw as unknown as StabilityModel;
+
+export function modelFor(aoiId: string): ModelPrediction | undefined {
+  return MODEL.predictions.find((p) => p.aoi_id === aoiId);
+}
+
+/* Подписи признаков — те же, что в tools/stability_features.py */
+export const FEATURE_LABEL: Record<string, string> = {
+  loss_share_pct: "доля площади, потерявшей покров",
+  loss_years: "число лет с заметной потерей",
+  fire_share: "доля пикселей с признаком горения",
+  volatility_rel: "волатильность годового ряда запаса",
+  sd_to_stock: "отношение погрешности продукта к запасу",
+  baseline_decline: "падение исторической динамики",
+};
