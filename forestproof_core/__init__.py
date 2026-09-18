@@ -10,6 +10,12 @@ from .carbon_screening import (
     calculate_forest_area_change,
     calculate_total_co2_stock,
 )
+from .claim_check import (
+    ClaimCheckConfig,
+    build_claim_check,
+    calculate_discrepancy_pct,
+    select_reference_observation,
+)
 
 __all__ = [
     "CarbonScreeningConfig",
@@ -20,4 +26,8 @@ __all__ = [
     "calculate_event_carbon_exposure",
     "calculate_forest_area_change",
     "calculate_total_co2_stock",
+    "ClaimCheckConfig",
+    "build_claim_check",
+    "calculate_discrepancy_pct",
+    "select_reference_observation",
 ]
