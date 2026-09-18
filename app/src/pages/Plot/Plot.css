@@ -5,6 +5,25 @@
   margin-bottom: 20px;
 }
 
+.plot-summary {
+  margin-bottom: 20px;
+}
+
+.plot-summary p {
+  line-height: 1.5;
+}
+
+.plot-summary details {
+  margin-top: 12px;
+  color: var(--c-muted-alt);
+  font-size: 12px;
+}
+
+.plot-summary ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
 .plot-head__back {
   display: inline-flex;
   align-items: center;

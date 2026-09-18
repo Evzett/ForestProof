@@ -131,6 +131,7 @@ export type SentinelEvidence = {
 
 export type Area = {
   aoi_id: string;
+  summary?: CalculationSummary;
   maps: AreaMaps | null;
   sentinel: SentinelEvidence | null;
   stability: Stability;
@@ -148,6 +149,11 @@ export type Area = {
   cover_loss: CoverLoss[];
   period_2019_2024: Period;
   periods: Period[];
+};
+
+export type CalculationSummary = {
+  text: string;
+  source_fields: string[];
 };
 
 export type CaseEvent = {
