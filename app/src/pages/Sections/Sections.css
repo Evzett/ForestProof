@@ -1,0 +1,378 @@
+.mb20 {
+  margin-bottom: 20px;
+}
+
+/* ================= Территории ================= */
+.terr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.terr {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 24px;
+  overflow: hidden;
+}
+
+.terr__map {
+  position: relative;
+  height: 190px;
+  margin-bottom: 18px;
+}
+
+.terr__map img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.terr__badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 11px;
+  color: var(--c-ink-deep);
+}
+
+.terr__name,
+.terr__meta,
+.terr__row,
+.terr__source,
+.terr__open {
+  padding: 0 26px;
+}
+
+.terr__name {
+  margin-bottom: 6px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--c-ink);
+}
+
+.terr__meta {
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.terr__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+  border-top: 1px solid var(--c-page);
+}
+
+.terr__source {
+  margin: 14px 0 10px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.terr__open {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-ink-deep);
+  text-decoration: none;
+}
+
+.terr--add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 420px;
+  padding: 40px 30px;
+  border: 2px dashed #c3ceb2;
+  border-radius: 40px;
+  background: #e9ecdd;
+  text-align: center;
+}
+
+.terr__plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--c-lime);
+  color: var(--c-ink-deep);
+  font-size: 30px;
+}
+
+.terr--add b {
+  font-size: 19px;
+  color: var(--c-ink-deep);
+}
+
+.terr--add p {
+  max-width: 320px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}
+
+/* ================= Наблюдение ================= */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 18px 24px;
+  border-radius: 30px;
+  background: #f6efe0;
+  color: #8a6524;
+}
+
+.banner b {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.banner span {
+  flex: 1;
+  min-width: 280px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.feed {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.feed li:last-child {
+  border-bottom: 0;
+}
+
+.feed__date {
+  min-width: 96px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.feed__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feed__body b {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.feed__body span {
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+/* ================= Расчёты ================= */
+.calc-actions {
+  display: inline-flex;
+  gap: 14px;
+}
+
+.calc-actions a {
+  color: var(--c-ink-deep);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.calc-why {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 40px;
+}
+
+.calc-glossary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.calc-glossary dt {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.calc-glossary dd {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+/* ================= Методика ================= */
+.meth {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.meth__toc ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meth__toc li button {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 24px;
+  font-size: 13px;
+  text-align: left;
+  color: var(--c-muted-alt);
+}
+
+.meth__toc li button:hover {
+  background: rgba(46, 62, 40, 0.06);
+  color: var(--c-ink);
+}
+
+.meth__toc li button.is-on {
+  background: var(--c-ink);
+  color: #fff;
+  font-weight: 500;
+}
+
+.meth__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.meth__list > div {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.meth__list > div:last-child {
+  border-bottom: 0;
+}
+
+.meth__list dt {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.meth__list dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+.meth__pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.meth__formulas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.meth__formulas > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.meth__formulas > div:last-child {
+  border-bottom: 0;
+}
+
+.meth__formulas dt {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.meth__formulas dd {
+  margin: 0;
+  font-size: 12px;
+  text-align: right;
+  color: var(--c-muted-alt);
+}
+
+.meth__not {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.meth__not span {
+  color: var(--c-lime);
+}
+
+@media (max-width: 1100px) {
+  .calc-why,
+  .meth,
+  .meth__list > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Действие-ссылка внутри таблицы */
+.link-btn {
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-ink-deep);
+  text-decoration: none;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.add-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}

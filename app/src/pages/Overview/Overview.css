@@ -1,0 +1,385 @@
+/* ---------- Плитки ---------- */
+.ov-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 26px 30px 28px;
+  border-radius: 40px;
+  background: var(--c-surface);
+}
+
+.tile--dark {
+  background: var(--c-ink-deep);
+}
+
+.tile--lime {
+  background: var(--c-lime);
+}
+
+.tile__label {
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.tile__value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: clamp(30px, 2.6vw, 44px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.tile__unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.tile__note {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--c-muted-alt);
+}
+
+.tile--dark .tile__label,
+.tile--dark .tile__note {
+  color: #b9c2ae;
+}
+
+.tile--dark .tile__value {
+  color: var(--c-lime);
+}
+
+.tile--dark .tile__unit {
+  color: #b9c2ae;
+}
+
+.tile--lime .tile__label,
+.tile--lime .tile__note,
+.tile--lime .tile__unit {
+  color: #3d4a1f;
+}
+
+.tile--lime .tile__value {
+  color: var(--c-ink-deep);
+}
+
+/* ---------- Ряды ---------- */
+.ov-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  margin-bottom: 20px;
+  align-items: start;
+}
+
+.ov-row--bottom {
+  grid-template-columns: minmax(0, 1fr) 440px;
+}
+
+/* ---------- Справка ---------- */
+.ov-summary__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.ov-summary__spacer {
+  flex: 1;
+}
+
+.ov-summary__text {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--c-ink-black);
+}
+
+.ov-summary__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--c-page);
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--c-page);
+  font-size: 11px;
+  color: var(--c-muted-alt);
+}
+
+.chip--soft {
+  align-self: flex-start;
+  border: 0;
+  background: #e9ecdd;
+  color: #283a0e;
+  font-size: 12px;
+  padding: 8px 14px;
+}
+
+/* ---------- Рынок и каталог ---------- */
+.ov-market {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ov-market__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ov-market__label {
+  font-size: 12px;
+  color: #b9c2ae;
+}
+
+.ov-market__price {
+  font-size: 46px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-lime);
+}
+
+.ov-market__price small {
+  font-size: 15px;
+  font-weight: 400;
+  color: #b9c2ae;
+}
+
+.ov-market__note {
+  font-size: 12px;
+  line-height: 1.3;
+  color: #b9c2ae;
+}
+
+.ov-market__divider {
+  height: 1px;
+  margin: 16px 0 12px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ov-market__scenarios {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ov-market__scenarios li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #b9c2ae;
+}
+
+.ov-market__scenarios li.is-active {
+  background: var(--c-lime);
+  color: var(--c-ink-deep);
+  font-weight: 500;
+}
+
+.ov-market__cta {
+  align-self: flex-start;
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  background: var(--c-lime);
+  color: var(--c-ink-deep);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* ---------- Диаграмма нарушений ---------- */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(6px, 0.8vw, 14px);
+  height: 220px;
+}
+
+.bars__col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.bars__bar {
+  width: 100%;
+  max-width: 48px;
+  border-radius: 16px;
+  background: var(--c-page);
+}
+
+.bars__bar--peak {
+  background: var(--c-ink-deep);
+}
+
+.bars__bar--fresh {
+  background: var(--c-lime);
+}
+
+/* Год без валидных наблюдений: пунктирная засечка, а не нулевой столбик */
+.bars__missing {
+  width: 100%;
+  max-width: 48px;
+  height: 4px;
+  border-top: 2px dashed #b6b6ae;
+}
+
+.bars__year {
+  font-size: 11px;
+  color: var(--c-muted-alt);
+}
+
+.ov-note {
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}
+
+/* ---------- Радиальная шкала ---------- */
+.ov-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gauge {
+  position: relative;
+  width: 280px;
+  height: 150px;
+  margin: 10px 0 6px;
+}
+
+.gauge__tick {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 9px;
+  height: 28px;
+  margin-left: -4.5px;
+  border-radius: 5px;
+  background: var(--c-page);
+  transform-origin: 50% 100%;
+}
+
+.gauge__tick.is-on {
+  background: var(--c-ink);
+}
+
+.gauge__tick.is-lime {
+  background: var(--c-lime);
+}
+
+.gauge__center {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  transform: translateX(-50%);
+}
+
+.gauge__value {
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.gauge__pct {
+  font-size: 18px;
+  color: var(--c-muted-alt);
+}
+
+.gauge__caption {
+  margin-bottom: 12px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--c-muted-alt);
+}
+
+/* ---------- Требуют внимания ---------- */
+.attention {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attention li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.attention li:last-child {
+  border-bottom: 0;
+}
+
+.attention__name {
+  min-width: 240px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--c-ink);
+  text-decoration: none;
+}
+
+.attention__name:hover {
+  text-decoration: underline;
+}
+
+.attention__why {
+  flex: 1;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+@media (max-width: 1200px) {
+  .ov-row,
+  .ov-row--bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .ov-gauge {
+    align-items: flex-start;
+  }
+}

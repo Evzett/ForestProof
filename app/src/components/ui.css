@@ -1,0 +1,410 @@
+/* ---------- Кнопка ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--h-btn);
+  padding: 14px 32px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-body);
+  letter-spacing: -0.2px;
+  transition: filter 0.15s ease;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.btn--dark {
+  background: var(--c-ink);
+  color: #fff;
+  justify-content: center;
+}
+
+.btn--lime {
+  background: var(--c-lime);
+  color: var(--c-ink);
+  justify-content: space-between;
+  min-width: 316px;
+  padding-right: 24px;
+}
+
+.btn__arrow {
+  color: var(--c-ink-deep);
+}
+
+/* ---------- Плашка со статистикой ---------- */
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 223px;
+  /* Высота по макету — 148, но фиксировать нельзя: подставной шрифт шире
+     оригинального, и длинная подпись начинает подпирать нижнюю границу. */
+  min-height: 148px;
+  padding: 18px 28px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-pill);
+  color: var(--c-muted);
+  text-align: center;
+  background: transparent;
+}
+
+.stat__value {
+  font-size: 50px;
+  letter-spacing: -2.5px;
+  line-height: 1.2;
+}
+
+.stat__caption {
+  font-size: var(--t-body);
+  line-height: 1.1;
+}
+
+/* ---------- Ярлык ---------- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 20px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-body);
+  letter-spacing: -0.64px;
+  white-space: nowrap;
+}
+
+.tag--light {
+  border: 1px solid var(--c-ink-black);
+  color: var(--c-ink-black);
+  opacity: 0.7;
+}
+
+.tag--dark {
+  background: #fff;
+  color: #2c312a;
+}
+
+/* ---------- Карточка приложения ---------- */
+.card {
+  padding: 26px 30px 30px;
+  border-radius: 40px;
+  background: var(--c-surface);
+}
+
+.card--dark {
+  background: var(--c-ink-deep);
+  color: #fff;
+}
+
+.card--soft {
+  background: #e9ecdd;
+}
+
+.card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.card__title {
+  font-size: var(--t-body);
+  font-weight: 500;
+  color: inherit;
+}
+
+.card__note {
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.card--dark .card__note {
+  color: #b9c2ae;
+}
+
+/* ---------- Пилюли уровней ---------- */
+.lvl {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.lvl--low {
+  background: #e9ecdd;
+  color: #283a0e;
+}
+
+.lvl--medium {
+  background: #f6efe0;
+  color: #8a6524;
+}
+
+.lvl--high {
+  background: #f4e8e4;
+  color: #9a5240;
+}
+
+.lvl--none {
+  background: var(--c-page);
+  color: var(--c-muted-alt);
+}
+
+.dash {
+  color: var(--c-muted-alt);
+}
+
+/* ---------- Круглая кнопка ---------- */
+.circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 18px;
+}
+
+.circle--dark {
+  background: var(--c-ink);
+  color: #fff;
+}
+
+.circle--lime {
+  background: var(--c-lime);
+  color: var(--c-ink-deep);
+}
+
+/* Пояснение под блоком: почему число такое и чего мы не считаем */
+.ov-note {
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+/* ---------- Таблицы разделов ---------- */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tbl th {
+  padding: 0 12px 12px 0;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--c-muted-alt);
+  border-bottom: 1px solid var(--c-page);
+  white-space: nowrap;
+}
+
+.tbl td {
+  padding: 14px 12px 14px 0;
+  border-bottom: 1px solid var(--c-page);
+  vertical-align: middle;
+}
+
+.tbl tr:last-child td {
+  border-bottom: 0;
+}
+
+.tbl .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tbl th.num {
+  text-align: right;
+}
+
+.tbl__name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tbl__name b {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.tbl__name span {
+  font-size: 11px;
+  color: var(--c-muted-alt);
+}
+
+.tbl__group th {
+  padding-bottom: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-muted-alt);
+  border-bottom: 0;
+}
+
+.tbl a {
+  color: var(--c-ink-deep);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.tbl a:hover {
+  text-decoration: underline;
+}
+
+.tbl__scroll {
+  overflow-x: auto;
+}
+
+/* Действие в строке каталога */
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 24px;
+  background: var(--c-lime);
+  color: var(--c-ink-deep);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Фильтры и панель выбора */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 24px;
+  background: var(--c-surface);
+  font-size: 13px;
+  color: var(--c-ink-black);
+}
+
+.filter--on {
+  background: var(--c-lime);
+  color: var(--c-ink-deep);
+  font-weight: 500;
+}
+
+.selbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 12px 14px 12px 22px;
+  border-radius: var(--r-pill);
+  background: var(--c-ink);
+  color: #fff;
+  font-size: 14px;
+}
+
+.selbar__hint {
+  font-size: 12px;
+  color: #b9c2ae;
+}
+
+.selbar__spacer {
+  flex: 1;
+}
+
+/* В тёмной полосе кнопка по содержимому, а не в 316 px как на лендинге */
+.selbar .btn--lime {
+  min-width: 0;
+  gap: 14px;
+}
+
+/* ---------- Карточка «что мы делаем» ---------- */
+.info {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 40px;
+  min-height: 250px;
+  padding: 20px 40px 40px;
+  border-radius: var(--r-card);
+  background: var(--c-surface);
+}
+
+.info--dark {
+  background: var(--c-ink);
+}
+
+.info__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  max-width: 447px;
+}
+
+.info__title {
+  font-size: var(--t-lead);
+  font-weight: 400;
+  letter-spacing: -0.96px;
+  line-height: 1;
+  color: var(--c-ink-black);
+}
+
+.info__body {
+  font-size: var(--t-body);
+  line-height: 1.2;
+  color: var(--c-muted);
+}
+
+.info--dark .info__title {
+  color: #fff;
+}
+
+.info--dark .info__body {
+  color: #fff;
+  opacity: 0.7;
+}
+
+.info__media {
+  flex: 0 0 227px;
+  width: 227px;
+  height: 210px;
+  border-radius: var(--r-img-sm);
+  overflow: hidden;
+}
+
+.info__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .info {
+    flex-direction: column;
+  }
+
+  .info__media {
+    flex: none;
+    width: 100%;
+    height: 180px;
+  }
+
+  .btn--lime {
+    min-width: 0;
+    width: 100%;
+  }
+}

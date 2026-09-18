@@ -1,0 +1,285 @@
+.welcome {
+  width: 100%;
+  max-width: var(--canvas);
+  margin: 0 auto;
+  padding: 0 var(--gutter) 60px;
+  overflow-x: clip;
+}
+
+.section-title {
+  font-size: var(--t-h1);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  color: var(--c-ink-deep);
+}
+
+.section-title--light {
+  color: #fff;
+}
+
+/* ================= Обложка =================
+   Всё масштабируется от ширины окна: картинка, вотермарк, отступы.
+   Жёстких координат макета нет — на узком экране они наезжали друг на друга. */
+.hero {
+  position: relative;
+  min-height: clamp(420px, 52vw, 1006px);
+  padding-bottom: clamp(32px, 4vw, 80px);
+}
+
+.hero__watermark {
+  position: absolute;
+  top: clamp(-62px, -3.2vw, -12px);
+  left: -1.5vw;
+  font-size: clamp(56px, 20.8vw, 400px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  color: var(--c-ink-deep);
+  opacity: 0.29;
+  mix-blend-mode: hard-light;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero__art {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(340px, 52vw, 1006px);
+  height: auto;
+  pointer-events: none;
+}
+
+/* Контент лежит поверх картинки: слева заголовок, справа плашки и лид */
+.hero__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(20px, 2.5vw, 60px);
+  /* отсчёт от верхней плашки: в макете она начинается на 447 из 1920 */
+  padding-top: clamp(170px, 23.3vw, 447px);
+}
+
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(14px, 1.4vw, 24px);
+  /* заголовок на 70 ниже плашек — как в макете */
+  margin-top: clamp(0px, 3.6vw, 70px);
+  max-width: 524px;
+}
+
+.hero__title {
+  font-size: var(--t-h1);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.hero__note {
+  max-width: 320px;
+  font-size: var(--t-body);
+  line-height: 1.15;
+  color: var(--c-muted);
+}
+
+.hero__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: clamp(20px, 3.6vw, 70px);
+}
+
+.hero__stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+
+/* Верхняя плашка сдвинута влево — лесенка из макета.
+   Сдвиг тоже текучий, на узком экране схлопывается в ноль. */
+.hero__stat--a {
+  margin-right: clamp(0px, 12.6vw, 242px);
+}
+
+.hero__lead {
+  width: clamp(240px, 21vw, 403px);
+  font-size: var(--t-lead);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  text-align: right;
+  color: var(--c-muted-alt);
+}
+
+/* ================= Что мы делаем ================= */
+.about {
+  display: grid;
+  grid-template-columns: minmax(0, 575px) minmax(0, 803px);
+  justify-content: space-between;
+  gap: clamp(32px, 4vw, 60px);
+  padding-top: clamp(64px, 8vw, 160px);
+}
+
+.about__left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 30px;
+}
+
+.about__text {
+  font-size: var(--t-lead);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  color: var(--c-muted-alt);
+}
+
+.about__gallery {
+  display: flex;
+  gap: clamp(16px, 2vw, 40px);
+  margin-top: auto;
+  padding-top: clamp(32px, 5vw, 100px);
+}
+
+.about__gallery img {
+  width: 250px;
+  max-width: calc(50% - 20px);
+  height: 236px;
+  border-radius: var(--r-img-md);
+  object-fit: cover;
+}
+
+.about__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ================= Закрывающий блок ================= */
+.closing {
+  position: relative;
+  margin-top: clamp(64px, 9vw, 176px);
+  padding: clamp(28px, 2.6vw, 50px);
+  border-radius: var(--r-card);
+  background: var(--c-ink);
+  overflow: hidden;
+}
+
+.closing__art {
+  position: absolute;
+  right: -10%;
+  bottom: -50%;
+  width: min(1400px, 80%);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.closing__content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 1.6vw, 30px);
+  max-width: 900px;
+}
+
+.closing__text {
+  font-size: var(--t-lead);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  color: #fff;
+  opacity: 0.7;
+}
+
+.closing__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.closing__caption {
+  font-size: var(--t-body);
+  line-height: 1.15;
+  color: var(--c-muted);
+}
+
+/* ================= Источники ================= */
+.sources {
+  margin-top: clamp(28px, 2.6vw, 50px);
+  font-size: var(--t-body);
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+/* ================= Узкие экраны ================= */
+@media (max-width: 1100px) {
+  .hero {
+    min-height: 0;
+    padding-bottom: 32px;
+  }
+
+  .hero__art {
+    position: static;
+    transform: none;
+    width: min(100%, 560px);
+    margin: 8px auto 0;
+  }
+
+  .hero__grid {
+    grid-template-columns: 1fr;
+    padding-top: 28px;
+  }
+
+  .hero__side {
+    align-items: flex-start;
+  }
+
+  .hero__stats {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .hero__stat--a {
+    margin-right: 0;
+  }
+
+  .hero__lead {
+    width: auto;
+    max-width: 560px;
+    text-align: left;
+  }
+
+  .about {
+    grid-template-columns: 1fr;
+  }
+
+  .about__gallery {
+    padding-top: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero__stats {
+    flex-direction: column;
+  }
+
+  .stat {
+    width: 100%;
+  }
+
+  .about__gallery img {
+    max-width: calc(50% - 8px);
+    height: 160px;
+  }
+}

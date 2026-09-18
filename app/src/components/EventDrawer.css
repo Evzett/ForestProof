@@ -1,0 +1,142 @@
+.dr {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.dr__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(27, 27, 23, 0.4);
+}
+
+.dr__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(520px, 100%);
+  height: 100%;
+  padding: 32px 36px 40px;
+  background: var(--c-surface);
+  overflow-y: auto;
+}
+
+.dr__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dr__head h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--c-ink);
+}
+
+.dr__big {
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.dr__big small {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.dr__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.dr__list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.dr__list > div:last-child {
+  border-bottom: 0;
+}
+
+.dr__list dt {
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.dr__list dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.dr__label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.dr__shots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.dr__shots figure {
+  margin: 0;
+}
+
+.dr__shots img {
+  width: 100%;
+  height: 150px;
+  border-radius: 24px;
+  object-fit: cover;
+}
+
+.dr__shots figcaption {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--c-muted-alt);
+}
+
+.dr__exposure {
+  margin-top: auto;
+  padding: 24px 26px;
+  border-radius: 30px;
+  background: #e9ecdd;
+}
+
+.dr__exposure > p:first-child {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}
+
+.dr__exposure-value {
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-ink-deep);
+}
+
+.dr__exposure-value small {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}

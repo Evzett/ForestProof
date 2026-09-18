@@ -1,0 +1,389 @@
+.wz {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.wz__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(27, 27, 23, 0.45);
+}
+
+.wz__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  border-radius: 40px;
+  background: var(--c-surface);
+  overflow: hidden;
+}
+
+.wz__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 34px 40px 18px;
+}
+
+.wz__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--c-ink);
+}
+
+.wz__step {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.wz__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--c-page);
+  font-size: 16px;
+}
+
+.wz__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 40px 8px;
+  overflow-y: auto;
+}
+
+/* ---------- Шаг 1: способ ---------- */
+.wz__opt {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border: 1px solid var(--c-page);
+  border-radius: 24px;
+  background: var(--c-surface);
+  text-align: left;
+}
+
+.wz__opt.is-on {
+  border: 2px solid var(--c-lime);
+  background: #e9ecdd;
+}
+
+.wz__opt:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.wz__opt > span:nth-child(2) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wz__opt b {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.wz__opt span span {
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.wz__radio {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #c9c9c1;
+  border-radius: 50%;
+}
+
+.wz__opt.is-on .wz__radio {
+  border-color: var(--c-lime);
+  background: var(--c-lime);
+}
+
+.wz__soon {
+  flex: none;
+  font-size: 11px;
+  color: var(--c-muted-alt);
+}
+
+/* ---------- Шаг 2: проверки ---------- */
+.wz__file {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: baseline;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 24px;
+  background: #e9ecdd;
+  color: var(--c-ink-deep);
+  font-size: 15px;
+}
+
+.wz__file span {
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.wz__checks {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wz__checks li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-page);
+  font-size: 15px;
+}
+
+.wz__checks li:last-child {
+  border-bottom: 0;
+}
+
+.wz__dot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-ink-deep);
+}
+
+.wz__dot--ok {
+  background: var(--c-lime);
+}
+
+.wz__dot--warn {
+  background: #f0e2c8;
+}
+
+.wz__dot--run {
+  background: var(--c-ink);
+  color: #fff;
+}
+
+.wz__dot--wait {
+  background: var(--c-page);
+}
+
+.wz__checks b {
+  flex: 1;
+  font-weight: 400;
+}
+
+.wz__val {
+  font-size: 13px;
+  color: var(--c-muted-alt);
+  text-align: right;
+}
+
+.wz__track {
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 4px;
+  background: var(--c-page);
+  overflow: hidden;
+}
+
+.wz__track span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--c-ink);
+}
+
+/* ---------- Шаг 3: поля ---------- */
+.wz__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wz__field > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.wz__field em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--c-ink-deep);
+}
+
+.wz__field input {
+  padding: 15px 20px;
+  border: 1px solid #c9c9c1;
+  border-radius: 24px;
+  background: var(--c-surface);
+  font: inherit;
+  font-size: 15px;
+  color: var(--c-ink-black);
+}
+
+.wz__field input:focus {
+  outline: 2px solid var(--c-lime);
+  outline-offset: 1px;
+}
+
+.wz__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wz__mode {
+  padding: 12px 18px;
+  border: 1px solid var(--c-page);
+  border-radius: 24px;
+  background: var(--c-surface);
+  font-size: 14px;
+  color: var(--c-muted-alt);
+}
+
+.wz__mode.is-on {
+  border: 2px solid var(--c-lime);
+  background: #e9ecdd;
+  color: var(--c-ink-deep);
+  font-weight: 500;
+}
+
+.wz__result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 24px;
+  background: #e9ecdd;
+}
+
+.wz__result div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wz__result b {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.wz__result span {
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+/* ---------- Шаг 5: итог ---------- */
+.wz__big {
+  font-size: 52px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.wz__big small {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.wz__summary {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wz__summary li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--c-page);
+  font-size: 14px;
+  color: var(--c-muted-alt);
+}
+
+.wz__summary li:last-child {
+  border-bottom: 0;
+}
+
+.wz__summary b {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--c-ink-black);
+}
+
+.wz__note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+/* ---------- Подвал ---------- */
+.wz__foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 40px 32px;
+}
+
+.wz__spacer {
+  flex: 1;
+}
+
+.btn--ghost {
+  background: var(--c-surface);
+  border: 1px solid var(--c-page);
+  color: var(--c-ink-black);
+  justify-content: center;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+@media (max-width: 640px) {
+  .wz__head,
+  .wz__body,
+  .wz__foot {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+}

@@ -1,0 +1,92 @@
+/* Если появятся файлы PP Neue Montreal — раскомментировать и положить в public/fonts.
+@font-face {
+  font-family: "PP Neue Montreal";
+  src: url("/fonts/PPNeueMontreal-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PP Neue Montreal";
+  src: url("/fonts/PPNeueMontreal-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+*/
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+/* Место под скроллбар резервируется всегда: иначе при его появлении
+   вся правая колонка уезжает на 15 пикселей и перестаёт совпадать с сеткой. */
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  background: var(--c-page);
+  color: var(--c-ink-black);
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  line-height: 1.25;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
+/* Цифры в таблицах и матрицах не должны прыгать по ширине */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Полоса контента: макет нарисован на 1920 с полями по 100 */
+.container {
+  width: 100%;
+  max-width: var(--canvas);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --gutter: 40px;
+    --t-h1: 40px;
+    --t-lead: 20px;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --gutter: 20px;
+    --t-h1: 32px;
+    --t-lead: 18px;
+  }
+}
