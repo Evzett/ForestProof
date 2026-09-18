@@ -1,0 +1,105 @@
+/* Печатная вёрстка отчёта. KAN-79.
+
+   Печать браузером, а не второй рендер на сервере: отчёт на экране уже
+   собран из посчитанных чисел, и второй источник тех же величин рано или
+   поздно разойдётся с первым. Печатаем то же самое.
+
+   В диалоге печати выбирается «Сохранить как PDF» — документ открывается
+   без сервиса, как требует О-02. */
+
+@media print {
+  /* Интерфейс не печатается: навигация, фильтры, вкладки и кнопки
+     на бумаге бессмысленны и съедают место. */
+  .sidebar,
+  .tabs,
+  .period,
+  .plot-head__back,
+  .report-actions,
+  .btn,
+  .filter,
+  .filters,
+  .cmp-bar,
+  .selbar,
+  .wz {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .shell {
+    display: block !important;
+  }
+
+  .shell__main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Карточки на бумаге — без заливки и скруглений: они съедают тонер
+     и не добавляют смысла. Разделение даёт линия. */
+  .card {
+    background: #fff !important;
+    border: 1px solid #d5d8cf !important;
+    border-radius: 0 !important;
+    padding: 14px 0 !important;
+    box-shadow: none !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    break-inside: avoid;
+  }
+
+  .card--dark,
+  .card--soft {
+    color: #000 !important;
+  }
+
+  .card--dark *,
+  .card--soft * {
+    color: #000 !important;
+  }
+
+  /* Строку таблицы и шаг цепочки нельзя разрывать между страницами:
+     разорванное «R = … → Q = 0» читается как две разные мысли. */
+  .tbl tr,
+  .chain li,
+  .kv > div,
+  .drivers li {
+    break-inside: avoid;
+  }
+
+  .tbl {
+    font-size: 10pt;
+  }
+
+  .tbl__scroll {
+    overflow: visible !important;
+  }
+
+  /* Уровни печатаются словом, а не цветом: на чёрно-белом принтере
+     заливка исчезает, и «низкая» становится неотличима от «высокой». */
+  .lvl {
+    background: transparent !important;
+    border: 1px solid #666 !important;
+    color: #000 !important;
+  }
+
+  /* Карта и графики остаются: без них отчёт теряет доказательную часть. */
+  img,
+  svg,
+  canvas {
+    max-width: 100% !important;
+    break-inside: avoid;
+  }
+
+  a {
+    text-decoration: none;
+    color: #000 !important;
+  }
+
+  @page {
+    margin: 14mm 12mm;
+  }
+}

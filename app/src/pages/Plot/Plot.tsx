@@ -1621,6 +1621,72 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
           </table>
         </div>
 
+        {/* Цепочка вывода. Проверяющему нужно не итоговое число, а то,
+            как оно получено: какой параметр дал какую величину. Раньше
+            отчёт показывал результат и источники, но не путь между ними. */}
+        <p className="tile__label" style={{ margin: "18px 0 10px" }}>
+          как получен результат
+        </p>
+        <ol className="chain">
+          <li>
+            <b>Растры</b>
+            <span>
+              ESA CCI Biomass v7.0, биомасса и канал AGB_SD за {period.year_start} и{" "}
+              {period.year_end}
+            </span>
+          </li>
+          <li>
+            <b>Площадь</b>
+            <span>
+              {formatDecimal(period.area_ha, 4)} га по доле пересечения каждого пикселя с контуром;
+              пиксель сетки CCI на этой широте — около 0,54 га, а не гектар
+            </span>
+          </li>
+          <li>
+            <b>Запас</b>
+            <span>
+              биомасса × CF {PARAMETERS.carbon_fraction} ={" "}
+              {formatDecimal(period.c_start_t_ha, 2)} т C/га на {period.year_start} и{" "}
+              {formatDecimal(period.c_end_t_ha, 2)} на {period.year_end}
+            </span>
+          </li>
+          <li>
+            <b>Изменение</b>
+            <span>
+              ΔC = {formatNumber(Math.round(period.delta_stock_tc))} т C, затем × 44/12 и знак
+              меняется: E = {period.e_tco2e > 0 ? "+" : ""}
+              {formatNumber(Math.round(period.e_tco2e))} т CO₂-экв.{" "}
+              {period.e_tco2e > 0 ? "— потеря из учитываемого пула" : "— накопление"}
+            </span>
+          </li>
+          <li>
+            <b>Неопределённость</b>
+            <span>
+              перенос AGB_SD при ρs {PARAMETERS.rho_spatial}, ρt {PARAMETERS.rho_temporal}, k{" "}
+              {PARAMETERS.k_sigma} даёт H = {formatNumber(Math.round(period.h_tco2e))} т CO₂-экв.
+              Это сценарный диапазон, а не эмпирически откалиброванный интервал
+            </span>
+          </li>
+          <li>
+            <b>Базовая линия</b>
+            <span>
+              историческая динамика g = {formatDecimal(area.baseline_rate_tc_ha_year, 3)} т C/га/год
+              даёт E_base = {formatNumber(Math.round(period.e_base_tco2e))} т CO₂-экв.
+            </span>
+          </li>
+          <li>
+            <b>Единицы</b>
+            <span>
+              R = E_base − E − LK = {formatNumber(Math.round(period.r_tco2e))} т CO₂-экв.
+              {period.r_tco2e <= 0
+                ? " ≤ 0 → Q = 0, отношение H/R не вычисляется"
+                : period.h_over_r !== null && period.h_over_r >= 1
+                  ? ` · H/R = ${formatDecimal(period.h_over_r, 2)} ≥ 1 → Q = 0`
+                  : ` · вычет UNC ${period.unc_share === null ? "—" : formatDecimal(period.unc_share, 3)}, резерв ${PARAMETERS.buffer_share}, округление вниз → Q = ${period.units ?? "недоступно"}`}
+            </span>
+          </li>
+        </ol>
+
         <p className="tile__label" style={{ margin: "18px 0 10px" }}>
           ограничения
         </p>
@@ -1630,12 +1696,18 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
           ))}
         </ul>
 
-        <button className="btn btn--dark" type="button" style={{ marginTop: 20 }} onClick={download}>
-          <span>Выгрузить отчёт в JSON</span>
-        </button>
+        <div className="report-actions">
+          <button className="btn btn--dark" type="button" onClick={download}>
+            <span>Выгрузить отчёт в JSON</span>
+          </button>
+          <button className="btn btn--outline" type="button" onClick={() => window.print()}>
+            <span>Печать и PDF</span>
+          </button>
+        </div>
         <p className="ov-note">
-          Выгрузка содержит все параметры, допущения, источники и промежуточные величины —
-          достаточно, чтобы повторить расчёт независимо от интерфейса.
+          JSON содержит все параметры, допущения, источники и промежуточные величины — достаточно,
+          чтобы повторить расчёт независимо от интерфейса. Печать даёт тот же отчёт документом:
+          в диалоге печати выберите «Сохранить как PDF».
         </p>
       </Card>
     </>

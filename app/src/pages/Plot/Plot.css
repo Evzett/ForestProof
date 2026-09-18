@@ -841,3 +841,64 @@
   border: 1px solid #cfdcb0;
   background: #f4f8ea;
 }
+
+/* ---------- Цепочка вывода в отчёте ---------- */
+/* Проверяющему нужно не итоговое число, а путь к нему: каждый шаг
+   называет параметр, который в него вошёл. */
+.chain {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  counter-reset: chain;
+}
+
+.chain li {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 14px;
+  padding: 10px 0 10px 34px;
+  position: relative;
+  border-top: 1px solid var(--c-page);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.chain li::before {
+  counter-increment: chain;
+  content: counter(chain);
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-page);
+  color: var(--c-muted-alt);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chain li b {
+  font-weight: 500;
+}
+
+.chain li span {
+  color: var(--c-muted-alt);
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+@media (max-width: 700px) {
+  .chain li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
