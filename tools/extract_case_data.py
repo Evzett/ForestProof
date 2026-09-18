@@ -21,106 +21,46 @@ import csv
 import json
 import math
 from pathlib import Path
+import sys
 
 import numpy as np
 
-from geotiff import read_geotiff
+# Keep the documented direct invocation (python tools/extract_case_data.py).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from forestproof_core.case_calculation import (  # noqa: E402
+    CaseCalculationConfig,
+    baseline_mean,
+    baseline_rate,
+    calculate_period,
+    calculate_year,
+    carbon_density_t_ha,
+    pixel_intersection_weights,
+    potential_units,
+    sigma_from_sums,
+    uncertainty_half_width,
+)
+from tools.geotiff import read_geotiff
 
 # ---------------------------------------------------------------- параметры
 
-CF = 0.47  # т C / т сухого вещества, МГЭИК 2006, т. 4, гл. 4, табл. 4.3
-CO2_PER_C = 44 / 12
-
-# Доля неопределённости и резерв — сценарные условия кейса
-UNC_THRESHOLD = 0.10
-BUFFER_SHARE = 0.15
-LEAKAGE = 0.0
-
-# Модель переноса ошибки. Все три значения — допущения, а не измерения,
-# поэтому выводятся на экран и проверяются на чувствительность.
-RHO_SPATIAL = 0.5  # корреляция ошибки продукта между пикселями одного года
-RHO_TEMPORAL = 0.7  # корреляция ошибки между двумя годами на той же территории
-K_SIGMA = 1.645  # нормальное приближение, двусторонний охват 90 %
+CONFIG = CaseCalculationConfig()
 
 # Порог древесного покрова для маски GFC: доля кроны на 2000 год
 TREECOVER_THRESHOLD = 30
 
-PRICES = {"low": 500, "base": 1500, "high": 4000}
-
-# Сетка чувствительности к допущениям о корреляции ошибки
-RHO_SPATIAL_GRID = [0.0, 0.25, 0.5, 0.75, 1.0]
-RHO_TEMPORAL_GRID = [0.0, 0.5, 0.7, 0.9, 0.95, 0.99]
-
-
-# ------------------------------------------------------------------ утилиты
-
-
-def bbox_weights(raster, west: float, south: float, east: float, north: float) -> np.ndarray:
-    """Площадь пересечения каждого пикселя с прямоугольником запроса, га.
-
-    Пиксель на краю входит частью — иначе площадь округляется до целых
-    пикселей и расходится с эталоном на проценты.
-    """
-    rows, cols = raster.data.shape[1], raster.data.shape[2]
-    lon_left = raster.lon_origin + np.arange(cols) * raster.lon_step
-    lon_right = lon_left + raster.lon_step
-    lat_top = raster.lat_origin - np.arange(rows) * raster.lat_step
-    lat_bottom = lat_top - raster.lat_step
-
-    frac_x = np.clip(np.minimum(lon_right, east) - np.maximum(lon_left, west), 0, None)
-    frac_y = np.clip(np.minimum(lat_top, north) - np.maximum(lat_bottom, south), 0, None)
-    frac = np.outer(frac_y / raster.lat_step, frac_x / raster.lon_step)
-    return frac * raster.pixel_area_ha()
-
-
-def weighted_mean(values: np.ndarray, weights: np.ndarray) -> float:
-    total = weights.sum()
-    return float((values * weights).sum() / total) if total > 0 else math.nan
-
-
-def stock_sigma(sd: np.ndarray, weights: np.ndarray, rho: float) -> float:
-    """Стандартное отклонение суммарного запаса, т C.
-
-    Корреляция ошибки между пикселями задана одним числом rho: при rho = 0
-    ошибки независимы и в сумме гасятся, при rho = 1 складываются целиком.
-    Промежуточное значение — допущение, которое проверяется отдельно.
-    """
-    terms = weights * sd
-    independent = float((terms**2).sum())
-    correlated = float(terms.sum() ** 2)
-    variance = (1 - rho) * independent + rho * correlated
-    return CF * math.sqrt(max(variance, 0.0))
-
-
 # ------------------------------------------------------------------- расчёт
-
-
-def sigma_pair(sd_terms: float, sq_terms: float, rho: float) -> float:
-    """sigma по уже посчитанным суммам: Sum(a*sd) и Sum((a*sd)^2)."""
-    variance = (1 - rho) * sq_terms + rho * sd_terms**2
-    return CF * math.sqrt(max(variance, 0.0))
 
 
 def read_year(data_dir: Path, aoi: str, year: int, box) -> dict:
     raster = read_geotiff(str(data_dir / aoi / f"CCI_Biomass_{year}.tif"))
-    weights = bbox_weights(raster, *box)
+    weights = pixel_intersection_weights(raster, box)
     agb = raster.band(0).astype(float)
     sd = raster.band(1).astype(float)
-    mean_agb = weighted_mean(agb, weights)
-    area = float(weights.sum())
-    terms = weights * sd
-    return {
-        "year": year,
-        "area_ha": area,
-        "agb_t_ha": mean_agb,
-        "agb_sd_t_ha": weighted_mean(sd, weights),
-        "c_t_ha": mean_agb * CF,
-        "stock_tc": mean_agb * CF * area,
-        "sigma_stock_tc": stock_sigma(sd, weights, RHO_SPATIAL),
-        # суммы для пересчёта sigma при другой корреляции, без чтения растров
-        "_sd_sum": float(terms.sum()),
-        "_sd_sq_sum": float((terms**2).sum()),
-    }
+    if raster.nodata is not None:
+        agb[agb == raster.nodata] = np.nan
+        sd[sd == raster.nodata] = np.nan
+    return calculate_year(year, agb, sd, weights, CONFIG)
 
 
 def gfc_loss_by_year(data_dir: Path, aoi: str, box) -> list[dict]:
@@ -130,7 +70,7 @@ def gfc_loss_by_year(data_dir: Path, aoi: str, box) -> list[dict]:
     установленная вырубка: причина здесь не определяется.
     """
     raster = read_geotiff(str(data_dir / aoi / "GFC_2025_v1_13.tif"))
-    weights = bbox_weights(raster, *box)
+    weights = pixel_intersection_weights(raster, box)
     treecover = raster.band(0).astype(float)
     lossyear = raster.band(1).astype(int)
     forest = treecover >= TREECOVER_THRESHOLD
@@ -155,11 +95,11 @@ def render_maps(data_dir: Path, aoi: str, box, out_dir: Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     start = read_geotiff(str(data_dir / aoi / "CCI_Biomass_2019.tif"))
     end = read_geotiff(str(data_dir / aoi / "CCI_Biomass_2024.tif"))
-    weights = bbox_weights(start, *box)
+    weights = pixel_intersection_weights(start, box)
     inside = weights > 0
 
-    c_start = start.band(0).astype(float) * CF
-    c_end = end.band(0).astype(float) * CF
+    c_start = carbon_density_t_ha(start.band(0), CONFIG)
+    c_end = carbon_density_t_ha(end.band(0), CONFIG)
     delta = c_end - c_start
 
     def save(rgb: np.ndarray, alpha: np.ndarray, name: str) -> str:
@@ -191,7 +131,7 @@ def render_maps(data_dir: Path, aoi: str, box, out_dir: Path) -> dict:
 
     # потери покрова Hansen на своей, более мелкой сетке
     gfc = read_geotiff(str(data_dir / aoi / "GFC_2025_v1_13.tif"))
-    gfc_weights = bbox_weights(gfc, *box)
+    gfc_weights = pixel_intersection_weights(gfc, box)
     lossyear = gfc.band(1).astype(int)
     treecover = gfc.band(0).astype(float)
     recent = (lossyear >= 19) & (lossyear <= 24) & (treecover >= TREECOVER_THRESHOLD)
@@ -384,51 +324,6 @@ def render_sentinel(data_dir: Path, aoi: str, event_dates: tuple[str, str] | Non
     }
 
 
-def potential_units(e_proj: float, e_base: float, half_width: float) -> dict:
-    """Потенциальные единицы по правилам кейса.
-
-    Порядок проверок важен: при R <= 0 отношение H/R не вычисляется вовсе,
-    а не считается и отбрасывается — деления на ноль в этой ветке нет.
-    """
-    r = e_base - e_proj - LEAKAGE
-    result = {
-        "e_proj_tco2e": e_proj,
-        "e_base_tco2e": e_base,
-        "leakage_tco2e": LEAKAGE,
-        "r_tco2e": r,
-        "h_tco2e": half_width,
-        "h_over_r": None,
-        "unc_share": None,
-        "r_adjusted_tco2e": None,
-        "buffer_tco2e": None,
-        "units": 0,
-        "reason": None,
-    }
-    if not all(map(math.isfinite, (e_proj, e_base, half_width))) or half_width < 0:
-        result["units"] = None
-        result["reason"] = "входные данные неполные — расчёт единиц недоступен"
-        return result
-    if r <= 0:
-        result["reason"] = "результат не превышает базовую линию"
-        return result
-
-    ratio = half_width / r
-    result["h_over_r"] = ratio
-    if ratio >= 1:
-        result["reason"] = "неопределённость не меньше самого результата"
-        return result
-
-    unc = min(1.0, max(0.0, ratio - UNC_THRESHOLD))
-    adjusted = r * (1 - unc)
-    result.update(
-        unc_share=unc,
-        r_adjusted_tco2e=adjusted,
-        buffer_tco2e=adjusted * BUFFER_SHARE,
-        units=int(math.floor(adjusted * (1 - BUFFER_SHARE))),
-    )
-    return result
-
-
 # Пороги скрининга устойчивости. Это правила, а не обученная модель:
 # четыре участка — не выборка, и назвать такое обучением было бы враньём.
 # Каждый порог виден на экране, и любой из них можно оспорить.
@@ -521,43 +416,46 @@ def build_aoi(
     area = series[0]["area_ha"]
 
     base_rows = [r for r in baseline if r["aoi_id"] == aoi]
-    base_stock = {int(r["year_start"]): float(r["baseline_stock_start_tc_ha"]) for r in base_rows}
-    base_stock[2029] = float(
-        next(r for r in base_rows if r["year_end"] == "2029")["baseline_stock_end_tc_ha"]
-    )
+    baseline_row = base_rows[0] if base_rows else {}
+
+    def baseline_value(key: str) -> float | None:
+        raw = baseline_row.get(key)
+        if raw is None or raw == "":
+            return None
+        value = float(raw)
+        return value if math.isfinite(value) else None
+
+    # The CSV provides the parent AOI references. Subareas must use these same
+    # references with their own area, not fit a new baseline to the subarea.
+    baseline_c2015 = baseline_value("reference_mean_2015_tc_ha")
+    baseline_c2019 = baseline_value("reference_mean_2019_tc_ha")
+    base_rate = baseline_rate(baseline_c2015, baseline_c2019, CONFIG)
+    base_stock = {
+        year: baseline_mean(year, baseline_c2015, baseline_c2019, CONFIG)
+        for year in range(CONFIG.baseline_anchor_year, CONFIG.baseline_end_year + 1)
+    }
 
     def period(start: int, end: int) -> dict:
         t0, t1 = by_year[start], by_year[end]
-        delta_stock = t1["stock_tc"] - t0["stock_tc"]
-        e_proj = -delta_stock * CO2_PER_C
-        sigma_delta = math.sqrt(
-            max(
-                t0["sigma_stock_tc"] ** 2
-                + t1["sigma_stock_tc"] ** 2
-                - 2 * RHO_TEMPORAL * t0["sigma_stock_tc"] * t1["sigma_stock_tc"],
-                0.0,
-            )
-        )
-        sigma_e = sigma_delta * CO2_PER_C
-        half = K_SIGMA * sigma_e
-        e_base = -area * (base_stock[end] - base_stock[start]) * CO2_PER_C
-        units = potential_units(e_proj, e_base, half)
+        result = calculate_period(t0, t1, baseline_c2015, baseline_c2019, CONFIG)
 
         # Чувствительность к допущениям о корреляции: число единиц целиком
         # определяется ими, и это главный вывод, а не техническая деталь.
         grid = []
-        for rs in RHO_SPATIAL_GRID:
+        for rs in CONFIG.rho_spatial_grid:
             row = []
-            for rt in RHO_TEMPORAL_GRID:
-                s0 = sigma_pair(t0["_sd_sum"], t0["_sd_sq_sum"], rs)
-                s1 = sigma_pair(t1["_sd_sum"], t1["_sd_sq_sum"], rs)
-                sd_delta = math.sqrt(max(s0**2 + s1**2 - 2 * rt * s0 * s1, 0.0)) * CO2_PER_C
-                cell = potential_units(e_proj, e_base, K_SIGMA * sd_delta)
+            for rt in CONFIG.rho_temporal_grid:
+                s0 = sigma_from_sums(t0["_sd_sum"], t0["_sd_sq_sum"], CONFIG, rs)
+                s1 = sigma_from_sums(t1["_sd_sum"], t1["_sd_sq_sum"], CONFIG, rs)
+                _, half = uncertainty_half_width(s0, s1, CONFIG, rt)
+                cell = potential_units(
+                    result["e_tco2e"], result["e_base_tco2e"], half, CONFIG
+                )
                 row.append(
                     {
                         "rho_spatial": rs,
                         "rho_temporal": rt,
-                        "h_tco2e": K_SIGMA * sd_delta,
+                        "h_tco2e": half,
                         "h_over_r": cell["h_over_r"],
                         "units": cell["units"],
                     }
@@ -565,25 +463,10 @@ def build_aoi(
             grid.append(row)
 
         return {
-            "year_start": start,
-            "year_end": end,
-            "years": end - start,
-            "area_ha": area,
-            "c_start_t_ha": t0["c_t_ha"],
-            "c_end_t_ha": t1["c_t_ha"],
-            "stock_start_tc": t0["stock_tc"],
-            "stock_end_tc": t1["stock_tc"],
-            "delta_stock_tc": delta_stock,
-            "e_tco2e": e_proj,
-            "e_per_ha_year": e_proj / (area * (end - start)),
-            "sigma_e_tco2e": sigma_e,
-            "lower_tco2e": e_proj - half,
-            "upper_tco2e": e_proj + half,
-            "baseline_c_start_t_ha": base_stock[start],
-            "baseline_c_end_t_ha": base_stock[end],
-            **units,
+            **result,
             "value_rub": {
-                name: (units["units"] or 0) * price for name, price in PRICES.items()
+                name: (None if result["units"] is None else result["units"] * price)
+                for name, price in CONFIG.prices_rub
             },
             "sensitivity": grid,
         }
@@ -601,8 +484,11 @@ def build_aoi(
         "aoi_id": aoi,
         "maps": render_maps(data_dir, aoi, box, maps_dir) if maps_dir else None,
         "sentinel": render_sentinel(data_dir, aoi, event_window, maps_dir) if maps_dir else None,
-        "stability": stability_screening(
-            series, loss, area, float(base_rows[0]["historical_rate_tc_ha_yr"]), has_fire
+        "stability": (
+            stability_screening(series, loss, area, base_rate, has_fire)
+            if base_rate is not None
+            and all(row["c_t_ha"] is not None and row["agb_t_ha"] is not None for row in series)
+            else None
         ),
         "name": meta["name"],
         "region": meta["region"],
@@ -612,7 +498,7 @@ def build_aoi(
         "area_ha_declared": float(meta["area_ha"]),
         "bbox": list(box),
         "baseline_id": meta["baseline_id"],
-        "baseline_rate_tc_ha_year": float(base_rows[0]["historical_rate_tc_ha_yr"]),
+        "baseline_rate_tc_ha_year": base_rate,
         "baseline_stock_t_ha": {str(k): v for k, v in sorted(base_stock.items())},
         "series": series,
         "cover_loss": loss,
@@ -642,16 +528,16 @@ def main() -> None:
     payload = {
         "generated_from": "ESA CCI Biomass v7.0, Hansen GFC v1.13, MODIS MCD64A1 061",
         "parameters": {
-            "carbon_fraction": CF,
-            "co2_per_carbon": CO2_PER_C,
-            "unc_threshold": UNC_THRESHOLD,
-            "buffer_share": BUFFER_SHARE,
-            "leakage_tco2e": LEAKAGE,
-            "rho_spatial": RHO_SPATIAL,
-            "rho_temporal": RHO_TEMPORAL,
-            "k_sigma": K_SIGMA,
+            "carbon_fraction": CONFIG.carbon_fraction,
+            "co2_per_carbon": CONFIG.co2_per_carbon,
+            "unc_threshold": CONFIG.unc_threshold,
+            "buffer_share": CONFIG.buffer_share,
+            "leakage_tco2e": CONFIG.leakage_tco2e,
+            "rho_spatial": CONFIG.rho_spatial,
+            "rho_temporal": CONFIG.rho_temporal,
+            "k_sigma": CONFIG.k_sigma,
             "treecover_threshold_pct": TREECOVER_THRESHOLD,
-            "prices_rub": PRICES,
+            "prices_rub": dict(CONFIG.prices_rub),
         },
         "areas": [build_aoi(args.data, meta, baseline, events, args.maps) for meta in areas],
         "events": [
