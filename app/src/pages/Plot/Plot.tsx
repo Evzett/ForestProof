@@ -1334,10 +1334,6 @@ function ModelForecastCard({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: s
       </div>
       <dl className="kv">
         <div>
-          <dt>вероятность нарушения</dt>
-          <dd className="tabular">{formatDecimal(forecast.probability, 3)}</dd>
-        </div>
-        <div>
           <dt>признаки посчитаны по</dt>
           <dd className="tabular">
             {forecast.feature_window[0]}—{forecast.feature_window[1]}
@@ -1351,8 +1347,11 @@ function ModelForecastCard({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: s
       <div className="disclaimer">
         Это и есть предсказание на следующие годы. Окно признаков той же длины, что при
         обучении, но сдвинуто к концу данных: модель смотрит на девятнадцать последних лет и
-        отвечает про следующую пятилетку. Числовой вероятностью реверсии это не является и на
-        число потенциальных единиц не влияет.
+        отвечает про следующую пятилетку.{" "}
+        <b>Показана категория, а не число.</b> Вероятность у модели есть, но на экран она не
+        выводится: число вида «0,99» читается как измеренная вероятность реверсии, которой у
+        нас нет и быть не может на выборке в восемьсот участков одной природной зоны. На число
+        потенциальных единиц прогноз не влияет.
       </div>
     </Card>
   );
@@ -1380,8 +1379,7 @@ function ModelEvidence({ aoiId }: { aoiId: string }) {
               <div>
                 <dt>модель говорила</dt>
                 <dd>
-                  <LevelPill level={(prediction.category ?? "low") as "low" | "medium" | "high"} />{" "}
-                  <span className="tabular">{formatDecimal(prediction.probability ?? 0, 3)}</span>
+                  <LevelPill level={(prediction.category ?? "low") as "low" | "medium" | "high"} />
                 </dd>
               </div>
               <div>
