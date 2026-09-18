@@ -164,14 +164,25 @@
   color: #283a0e;
 }
 
+/* Шкала намеренно не «светофорная»: жёлтый и красный читаются как
+   оценка качества участка, а мы оцениваем не участок, а устойчивость
+   результата. Фиолетовый и розовый различают уровни не хуже, но не
+   несут приговора. */
 .lvl--medium {
-  background: #f6efe0;
-  color: #8a6524;
+  background: #ece7f5;
+  color: #5b4a86;
 }
 
 .lvl--high {
-  background: #f4e8e4;
-  color: #9a5240;
+  background: #f8e3ec;
+  color: #9c3f66;
+}
+
+/* Плашка-метка с лёгкой обводкой — для подписей вроде «собрано шаблоном» */
+.lvl--outline {
+  border: 1px solid #c3d19a;
+  background: #f2f5e8;
+  color: #3f5220;
 }
 
 .lvl--none {
@@ -599,3 +610,28 @@
 .link-btn:hover {
   text-decoration: underline;
 }
+
+/* ---------- Иконки из макета ----------
+   Файлы в public/icons — экспорт как есть, в них цвет вшит в разметку.
+   Поэтому подключаем не <img>, а маску: маске цвет файла безразличен,
+   она берёт только форму, а цвет приходит от currentColor. Один файл
+   работает и на светлом пункте, и на активном тёмном. */
+.ic {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.ic--overview { mask-image: url("/icons/overview.svg"); }
+.ic--areas { mask-image: url("/icons/areas.svg"); }
+.ic--projects { mask-image: url("/icons/projects.svg"); }
+.ic--monitoring { mask-image: url("/icons/monitoring.svg"); }
+.ic--calc { mask-image: url("/icons/calc.svg"); }
+.ic--method { mask-image: url("/icons/method.svg"); }
+.ic--plus { mask-image: url("/icons/plus.svg"); width: 22px; height: 22px; }
+.ic--arrow { mask-image: url("/icons/arrow.svg"); width: 14px; height: 14px; }

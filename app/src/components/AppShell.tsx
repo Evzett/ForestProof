@@ -14,14 +14,21 @@ import "./AppShell.css";
    исследовательские участки, а не зарегистрированные климатические
    проекты, и называть их проектами значит подменять статус данных. */
 
+/* Иконки — экспорт из макета, лежат в public/icons.
+   Подключены CSS-маской, а не <img>: у экспортированных файлов цвет
+   вшит в разметку, а маске он безразличен — цвет берётся от состояния
+   пункта, и активный пункт не требует второго файла. */
 const NAV = [
-  { to: "/app/overview", label: "Обзор" },
-  { to: "/app/areas", label: "Участки" },
-  { to: "/app/compare", label: "Сравнение" },
-  { to: "/app/projects", label: "Проекты" },
-  { to: "/app/calculations", label: "Расчёты" },
-  { to: "/app/monitoring", label: "Наблюдение" },
-  { to: "/app/methodology", label: "Методика" },
+  { to: "/app/overview", label: "Обзор", icon: "overview" },
+  { to: "/app/areas", label: "Участки", icon: "areas" },
+  /* Иконок в макете шесть, разделов у нас семь. «Сравнение» повторяет
+     значок «Участков» — из всех повторов этот самый безобидный: оба
+     раздела про одни и те же территории. */
+  { to: "/app/compare", label: "Сравнение", icon: "areas" },
+  { to: "/app/projects", label: "Проекты", icon: "projects" },
+  { to: "/app/calculations", label: "Расчёты", icon: "calc" },
+  { to: "/app/monitoring", label: "Наблюдение", icon: "monitoring" },
+  { to: "/app/methodology", label: "Методика", icon: "method" },
 ];
 
 /* Кнопка добавления участка. Главное действие продукта,
@@ -30,7 +37,7 @@ export function AddPlotButton({ className = "", label = "Задать конту
   const { open } = useWizard();
   return (
     <button className={`add-btn ${className}`.trim()} type="button" onClick={() => open()}>
-      <span aria-hidden="true">+</span> {label}
+      <i className="ic ic--plus" aria-hidden="true" /> {label}
     </button>
   );
 }
@@ -55,6 +62,7 @@ function Shell() {
                 isActive ? "sidebar__item sidebar__item--active" : "sidebar__item"
               }
             >
+              <i className={`ic ic--${item.icon}`} aria-hidden="true" />
               {item.label}
             </NavLink>
           ))}

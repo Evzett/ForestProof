@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="arcticons:pie-vat" clip-path="url(#clip0_0_28)">
+<path id="Vector" d="M18.9583 10C18.9583 11.7718 18.4329 13.5038 17.4486 14.977C16.4642 16.4502 15.0651 17.5984 13.4282 18.2764C11.7913 18.9545 9.99006 19.1319 8.25232 18.7862C6.51457 18.4405 4.91835 17.5873 3.6655 16.3345C2.41266 15.0817 1.55946 13.4854 1.2138 11.7477C0.868139 10.0099 1.04554 8.20872 1.72358 6.57179C2.40161 4.93487 3.54983 3.53577 5.02302 2.55142C6.49621 1.56706 8.22821 1.04167 10 1.04167V10H18.9583Z" stroke="#8B9787" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<clipPath id="clip0_0_28">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

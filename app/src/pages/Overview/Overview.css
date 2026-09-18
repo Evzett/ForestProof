@@ -7,11 +7,14 @@
    Левые блоки шире своего столбца на 91 — в макете карточка рынка уже
    покрытия и оставляет слева свободную полосу. */
 .ov {
-  --ov-side: clamp(280px, 29.8%, 441px);
-  --ov-notch: clamp(0px, 6.2%, 91px);
+  /* Зазор до «Условий расчёта» такой же, как между всеми карточками.
+     Раньше он был 19 и вдобавок съедался выносом левых блоков вправо,
+     поэтому единственный вертикальный шов на экране был уже остальных. */
+  --ov-side: clamp(300px, 24%, 380px);
+  --ov-notch: 0px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--ov-side);
-  gap: 27px 19px;
+  gap: 30px;
   margin-bottom: 20px;
 }
 
@@ -44,8 +47,7 @@
 .ov-market {
   grid-column: 2;
   grid-row: 1 / span 2;
-  width: min(100%, 350px);
-  margin-left: auto;
+  width: 100%;
 }
 
 /* Ряд из 25 лет требует ширины: в узкой колонке столбики не помещались */
@@ -59,10 +61,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
   justify-content: center;
-  min-height: clamp(168px, 10vw, 192px);
-  padding: 28px 34px 30px;
+  min-height: clamp(140px, 8.2vw, 158px);
+  padding: 20px 28px 22px;
   border-radius: 40px;
   background: var(--c-surface);
 }
@@ -99,7 +101,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: clamp(44px, 3.9vw, 70px);
+  font-size: clamp(40px, 3.3vw, 60px);
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -128,7 +130,7 @@
 }
 
 .tile--dark .tile__value {
-  color: var(--c-lime);
+  color: #fff;
 }
 
 .tile--dark .tile__unit {
@@ -137,7 +139,7 @@
 
 .tile--lime .tile__note,
 .tile--lime .tile__unit {
-  color: #3d4a1f;
+  color: #f2f7e2;
 }
 
 .tile--lime .tile__label {
@@ -145,7 +147,7 @@
 }
 
 .tile--lime .tile__value {
-  color: var(--c-ink-deep);
+  color: #fff;
 }
 
 /* ---------- Стоимость активов ---------- */
@@ -155,7 +157,7 @@
 }
 
 .ov-assets__value {
-  font-size: clamp(34px, 2.9vw, 50px);
+  font-size: clamp(34px, 2.6vw, 46px);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -309,9 +311,42 @@
   flex: 1;
 }
 
-.ov-summary__text {
-  font-size: 15px;
-  line-height: 1.45;
+.ov-summary__list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+}
+
+.ov-summary__list li {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.ov-summary__value {
+  display: flex;
+  min-width: 132px;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.ov-summary__value small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.ov-summary__why {
+  font-size: 14px;
+  line-height: 1.4;
   color: var(--c-ink-black);
 }
 
@@ -590,6 +625,13 @@
 
 .yloss__bar {
   position: relative;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  transition: filter 0.15s ease, outline-color 0.15s ease;
+  outline: 2px solid transparent;
+  outline-offset: 3px;
   border-radius: var(--r-pill);
   /* Штриховка макета: полосы шириной 7 с шагом 22 под −45°.
      В макете это 29 отдельных прямоугольников, здесь — один градиент,
@@ -608,6 +650,14 @@
 
 .yloss__bar--within {
   background-color: var(--c-ink);
+}
+
+.yloss__bar:hover {
+  filter: brightness(1.08);
+}
+
+.yloss__bar--picked {
+  outline-color: var(--c-ink-deep);
 }
 
 .yloss__bar--outside {
@@ -727,7 +777,7 @@
 .attention {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -737,12 +787,15 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--c-page);
+  padding: 16px 24px;
+  border: 1px solid rgb(46 62 40 / 22%);
+  border-radius: 30px;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.attention li:last-child {
-  border-bottom: 0;
+.attention li:hover {
+  border-color: var(--c-ink);
+  background: rgb(46 62 40 / 3%);
 }
 
 .attention__name {
@@ -814,4 +867,71 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
+}
+
+/* ---- разбор выбранного года ---- */
+.yloss__picked {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding: 16px 18px;
+  border: 1px solid rgb(46 62 40 / 22%);
+  border-radius: 24px;
+}
+
+.yloss__picked-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--c-muted-alt);
+}
+
+.yloss__picked-head b {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.yloss__clear {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+  text-decoration: underline;
+}
+
+.yloss__breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  list-style: none;
+  font-size: 13px;
+}
+
+.yloss__breakdown li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.yloss__breakdown a {
+  color: var(--c-ink-black);
+  text-decoration: none;
+}
+
+.yloss__breakdown a:hover {
+  text-decoration: underline;
+}
+
+.yloss__hint {
+  margin-top: 4px;
+  font-size: 12px;
+  font-style: italic;
+  color: #9b9b93;
 }

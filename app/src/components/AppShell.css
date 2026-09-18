@@ -74,6 +74,9 @@
 }
 
 .sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   padding: 13px 16px;
   border-radius: 20px;
   font-size: 15px;

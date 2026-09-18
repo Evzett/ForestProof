@@ -35,8 +35,14 @@ const PERIODS = [
 ];
 
 /* Справка собирается шаблоном из посчитанного, без языковой модели:
-   так свойство «ничего не выдумывает» держится конструкцией. */
-function buildSummary(startYear: number, endYear: number) {
+   так свойство «ничего не выдумывает» держится конструкцией.
+
+   Возвращается не склеенный абзац, а строки с выделенной величиной:
+   сплошным текстом справка читалась как дисклеймер, и числа в ней
+   терялись — а числа в ней и есть содержание. */
+type SummaryLine = { value: string; unit?: string; text: string };
+
+function buildSummary(startYear: number, endYear: number): SummaryLine[] {
   const rows = AREAS.map((a) => {
     const p =
       a.periods.find((x) => x.year_start === startYear && x.year_end === endYear) ??
@@ -48,19 +54,37 @@ function buildSummary(startYear: number, endYear: number) {
   const worst = [...rows].sort((a, b) => b.period.e_tco2e - a.period.e_tco2e)[0];
 
   return [
-    `За ${startYear}—${endYear} потерю углерода из учитываемого пула показывают ${losing.length} участка из ${rows.length}.`,
-    `Наибольшая — ${worst.area.name}: ${formatNumber(Math.round(worst.period.e_tco2e))} т CO₂-экв., то есть ${formatDecimal(worst.period.e_per_ha_year, 2)} т CO₂-экв./га/год.`,
-    withUnits.length === 0
-      ? "Потенциальных единиц не даёт ни один участок: результат либо не превышает базовую линию, либо не отличим от неё в пределах неопределённости."
-      : `Потенциальные единицы получаются на ${withUnits.length} участке.`,
-    `Причина изменения покрова подтверждена внешним продуктом на ${EVENTS.length} участках из ${rows.length}; на остальных статус причины остаётся неустановленным.`,
-  ].join(" ");
+    {
+      value: `${losing.length} из ${rows.length}`,
+      text: `участков показывают потерю углерода из учитываемого пула за ${startYear}—${endYear}`,
+    },
+    {
+      value: formatNumber(Math.round(worst.period.e_tco2e)),
+      unit: "т CO₂-экв.",
+      text: `наибольшая потеря — ${worst.area.name}, то есть ${formatDecimal(
+        worst.period.e_per_ha_year,
+        2
+      )} т CO₂-экв./га/год`,
+    },
+    {
+      value: withUnits.length === 0 ? "ни один" : `${withUnits.length} из ${rows.length}`,
+      text:
+        withUnits.length === 0
+          ? "участок не даёт потенциальных единиц: результат либо не превышает базовую линию, либо не отличим от неё в пределах неопределённости"
+          : "участков дают потенциальные единицы",
+    },
+    {
+      value: `${EVENTS.length} из ${rows.length}`,
+      text: "участков имеют подтверждение причины изменения покрова внешним продуктом; на остальных статус причины остаётся неустановленным",
+    },
+  ];
 }
 
 export default function Overview() {
   const { priceKey, price, label, setPriceKey } = useScenario();
   const [range, setRange] = useState("2019-2024");
   const [lossRange, setLossRange] = useState("2019");
+  const [pickedYear, setPickedYear] = useState<number | null>(null);
   const [startYear, endYear] = range.split("-").map(Number);
 
   const rows = useMemo(
@@ -75,7 +99,7 @@ export default function Overview() {
   );
 
   const [summary, setSummary] = useState(() => ({
-    text: buildSummary(2019, 2024),
+    lines: buildSummary(2019, 2024),
     at: "—",
   }));
   const [rebuilding, setRebuilding] = useState(false);
@@ -86,7 +110,7 @@ export default function Overview() {
     window.setTimeout(() => {
       const now = new Date();
       setSummary({
-        text: buildSummary(startYear, endYear),
+        lines: buildSummary(startYear, endYear),
         at: `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU", {
           hour: "2-digit",
           minute: "2-digit",
@@ -128,6 +152,19 @@ export default function Overview() {
     [shownLoss]
   );
   const shownTotal = shownLoss.reduce((s, l) => s + l.area_ha, 0);
+  /* Выбранный год: если он выпал из показанного ряда, выбор снимается,
+     иначе карточка показывала бы год, которого на графике нет. */
+  const picked = shownLoss.find((l) => l.year === pickedYear) ?? null;
+  /* Разбор выбранного года по участкам — из тех же cover_loss, что и сам
+     ряд, поэтому сумма разбора всегда сходится со столбцом. */
+  const pickedByArea = picked
+    ? AREAS.map((a) => ({
+        area: a,
+        area_ha: a.cover_loss.find((l) => l.year === picked.year)?.area_ha ?? 0,
+      }))
+        .filter((r) => r.area_ha > 0)
+        .sort((a, b) => b.area_ha - a.area_ha)
+    : [];
   const peakShare = shownTotal > 0 ? (shownPeak.area_ha / shownTotal) * 100 : 0;
   /* Выноска ставится над самым высоким столбцом: столбцы равной ширины,
      поэтому центр нужного — это его порядковый номер плюс половина. */
@@ -144,7 +181,7 @@ export default function Overview() {
       <div className="ov">
         <div className="ov-tiles">
           <div className="tile tile--light">
-            <span className="tile__label">участков в наборе</span>
+            <span className="tile__label">Участков в наборе</span>
             <span className="tile__value tabular">{AREAS.length}</span>
             <span className="tile__note">
               {formatDecimal(totalArea, 0)} га суммарно · 2019—2024
@@ -155,7 +192,7 @@ export default function Overview() {
           </div>
 
           <div className="tile tile--dark">
-            <span className="tile__label">показывают потерю углерода</span>
+            <span className="tile__label">Показывают потерю углерода</span>
             <span className="tile__value tabular">
               {losing}
               <span className="tile__unit">из {AREAS.length}</span>
@@ -164,7 +201,7 @@ export default function Overview() {
           </div>
 
           <div className="tile tile--lime">
-            <span className="tile__label">дают потенциальные единицы</span>
+            <span className="tile__label">Дают потенциальные единицы</span>
             <span className="tile__value tabular">
               {withUnits}
               <span className="tile__unit">из {AREAS.length}</span>
@@ -179,7 +216,7 @@ export default function Overview() {
           <Card className="ov-summary">
             <div className="ov-summary__head">
               <h2 className="card__title">Краткая справка</h2>
-              <span className="lvl lvl--low">собрано шаблоном</span>
+              <span className="lvl lvl--outline">собрано шаблоном</span>
               <span className="ov-summary__spacer" />
               <CircleBtn
                 glyph="⟳"
@@ -188,7 +225,17 @@ export default function Overview() {
                 label="Пересобрать справку"
               />
             </div>
-            <p className="ov-summary__text">{summary.text}</p>
+            <ul className="ov-summary__list">
+              {summary.lines.map((line) => (
+                <li key={line.text}>
+                  <span className="ov-summary__value tabular">
+                    {line.value}
+                    {line.unit && <small>{line.unit}</small>}
+                  </span>
+                  <span className="ov-summary__why">{line.text}</span>
+                </li>
+              ))}
+            </ul>
             <div className="ov-summary__foot">
               <span>собрано из посчитанного · без языковой модели · обновлено {summary.at}</span>
             </div>
@@ -376,20 +423,45 @@ export default function Overview() {
                 <br />
                 древесный покров за показанные годы
               </p>
-              <ul className="yloss__legend">
-                <li>
-                  <i className="yloss__dot yloss__dot--peak" />
-                  наибольший год ряда
-                </li>
-                <li>
-                  <i className="yloss__dot yloss__dot--within" />
-                  внутри периода анализа
-                </li>
-                <li>
-                  <i className="yloss__dot yloss__dot--outside" />
-                  вне периода анализа
-                </li>
-              </ul>
+              {picked ? (
+                <div className="yloss__picked">
+                  <div className="yloss__picked-head">
+                    <b>{picked.year}</b>
+                    <span>{formatArea(Math.round(picked.area_ha))} га</span>
+                    <button
+                      type="button"
+                      className="yloss__clear"
+                      onClick={() => setPickedYear(null)}
+                    >
+                      сбросить
+                    </button>
+                  </div>
+                  <ul className="yloss__breakdown">
+                    {pickedByArea.map((r) => (
+                      <li key={r.area.aoi_id}>
+                        <Link to={`/app/area/${r.area.aoi_id}`}>{r.area.name}</Link>
+                        <span className="tabular">{formatDecimal(r.area_ha, 1)} га</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <ul className="yloss__legend">
+                  <li>
+                    <i className="yloss__dot yloss__dot--peak" />
+                    наибольший год ряда
+                  </li>
+                  <li>
+                    <i className="yloss__dot yloss__dot--within" />
+                    внутри периода анализа
+                  </li>
+                  <li>
+                    <i className="yloss__dot yloss__dot--outside" />
+                    вне периода анализа
+                  </li>
+                  <li className="yloss__hint">нажмите столбец — покажу разбор по участкам</li>
+                </ul>
+              )}
             </div>
 
             <div className="yloss__plot">
@@ -403,21 +475,24 @@ export default function Overview() {
                 const height = Math.max(share, 14);
                 return (
                   <div key={l.year} className="yloss__col">
-                    <div
+                    <button
+                      type="button"
                       className={`yloss__bar ${
                         isPeak
                           ? "yloss__bar--peak"
                           : within
                             ? "yloss__bar--within"
                             : "yloss__bar--outside"
-                      }`}
+                      } ${picked?.year === l.year ? "yloss__bar--picked" : ""}`.trim()}
                       style={{ height: `${height}%` }}
+                      aria-pressed={picked?.year === l.year}
+                      onClick={() => setPickedYear(picked?.year === l.year ? null : l.year)}
                       title={`${l.year}: ${formatDecimal(l.area_ha, 1)} га`}
                     >
                       {(isPeak || share >= 22) && (
                         <span className="yloss__value">{formatArea(Math.round(l.area_ha))} га</span>
                       )}
-                    </div>
+                    </button>
                     <span className="yloss__year">{l.year}</span>
                   </div>
                 );
