@@ -377,3 +377,68 @@
   cursor: not-allowed;
   filter: none;
 }
+
+/* Ссылка на источник под пунктом методики */
+.meth__src {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-style: normal;
+  color: #8d9188;
+}
+
+/* Шаги сверки: нумерация своя, чтобы цифра совпадала с базовой линией */
+.meth__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.meth__steps li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 4px 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.meth__steps li:last-child {
+  border-bottom: 0;
+}
+
+.meth__steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--c-page);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-ink-deep);
+}
+
+.meth__steps b {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.meth__steps span {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+.meth__toc .ov-note {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--c-page);
+}

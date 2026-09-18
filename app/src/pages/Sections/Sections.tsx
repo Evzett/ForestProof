@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, ClaimPill, LevelPill, formatNumber } from "../../components/ui";
+import { Card, Checkbox, ClaimPill, LevelPill, formatNumber } from "../../components/ui";
 import { AddPlotButton, PageHead } from "../../components/AppShell";
 import { useWizard } from "../../components/Wizard";
 import {
@@ -233,13 +233,18 @@ function downloadCalc(calcId: string) {
 export function Calculations() {
   const [compare, setCompare] = useState<string[]>([]);
 
+  /* Сравнение здесь всегда попарное: вопрос журнала — «что изменилось
+     между этими двумя расчётами». Третий расчёт ответа не уточняет,
+     поэтому при двух отмеченных остальные гасим с объяснением,
+     а не подменяем выбор молча. */
   const toggle = (id: string) =>
     setCompare((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : [prev[1], id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : prev
     );
 
   const [a, b] = compare.map((id) => CALCULATIONS.find((c) => c.calc_id === id)!);
   const sameInput = a && b && a.input_hash === b.input_hash;
+  const pair = compare.length === 2;
 
   return (
     <>
@@ -270,7 +275,9 @@ export function Calculations() {
           <table className="tbl">
             <thead>
               <tr>
-                <th style={{ width: 40 }} />
+                <th style={{ width: 40 }} title="отметьте два расчёта для сравнения">
+                  ↔
+                </th>
                 <th>расчёт</th>
                 <th>дата и время</th>
                 <th>участок</th>
@@ -284,11 +291,12 @@ export function Calculations() {
               {CALCULATIONS.map((c) => (
                 <tr key={c.calc_id}>
                   <td>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={compare.includes(c.calc_id)}
+                      disabled={pair && !compare.includes(c.calc_id)}
                       onChange={() => toggle(c.calc_id)}
-                      aria-label={`сравнить ${c.calc_id}`}
+                      label={`сравнить ${c.calc_id}`}
+                      reason="выбрано два расчёта — снимите отметку с одного"
                     />
                   </td>
                   <td>
@@ -321,8 +329,10 @@ export function Calculations() {
           </table>
         </div>
         <p className="ov-note">
-          Отметьте два расчёта, чтобы сравнить их входные данные. Выгрузка в JSON нужна, чтобы
-          расчёт можно было перепроверить независимо, не доверяя нашему интерфейсу.
+          Отметьте два расчёта, чтобы сравнить их входные данные — сравнение попарное: журнал
+          отвечает на вопрос «что изменилось между этими двумя», и третья строка его не уточняет.
+          Выгрузка в JSON нужна, чтобы расчёт можно было перепроверить независимо, не доверяя
+          нашему интерфейсу.
         </p>
       </Card>
 
@@ -359,170 +369,4 @@ export function Calculations() {
   );
 }
 
-/* ================= Методика ================= */
-const SECTIONS = [
-  { id: "what", label: "Что мы считаем" },
-  { id: "formulas", label: "Формулы и коэффициенты" },
-  { id: "sources", label: "Источники данных" },
-  { id: "check", label: "Как устроена сверка" },
-  { id: "not", label: "Чего мы не считаем" },
-  { id: "limits", label: "Границы применимости" },
-];
-
-const WHAT = [
-  [
-    "Лесопокрытая площадь",
-    "Годовой ряд за 10 лет по Hansen Global Forest Change и Dynamic World. Год без валидных наблюдений остаётся в ряду пустым, а не подменяется соседним.",
-  ],
-  [
-    "Надземная биомасса",
-    "ESA CCI Biomass, всегда вместе с погрешностью продукта. Если год продукта отличается от года расчёта, это указывается как допущение.",
-  ],
-  [
-    "События нарушений",
-    "Потери покрова по годам с площадью. Пересечение с данными о гарях MODIS даёт пожарные признаки. Отсутствие признаков не означает рубку.",
-  ],
-  [
-    "Уязвимость территории",
-    "Относительный скрининг по истории пожаров, доле потерь, рельефу, близости дорог и климату. Категория с драйверами, без числовой вероятности.",
-  ],
-];
-
-const FORMULAS = [
-  ["C = AGB × 0,47", "углеродная доля, IPCC"],
-  ["CO₂ = C × 44/12", "молярное отношение"],
-  ["Δ = (заявл. − набл.) / заявл. × 100 %", "порог существенности ±10 %"],
-  ["выручка = Q × P × (1 − h)", "Q и h задаются, не выводятся"],
-];
-
-const NOT = [
-  "базовые линии и дополнительность",
-  "объём единиц к выпуску",
-  "процент резервирования и буфер",
-  "вердикт о добросовестности",
-];
-
-export function Methodology() {
-  const [active, setActive] = useState("what");
-
-  const go = (id: string) => {
-    setActive(id);
-    /* Плавная прокрутка игнорируется, если у пользователя отключены анимации
-       или браузер их не поддерживает — тогда прыгаем сразу, а не стоим на месте. */
-    const smooth = window.matchMedia?.("(prefers-reduced-motion: no-preference)").matches ?? false;
-    document
-      .getElementById(id)
-      ?.scrollIntoView(smooth ? { behavior: "smooth", block: "start" } : { block: "start" });
-  };
-
-  return (
-    <>
-      <PageHead
-        title="Методика"
-        subtitle="Что именно считаем, по каким формулам, из каких источников — и чего не считаем принципиально"
-      />
-
-      <div className="meth">
-        <Card className="meth__toc">
-          <ul>
-            {SECTIONS.map((s) => (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  className={active === s.id ? "is-on" : ""}
-                  onClick={() => go(s.id)}
-                >
-                  {s.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <div className="meth__body">
-          <div id="what">
-            <Card title="Что мы считаем" className="mb20">
-              <dl className="meth__list">
-                {WHAT.map(([t, d]) => (
-                  <div key={t}>
-                    <dt>{t}</dt>
-                    <dd>{d}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Card>
-          </div>
-
-          <div className="meth__pair">
-            <div id="formulas">
-              <Card title="Формулы" note="в конфигурации, не в коде">
-                <dl className="meth__formulas">
-                  {FORMULAS.map(([f, d]) => (
-                    <div key={f}>
-                      <dt>{f}</dt>
-                      <dd>{d}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </Card>
-            </div>
-
-            <div id="not">
-              <Card tone="dark" title="Чего мы не считаем">
-                <ul className="meth__not">
-                  {NOT.map((n) => (
-                    <li key={n}>
-                      <span aria-hidden="true">✕</span> {n}
-                    </li>
-                  ))}
-                </ul>
-                <p className="ov-note" style={{ color: "#b9c2ae" }}>
-                  Это не пробелы, а осознанные границы метода. Заявленный эффект вида
-                  предотвращённых выбросов помечается несопоставимым при любых данных.
-                </p>
-              </Card>
-            </div>
-          </div>
-
-          <div id="sources">
-            <Card title="Источники данных" className="mb20">
-              <dl className="meth__formulas">
-                {PROVENANCE.datasets.map((d) => (
-                  <div key={d.name}>
-                    <dt style={{ fontSize: 13 }}>{d.name}</dt>
-                    <dd>{d.version}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Card>
-          </div>
-
-          <div id="check">
-            <Card title="Как устроена сверка" className="mb20">
-              <p className="ov-note" style={{ marginTop: 0 }}>
-                Сверка ведётся на дату отчётности проекта, а не на сегодня: наблюдение берётся
-                ближайшее валидное к этой дате. Иначе расхождение вылезет у всех проектов просто
-                оттого, что прошло несколько лет. События, случившиеся после даты отчётности,
-                выносятся в отдельный блок и на статус не влияют — отчёт физически не мог их
-                содержать. Площадь сравнивается только с одноимённой величиной, а заявленный
-                эффект вида предотвращённых выбросов всегда помечается несопоставимым.
-              </p>
-            </Card>
-          </div>
-
-          <div id="limits">
-            <Card title="Границы применимости">
-              <p className="ov-note" style={{ marginTop: 0 }}>
-                Оценка уязвимости обучена на бореальных лесах Сибири и на другие зоны не
-                переносится. Продукт биомассы имеет разрешение 100 метров, поэтому для участков
-                меньше нескольких сотен гектаров погрешность становится сопоставимой со значением.
-                Оптические данные не работают в полярную ночь и при устойчивой облачности — в такие
-                периоды система отвечает «данных недостаточно» вместо результата.
-              </p>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
+export { Methodology } from "./Methodology";

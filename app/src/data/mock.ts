@@ -176,20 +176,32 @@ export const REGISTRY: RegistryItem[] = [
 ];
 
 /* Годовой ряд нарушений. 2017 и 2018 — без валидных наблюдений (NaN),
-   год без данных остаётся в ряду пустым, а не подменяется соседним. */
-export const DISTURBANCE_SERIES: { year: number; area_ha: number | null }[] = [
-  { year: 2015, area_ha: 6 },
-  { year: 2016, area_ha: 10 },
-  { year: 2017, area_ha: null },
-  { year: 2018, area_ha: null },
-  { year: 2019, area_ha: 8 },
-  { year: 2020, area_ha: 0 },
-  { year: 2021, area_ha: 840 },
-  { year: 2022, area_ha: 12 },
-  { year: 2023, area_ha: 22 },
-  { year: 2024, area_ha: 62 },
-  { year: 2025, area_ha: 16 },
-  { year: 2026, area_ha: 34 },
+   год без данных остаётся в ряду пустым, а не подменяется соседним.
+
+   Разбивка по типам нужна фильтру на обзоре. Сумма трёх типов равна
+   area_ha: «тип не определён» — это отдельная категория, а не остаток.
+   Отсутствие пожарных признаков рубкой не считается (FR-30). */
+export type DisturbanceYear = {
+  year: number;
+  area_ha: number | null;
+  fire_ha: number | null;
+  non_fire_ha: number | null;
+  unknown_ha: number | null;
+};
+
+export const DISTURBANCE_SERIES: DisturbanceYear[] = [
+  { year: 2015, area_ha: 6, fire_ha: 6, non_fire_ha: 0, unknown_ha: 0 },
+  { year: 2016, area_ha: 10, fire_ha: 4, non_fire_ha: 6, unknown_ha: 0 },
+  { year: 2017, area_ha: null, fire_ha: null, non_fire_ha: null, unknown_ha: null },
+  { year: 2018, area_ha: null, fire_ha: null, non_fire_ha: null, unknown_ha: null },
+  { year: 2019, area_ha: 8, fire_ha: 0, non_fire_ha: 0, unknown_ha: 8 },
+  { year: 2020, area_ha: 0, fire_ha: 0, non_fire_ha: 0, unknown_ha: 0 },
+  { year: 2021, area_ha: 840, fire_ha: 840, non_fire_ha: 0, unknown_ha: 0 },
+  { year: 2022, area_ha: 12, fire_ha: 0, non_fire_ha: 12, unknown_ha: 0 },
+  { year: 2023, area_ha: 22, fire_ha: 14, non_fire_ha: 8, unknown_ha: 0 },
+  { year: 2024, area_ha: 62, fire_ha: 0, non_fire_ha: 40, unknown_ha: 22 },
+  { year: 2025, area_ha: 16, fire_ha: 16, non_fire_ha: 0, unknown_ha: 0 },
+  { year: 2026, area_ha: 34, fire_ha: 18.4, non_fire_ha: 0, unknown_ha: 15.6 },
 ];
 
 export const EVENTS: DisturbanceEvent[] = [
