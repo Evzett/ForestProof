@@ -906,6 +906,11 @@ function UnitsTab({ area, period }: { area: Area; period: Period }) {
 
   return (
     <>
+      {/* Экономика стоит первой: на вопрос «сколько это денег» человек
+          смотрит раньше, чем на то, как получилось Q. Сам расчёт никуда
+          не делся, он ниже — и именно в таком порядке его и читают. */}
+      <Economics area={area} period={period} />
+
       <div className="plot-row plot-row--even">
         <Card title="Сравнение с базовой линией" className="plot-block">
           <dl className="kv">
@@ -997,8 +1002,6 @@ function UnitsTab({ area, period }: { area: Area; period: Period }) {
           в Q не включается.
         </p>
       </Card>
-
-      <Economics area={area} period={period} />
     </>
   );
 }
@@ -1196,29 +1199,6 @@ function StabilityTab({ area }: { area: Area }) {
         <ModelForecastCard aoiId={area.aoi_id} rulesLevel={s.level} />
       </div>
 
-      <div className="plot-row plot-row--even">
-        <Card title="Чего скрининг не делает" tone="soft" className="plot-block">
-          <ul className="meth__not" style={{ color: "var(--c-ink-black)" }}>
-            <li>
-              <span aria-hidden="true">✕</span> не влияет на число потенциальных единиц
-            </li>
-            <li>
-              <span aria-hidden="true">✕</span> не даёт числовой вероятности реверсии
-            </li>
-            <li>
-              <span aria-hidden="true">✕</span> не заменяет официальный расчёт риска
-            </li>
-            <li>
-              <span aria-hidden="true">✕</span> не переносится на другие природные зоны
-            </li>
-          </ul>
-          <p className="ov-note">
-            Вычет за неопределённость выводится из отношения H/R, резерв фиксирован условиями
-            кейса — подставить сюда выход скрининга значило бы нарушить правила расчёта.
-          </p>
-        </Card>
-      </div>
-
       <Card title="Сработавшие признаки" note="каждый порог виден и оспорим" className="plot-block">
         <div className="tbl__scroll">
           <table className="tbl">
@@ -1261,6 +1241,29 @@ function StabilityTab({ area }: { area: Area }) {
       </Card>
 
       <ModelEvidence aoiId={area.aoi_id} />
+
+      <div className="plot-row plot-row--even">
+        <Card title="Чего скрининг не делает" tone="soft" className="plot-block">
+          <ul className="meth__not" style={{ color: "var(--c-ink-black)" }}>
+            <li>
+              <span aria-hidden="true">✕</span> не влияет на число потенциальных единиц
+            </li>
+            <li>
+              <span aria-hidden="true">✕</span> не даёт числовой вероятности реверсии
+            </li>
+            <li>
+              <span aria-hidden="true">✕</span> не заменяет официальный расчёт риска
+            </li>
+            <li>
+              <span aria-hidden="true">✕</span> не переносится на другие природные зоны
+            </li>
+          </ul>
+          <p className="ov-note">
+            Вычет за неопределённость выводится из отношения H/R, резерв фиксирован условиями
+            кейса — подставить сюда выход скрининга значило бы нарушить правила расчёта.
+          </p>
+        </Card>
+      </div>
     </>
   );
 }
