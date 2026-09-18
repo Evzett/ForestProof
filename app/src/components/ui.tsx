@@ -159,10 +159,14 @@ export function InfoCard({
 }) {
   return (
     <article className={`info info--${tone}`}>
+      {/* В макете ярлык отбит от заголовка на 16, а заголовок от текста — на 10,
+          поэтому пара «заголовок + текст» лежит в своей обёртке. */}
       <div className="info__text">
         <Tag tone={tone === "dark" ? "dark" : "light"}>{tag}</Tag>
-        <h3 className="info__title">{title}</h3>
-        <p className="info__body">{body}</p>
+        <div className="info__copy">
+          <h3 className="info__title">{title}</h3>
+          <p className="info__body">{body}</p>
+        </div>
       </div>
       <div className="info__media">
         <img src={image} alt={imageAlt} loading="lazy" />

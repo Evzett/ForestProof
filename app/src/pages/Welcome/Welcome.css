@@ -1,16 +1,22 @@
+/* Приветственный экран.
+   Макет нарисован на 1920 с полями по 100. Все размеры здесь заданы
+   как доля этой ширины (vw) с ограничителями, поэтому композиция
+   сжимается целиком: картинка, типографика и отступы едут вместе,
+   и текст не наползает на скалу. Проценты от 1920:
+   100 = 5.21vw, 242 = 12.6vw, 403 = 21vw, 524 = 27.3vw, 1006 = 52.4vw. */
 .welcome {
   width: 100%;
   max-width: var(--canvas);
   margin: 0 auto;
-  padding: 0 var(--gutter) 60px;
+  padding: 0 var(--gutter) 40px;
   overflow-x: clip;
 }
 
 .section-title {
   font-size: var(--t-h1);
   font-weight: 400;
-  line-height: 0.85;
-  letter-spacing: -0.02em;
+  line-height: 0.7;
+  letter-spacing: -0.01em;
   color: var(--c-ink-deep);
 }
 
@@ -18,21 +24,20 @@
   color: #fff;
 }
 
-/* ================= Обложка =================
-   Всё масштабируется от ширины окна: картинка, вотермарк, отступы.
-   Жёстких координат макета нет — на узком экране они наезжали друг на друга. */
+/* ================= Обложка ================= */
 .hero {
-  --art: clamp(340px, 52vw, 1006px);
+  --art: clamp(320px, 52.4vw, 1006px);
   position: relative;
-  min-height: clamp(420px, 52vw, 1006px);
-  padding-bottom: clamp(32px, 4vw, 80px);
+  min-height: var(--art);
 }
 
+/* Вотермарк шире холста и обрезается по краям страницы —
+   поэтому отсчёт идёт от края окна, а не от колонки контента. */
 .hero__watermark {
   position: absolute;
-  top: clamp(-62px, -3.2vw, -12px);
-  left: -1.5vw;
-  font-size: clamp(56px, 20.8vw, 400px);
+  top: clamp(-62px, -3.23vw, -12px);
+  left: calc(-1 * var(--gutter) - 1.46vw);
+  font-size: clamp(56px, 20.83vw, 400px);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.05em;
@@ -117,48 +122,57 @@
   }
 }
 
-/* Контент лежит поверх картинки: слева заголовок, справа плашки и лид */
+/* Контент лежит поверх картинки: слева заголовок, справа плашки и лид.
+   Левая колонка ровно 524 из 1920 — ширина заголовка в макете.
+   Шире её делать нельзя: строка уходит на скалу. */
 .hero__grid {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-columns: clamp(220px, 27.3vw, 524px) minmax(0, 1fr);
   align-items: start;
-  gap: clamp(20px, 2.5vw, 60px);
-  /* отсчёт от верхней плашки: в макете она начинается на 447 из 1920 */
-  padding-top: clamp(170px, 23.3vw, 447px);
+  gap: clamp(16px, 2.5vw, 48px);
+  /* плашка «132» начинается на 447 из 1920 */
+  padding-top: clamp(120px, 23.28vw, 447px);
 }
 
 .hero__copy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: clamp(14px, 1.4vw, 24px);
-  /* заголовок на 70 ниже плашек — как в макете */
-  margin-top: clamp(0px, 3.6vw, 70px);
-  max-width: 524px;
+  /* в макете заголовок → подпись → кнопка идут через 27 */
+  gap: clamp(12px, 1.4vw, 27px);
+  /* заголовок на 70 ниже плашек */
+  margin-top: clamp(0px, 3.65vw, 70px);
 }
 
 .hero__title {
   font-size: var(--t-h1);
   font-weight: 400;
-  line-height: 0.85;
-  letter-spacing: -0.02em;
+  line-height: 0.7;
+  letter-spacing: -0.01em;
   color: var(--c-ink);
 }
 
 .hero__note {
-  max-width: 320px;
+  width: clamp(160px, 14.7vw, 282px);
   font-size: var(--t-body);
-  line-height: 1.15;
+  line-height: 1;
   color: var(--c-muted);
+}
+
+/* Кнопка в макете фиксированной ширины, а не по тексту.
+   Именно min-width: на узком экране подпись должна иметь право
+   раздвинуть кнопку, а не переноситься на вторую строку. */
+.hero__copy .btn {
+  min-width: clamp(220px, 19.53vw, 375px);
 }
 
 .hero__side {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: clamp(20px, 3.6vw, 70px);
+  gap: clamp(20px, 3.65vw, 70px);
 }
 
 .hero__stats {
@@ -168,16 +182,15 @@
   gap: 0;
 }
 
-/* Верхняя плашка сдвинута влево — лесенка из макета.
-   Сдвиг тоже текучий, на узком экране схлопывается в ноль. */
+/* Верхняя плашка сдвинута влево на 242 — лесенка из макета */
 .hero__stat--a {
   margin-right: clamp(0px, 12.6vw, 242px);
 }
 
 .hero__lead {
-  width: clamp(240px, 21vw, 403px);
+  width: clamp(220px, 21vw, 403px);
   font-size: var(--t-lead);
-  line-height: 1.15;
+  line-height: 1;
   letter-spacing: -0.04em;
   text-align: right;
   color: var(--c-muted-alt);
@@ -186,52 +199,68 @@
 /* ================= Что мы делаем ================= */
 .about {
   display: grid;
-  grid-template-columns: minmax(0, 575px) minmax(0, 803px);
+  /* 575 и 803 из 1720 — между ними в макете 342; при сужении
+     колонки едут вместе с зазором, а не зазор в одиночку */
+  grid-template-columns: minmax(0, clamp(260px, 29.95vw, 575px)) minmax(0, clamp(320px, 41.82vw, 803px));
   justify-content: space-between;
-  gap: clamp(32px, 4vw, 60px);
-  padding-top: clamp(64px, 8vw, 160px);
+  gap: clamp(24px, 4vw, 60px);
+  padding-top: clamp(56px, 8.33vw, 160px);
 }
 
 .about__left {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 30px;
+  /* абзац → кнопка: 30 */
+  gap: clamp(16px, 1.56vw, 30px);
 }
 
+/* заголовок → абзац: 60, то есть ещё 30 сверх общего gap */
 .about__text {
+  margin-top: clamp(14px, 1.56vw, 30px);
   font-size: var(--t-lead);
-  line-height: 1.15;
+  line-height: 1;
   letter-spacing: -0.04em;
   color: var(--c-muted-alt);
 }
 
+.about__left .btn {
+  min-width: clamp(190px, 14.32vw, 275px);
+}
+
+/* Карточки правой колонки на 17 ниже заголовка */
+.about__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: clamp(0px, 0.9vw, 17px);
+}
+
+/* Галерея прижата к низу колонки — как в макете */
 .about__gallery {
   display: flex;
-  gap: clamp(16px, 2vw, 40px);
+  gap: clamp(16px, 2.08vw, 40px);
+  width: 100%;
+  max-width: clamp(240px, 28.13vw, 540px);
   margin-top: auto;
   padding-top: clamp(32px, 5vw, 100px);
 }
 
 .about__gallery img {
-  width: 250px;
-  max-width: calc(50% - 20px);
-  height: 236px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: clamp(110px, 13.02vw, 250px);
+  height: auto;
+  aspect-ratio: 250 / 236;
   border-radius: var(--r-img-md);
   object-fit: cover;
-}
-
-.about__cards {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
 }
 
 /* ================= Закрывающий блок ================= */
 .closing {
   position: relative;
-  margin-top: clamp(64px, 9vw, 176px);
-  padding: clamp(28px, 2.6vw, 50px);
+  margin-top: clamp(56px, 9.17vw, 176px);
+  padding: clamp(24px, 2.6vw, 50px);
   border-radius: var(--r-card);
   background: var(--c-ink);
   overflow: hidden;
@@ -250,28 +279,30 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: clamp(20px, 1.6vw, 30px);
-  max-width: 900px;
+  gap: clamp(16px, 1.56vw, 30px);
+  max-width: clamp(280px, 46.88vw, 900px);
 }
 
 .closing__text {
   font-size: var(--t-lead);
-  line-height: 1.15;
+  line-height: 1;
   letter-spacing: -0.04em;
   color: #fff;
   opacity: 0.7;
 }
 
+/* абзац → кнопка: 40, то есть 30 общего gap плюс 10 */
 .closing__actions {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 20px;
+  margin-top: 10px;
 }
 
 .closing__caption {
   font-size: var(--t-body);
-  line-height: 1.15;
+  line-height: 1;
   color: var(--c-muted);
 }
 
@@ -284,11 +315,12 @@
   color: var(--c-muted);
 }
 
-/* ================= Узкие экраны ================= */
+/* ================= Узкие экраны =================
+   Ниже 1100 композиция макета уже не читается: разбираем её
+   на одну колонку, картинка встаёт в поток. */
 @media (max-width: 1100px) {
   .hero {
     min-height: 0;
-    padding-bottom: 32px;
   }
 
   .hero__float {
@@ -304,6 +336,15 @@
   .hero__grid {
     grid-template-columns: 1fr;
     padding-top: 28px;
+  }
+
+  .hero__copy {
+    margin-top: 0;
+  }
+
+  .hero__note {
+    width: auto;
+    max-width: 420px;
   }
 
   .hero__side {
@@ -331,6 +372,10 @@
     grid-template-columns: 1fr;
   }
 
+  .about__cards {
+    margin-top: 0;
+  }
+
   .about__gallery {
     padding-top: 8px;
   }
@@ -345,8 +390,8 @@
     width: 100%;
   }
 
-  .about__gallery img {
-    max-width: calc(50% - 8px);
-    height: 160px;
+  .hero__copy .btn,
+  .about__left .btn {
+    width: 100%;
   }
 }

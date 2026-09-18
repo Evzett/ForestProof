@@ -75,18 +75,10 @@ button {
   padding: 0 var(--gutter);
 }
 
-@media (max-width: 1280px) {
-  :root {
-    --gutter: 40px;
-    --t-h1: 40px;
-    --t-lead: 20px;
-  }
-}
-
+/* Поля и кегли текучие — смотри tokens.css. Здесь остаётся только то,
+   что от ширины не выводится: на телефоне поле в 5.21% слишком узкое. */
 @media (max-width: 720px) {
   :root {
     --gutter: 20px;
-    --t-h1: 32px;
-    --t-lead: 18px;
   }
 }

@@ -4,7 +4,7 @@
   align-items: center;
   gap: 10px;
   min-height: var(--h-btn);
-  padding: 14px 32px;
+  padding: 14px clamp(18px, 1.67vw, 32px);
   border-radius: var(--r-pill);
   font-size: var(--t-body);
   letter-spacing: -0.2px;
@@ -25,7 +25,7 @@
   background: var(--c-lime);
   color: var(--c-ink);
   justify-content: space-between;
-  min-width: 316px;
+  min-width: clamp(240px, 16.46vw, 316px);
   padding-right: 24px;
 }
 
@@ -54,17 +54,18 @@
 }
 
 /* ---------- Плашка со статистикой ---------- */
+/* Плашка макета: 223 × 148, внутри колонка 159 с полями 32 и 16,5.
+   Высота — минимум, а не жёсткая: подставной шрифт шире оригинального
+   и длинная подпись начинает подпирать нижнюю границу. */
 .stat {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  width: 223px;
-  /* Высота по макету — 148, но фиксировать нельзя: подставной шрифт шире
-     оригинального, и длинная подпись начинает подпирать нижнюю границу. */
-  min-height: 148px;
-  padding: 18px 28px;
+  width: clamp(150px, 11.61vw, 223px);
+  min-height: clamp(104px, 7.71vw, 148px);
+  padding: clamp(12px, 0.86vw, 16px) clamp(16px, 1.67vw, 32px);
   border: 1px solid var(--c-line);
   border-radius: var(--r-pill);
   color: var(--c-muted);
@@ -73,14 +74,14 @@
 }
 
 .stat__value {
-  font-size: 50px;
-  letter-spacing: -2.5px;
+  font-size: clamp(32px, 2.6vw, 50px);
+  letter-spacing: -0.05em;
   line-height: 1.2;
 }
 
 .stat__caption {
   font-size: var(--t-body);
-  line-height: 1.1;
+  line-height: 1;
 }
 
 /* ---------- Ярлык ---------- */
@@ -92,7 +93,8 @@
   padding: 0 20px;
   border-radius: var(--r-pill);
   font-size: var(--t-body);
-  letter-spacing: -0.64px;
+  letter-spacing: -0.04em;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -359,13 +361,15 @@
 }
 
 /* ---------- Карточка «что мы делаем» ---------- */
+/* Карточка макета: 803 в ширину, поля 20 сверху и 40 по бокам и снизу,
+   внутри строка высотой 210 — столько же, сколько фотография справа.
+   Колонка текста 447, зазор до фотографии 49. */
 .info {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 40px;
-  min-height: 250px;
-  padding: 20px 40px 40px;
+  gap: clamp(20px, 2.55vw, 49px);
+  padding: 20px clamp(20px, 2.08vw, 40px) clamp(20px, 2.08vw, 40px);
   border-radius: var(--r-card);
   background: var(--c-surface);
 }
@@ -379,20 +383,28 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
-  max-width: 447px;
+  min-width: 0;
+  max-width: clamp(200px, 23.28vw, 447px);
+}
+
+.info__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .info__title {
   font-size: var(--t-lead);
   font-weight: 400;
-  letter-spacing: -0.96px;
+  letter-spacing: -0.04em;
   line-height: 1;
   color: var(--c-ink-black);
 }
 
+/* Межстрочный интервал в макете равен кеглю — набор плотный, так и оставляем */
 .info__body {
   font-size: var(--t-body);
-  line-height: 1.2;
+  line-height: 1;
   color: var(--c-muted);
 }
 
@@ -406,9 +418,9 @@
 }
 
 .info__media {
-  flex: 0 0 227px;
-  width: 227px;
-  height: 210px;
+  flex: 0 0 clamp(120px, 11.82vw, 227px);
+  width: clamp(120px, 11.82vw, 227px);
+  aspect-ratio: 227 / 210;
   border-radius: var(--r-img-sm);
   overflow: hidden;
 }
