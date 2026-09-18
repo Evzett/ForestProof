@@ -1,0 +1,93 @@
+.terrain {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.terrain__bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.terrain__years {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid rgb(46 62 40 / 28%);
+  border-radius: var(--r-pill);
+}
+
+.terrain__years button {
+  padding: 8px 18px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  color: var(--c-muted-alt);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.terrain__years button.is-on {
+  background: var(--c-ink);
+  color: #fff;
+}
+
+.terrain__hint {
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+/* Холст на всю ширину карточки: рельеф — главное, ради чего эта
+   вкладка открывается, и ужимать его нечем. */
+.terrain__canvas {
+  width: 100%;
+  height: clamp(320px, 30vw, 520px);
+  border-radius: var(--r-img-md);
+  background: linear-gradient(180deg, #f3f4ef 0%, #e8eae3 100%);
+  cursor: grab;
+  touch-action: none;
+}
+
+.terrain__canvas:active {
+  cursor: grabbing;
+}
+
+.terrain__kv {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+}
+
+.terrain__kv > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.terrain__kv dt {
+  color: var(--c-muted-alt);
+}
+
+.terrain__kv dd {
+  color: var(--c-ink-black);
+}
+
+.terrain__dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  vertical-align: baseline;
+}
+
+.terrain__dot--up {
+  background: rgb(40 136 34);
+}
+
+.terrain__dot--down {
+  background: rgb(150 120 96);
+}

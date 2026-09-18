@@ -133,6 +133,7 @@ export type Area = {
   aoi_id: string;
   summary?: CalculationSummary;
   maps: AreaMaps | null;
+  terrain: Terrain | null;
   sentinel: SentinelEvidence | null;
   stability: Stability;
   name: string;
@@ -334,6 +335,20 @@ export const ASSUMPTIONS = [
    Второе мнение рядом с пороговыми правилами, а не вместо них.
    На четырёх участках модель проверить нечем, и она сама это пишет
    в поле verdict — оно выводится на экран целиком, а не прячется. */
+
+export type Terrain = {
+  width: number;
+  height: number;
+  unit: string;
+  peak_t_ha: number;
+  pixel_area_ha: number;
+  start_year: number;
+  end_year: number;
+  /* Значение -1 означает «пиксель вне контура». Ноль тоже значение,
+     и путать «здесь нет леса» с «сюда не спрашивали» нельзя. */
+  start: number[];
+  end: number[];
+};
 
 export type ModelForecast = {
   probability: number;

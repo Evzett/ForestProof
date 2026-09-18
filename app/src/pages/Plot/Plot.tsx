@@ -9,6 +9,7 @@ import {
   plural,
 } from "../../components/ui";
 import ChangeMap from "../../components/ChangeMap";
+import CarbonTerrain from "../../components/CarbonTerrain";
 import CalculationSummary from "../../components/CalculationSummary";
 import SeriesChart from "../../components/SeriesChart";
 import {
@@ -422,6 +423,16 @@ function ChangesTab({
 
   return (
     <>
+      {area.terrain && (
+        <Card
+          title="Запас углерода в объёме"
+          note={`${area.terrain.start_year} и ${area.terrain.end_year}`}
+          className="plot-block mb20"
+        >
+          <CarbonTerrain terrain={area.terrain} name={area.name} />
+        </Card>
+      )}
+
       <div className="plot-row">
         <Card title="Где изменился запас" note={`${period.year_start} → ${period.year_end}`} className="plot-block">
           <ChangeMap area={area} />
