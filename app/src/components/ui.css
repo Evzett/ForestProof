@@ -1,13 +1,16 @@
 /* ---------- Кнопка ---------- */
+/* Подпись кнопки набрана как ведущий абзац: тот же кегль и та же
+   плотность. Прежние 16 px рядом с лидом в 24 выглядели мелочью,
+   хотя кнопка — главное действие экрана. */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   min-height: var(--h-btn);
-  padding: 14px clamp(18px, 1.67vw, 32px);
+  padding: 14px clamp(20px, 1.9vw, 36px);
   border-radius: var(--r-pill);
-  font-size: var(--t-body);
-  letter-spacing: -0.2px;
+  font-size: var(--t-lead);
+  letter-spacing: -0.04em;
   transition: filter 0.15s ease;
 }
 

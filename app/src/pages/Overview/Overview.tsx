@@ -350,27 +350,6 @@ export default function Overview() {
           </span>
 
           <div className="ov-market__divider" />
-          <span className="ov-market__label">вычеты и резерв</span>
-          <dl className="ov-market__kv">
-            <div>
-              <dt>порог неопределённости</dt>
-              <dd className="tabular">{PARAMETERS.unc_threshold * 100} %</dd>
-            </div>
-            <div>
-              <dt>резерв BUF</dt>
-              <dd className="tabular">{PARAMETERS.buffer_share * 100} %</dd>
-            </div>
-            <div>
-              <dt>утечка LK</dt>
-              <dd className="tabular">{PARAMETERS.leakage_tco2e}</dd>
-            </div>
-            <div>
-              <dt>углеродная доля CF</dt>
-              <dd className="tabular">{PARAMETERS.carbon_fraction}</dd>
-            </div>
-          </dl>
-
-          <div className="ov-market__divider" />
           <Link to="/app/methodology" className="ov-market__cta">
             Как это считается
           </Link>
