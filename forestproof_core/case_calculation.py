@@ -20,6 +20,8 @@ def _finite_or_none(value: float | None) -> float | None:
 class CaseCalculationConfig:
     carbon_fraction: float = 0.47
     co2_per_carbon: float = 44 / 12
+    # Scenario assumptions from docs/06: parameters.csv has no rho_s, rho_t
+    # or k_sigma rows. Keep them configurable rather than claiming CSV provenance.
     rho_spatial: float = 0.5
     rho_temporal: float = 0.7
     k_sigma: float = 1.645
@@ -311,6 +313,7 @@ def baseline_rate(
     c_anchor_tc_ha: float | None,
     config: CaseCalculationConfig,
 ) -> float | None:
+    """Legacy historical-rate helper; production uses baseline.csv endpoints."""
     if c_start_tc_ha is None or c_anchor_tc_ha is None:
         return None
     if not math.isfinite(c_start_tc_ha) or not math.isfinite(c_anchor_tc_ha):
@@ -327,6 +330,7 @@ def baseline_mean(
     c_anchor_tc_ha: float | None,
     config: CaseCalculationConfig,
 ) -> float | None:
+    """Legacy projection helper; production uses baseline.csv endpoints."""
     rate = baseline_rate(c_start_tc_ha, c_anchor_tc_ha, config)
     if rate is None or not math.isfinite(year):
         return None
