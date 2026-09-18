@@ -1,84 +1,103 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Card, FilterSelect, formatDecimal, formatNumber } from "../../components/ui";
+import ChangeMap from "../../components/ChangeMap";
 import {
-  Card,
-  CircleBtn,
-  ClaimPill,
-  ConfidencePill,
-  LevelPill,
-  WithError,
-  formatDecimal,
-  formatNumber,
-} from "../../components/ui";
-import EventDrawer from "../../components/EventDrawer";
-import {
-  CLAIM_CHECK,
-  CONFIDENCE_PARTS,
-  COVER_SERIES,
-  DATA_COMPLETENESS,
-  DISTURBANCE_SERIES,
-  EVENTS,
-  PROJECTS,
-  PROVENANCE,
-  SCENARIO,
-  SUMMARY,
-  VULNERABILITY,
-} from "../../data/mock";
-import type { DisturbanceEvent, EventType } from "../../types";
+  ASSUMPTIONS,
+  DATASETS,
+  PARAMETERS,
+  YEARS,
+  areaById,
+  eventsFor,
+  periodFor,
+} from "../../data/case";
+import type { Area, Period } from "../../data/case";
 import "./Plot.css";
 
-/* Карточка участка. Требования FR-25 — FR-50, FR-83, FR-84.
+/* Карточка участка — основной экран сервиса.
 
-   Для территории без проекта вкладки сверки нет вовсе — она не показывается
-   пустой, а отсутствует: заявлять нечего. */
+   Порядок вкладок повторяет порядок рассуждения верификатора: сколько
+   запаса и как изменилось → как менялось по годам → где именно и почему →
+   насколько результату можно верить → сколько это единиц → отчёт.
 
-const TABS = ["Обзор", "Измерение", "Нарушения", "Сверка", "Уязвимость", "Экономика", "Аудит"];
+   Знак результата: положительное E означает потерю углерода из
+   учитываемого пула, отрицательное — накопление. Это не объём выброса
+   в атмосферу: часть углерода переходит в мёртвую древесину и подстилку. */
 
-/* Отсутствие пожарных признаков не означает рубку: тип остаётся
-   неопределённым, пока нет дополнительных сведений (FR-30). */
-const EVENT_LABEL: Record<EventType, string> = {
-  fire_supported: "подтверждено пожаром",
-  non_fire: "не связано с пожаром",
-  vegetation_stress: "стресс растительности",
-  unknown: "тип не определён",
-};
+const TABS = [
+  "Запас",
+  "Динамика",
+  "Изменения",
+  "Неопределённость",
+  "Единицы",
+  "Отчёт",
+] as const;
+
+const YEAR_OPTIONS = YEARS.map((y) => ({ value: String(y), label: String(y) }));
 
 export default function Plot() {
   const { id } = useParams();
-  const plot = PROJECTS.find((p) => p.project_id === id) ?? PROJECTS[0];
-  const withProject = plot.mode === "with_project";
-  const tabs = withProject ? TABS : TABS.filter((t) => t !== "Сверка");
-  const [tab, setTab] = useState(tabs[0]);
-  const [event, setEvent] = useState<DisturbanceEvent | null>(null);
+  const area = areaById(id);
+  const events = eventsFor(area.aoi_id);
 
-  /* Допущения сценария: пользователь их меняет, но дисконт никогда
-     не выводится из оценки уязвимости (FR-56). */
-  const [price, setPrice] = useState(SCENARIO.default_price);
-  const [manualPrice, setManualPrice] = useState(false);
-  const [haircut, setHaircut] = useState(SCENARIO.default_haircut_pct);
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Запас");
+  const [start, setStart] = useState("2019");
+  const [end, setEnd] = useState("2024");
 
-  const max = Math.max(...DISTURBANCE_SERIES.map((d) => d.area_ha ?? 0), 1);
-  const revenue = Math.round(SCENARIO.expected_effect_co2_t_year * price * (1 - haircut / 100));
-  const perHa = Math.round(revenue / plot.area_ha);
+  /* Конечный год должен быть больше начального — условие постановки.
+     Вместо ошибки подтягиваем конец за началом: пользователь не обязан
+     угадывать допустимую пару. */
+  const startYear = Number(start);
+  const endYear = Math.max(Number(end), startYear + 1);
+  const period = periodFor(area, startYear, Math.min(endYear, 2024));
 
-  const showOverview = tab === "Обзор";
+  if (!period) {
+    return (
+      <Card title="Расчёт недоступен">
+        <p className="ov-note" style={{ marginTop: 0 }}>
+          Для пары {startYear} — {endYear} в наборе нет сопоставимых состояний.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <>
       <header className="plot-head">
-        <Link to="/app/projects" className="plot-head__back" aria-label="Назад в каталог">
+        <Link to="/app/areas" className="plot-head__back" aria-label="Назад к участкам">
           ←
         </Link>
         <div>
-          <h1 className="page-head__title">{plot.name}</h1>
+          <h1 className="page-head__title">{area.name}</h1>
           <p className="page-head__sub">
-            {formatNumber(plot.area_ha)} га · {plot.subtitle} · граница: {plot.boundary_source}
+            {formatDecimal(area.area_ha, 1)} га · {area.region} · {area.role} ·{" "}
+            {area.status}
           </p>
         </div>
       </header>
 
+      <div className="period">
+        <span className="period__label">период наблюдения</span>
+        <FilterSelect
+          value={start}
+          onChange={setStart}
+          options={YEAR_OPTIONS.slice(0, -1)}
+          label="начальный год"
+        />
+        <span aria-hidden="true">—</span>
+        <FilterSelect
+          value={String(Math.min(endYear, 2024))}
+          onChange={setEnd}
+          options={YEAR_OPTIONS.filter((o) => Number(o.value) > startYear)}
+          label="конечный год"
+        />
+        <span className="period__hint">
+          {period.years} годовых перехода · учитываемый пул — живая надземная древесная биомасса
+        </span>
+      </div>
+
       <nav className="tabs">
-        {tabs.map((t) => (
+        {TABS.map((t) => (
           <button
             key={t}
             type="button"
@@ -90,530 +109,814 @@ export default function Plot() {
         ))}
       </nav>
 
-      {/* ---------------- Обзор ---------------- */}
-      {showOverview && (
-        <>
-          <div className="plot-row">
-            <Card className="plot-map">
-              <div className="plot-map__canvas">
-                <img src={plot.preview_path} alt="Превью участка" />
-                <span className="plot-map__stamp">
-                  Sentinel-2 · {DATA_COMPLETENESS.latest_observation_date}
-                </span>
-              </div>
-            </Card>
-
-            <Card className="plot-summary">
-              <div className="ov-summary__head">
-                <h2 className="card__title">Краткая справка</h2>
-                <span className="lvl lvl--low">сгенерировано</span>
-                <span className="ov-summary__spacer" />
-                <CircleBtn glyph="⟳" />
-              </div>
-              <p className="ov-summary__text">{SUMMARY.text}</p>
-              <div className="ov-summary__foot">
-                <span>источник:</span>
-                <span className="chip">{plot.calc_id}</span>
-                <span>· только пересказ посчитанного</span>
-              </div>
-            </Card>
-          </div>
-
-          <div className="plot-tiles">
-            <Card>
-              <span className="tile__label">лесопокрытая площадь</span>
-              <div className="plot-tiles__value tabular">
-                {formatNumber(476210)} <small>га</small>
-              </div>
-              <span className="tile__note">−3,1 % за период наблюдения</span>
-            </Card>
-            <Card>
-              <span className="tile__label">биомасса</span>
-              <div className="plot-tiles__value">
-                <WithError value={plot.agb_t_ha} error={plot.agb_sd_t_ha} /> <small>т/га</small>
-              </div>
-              <span className="tile__note">ESA CCI Biomass v6, год продукта 2022</span>
-            </Card>
-            <Card tone="dark">
-              <span className="tile__label" style={{ color: "#b9c2ae" }}>
-                эквивалент запаса CO₂
-              </span>
-              <div className="plot-tiles__value tabular" style={{ color: "var(--c-lime)" }}>
-                110,9 <small style={{ color: "#b9c2ae" }}>млн т</small>
-              </div>
-              <span className="tile__note" style={{ color: "#b9c2ae" }}>
-                232,9 т CO₂ на гектар
-              </span>
-            </Card>
-            <Card tone="soft">
-              <span className="tile__label">уязвимость</span>
-              <div style={{ margin: "10px 0" }}>
-                <LevelPill level={plot.vulnerability_level} />
-              </div>
-              <span className="tile__note">
-                Аналитический скрининг, не расчёт риска реверсии. Числовой вероятности нет.
-              </span>
-            </Card>
-          </div>
-        </>
-      )}
-
-      {/* ---------------- Измерение ---------------- */}
-      {tab === "Измерение" && (
-        <>
-          <Card title="Лесопокрытая площадь по годам" note="Hansen GFC v1.13 + Dynamic World" className="plot-block">
-            <CoverChart />
-            <p className="ov-note">
-              Год без валидных наблюдений остаётся в ряду пустым, а не подменяется соседним:
-              2017 и 2018 закрыты сплошной облачностью.
-            </p>
-          </Card>
-
-          <div className="plot-row plot-row--even">
-            <Card title="Полнота данных" className="plot-block">
-              <dl className="kv">
-                <div>
-                  <dt>доступных периодов</dt>
-                  <dd className="tabular">
-                    {DATA_COMPLETENESS.periods_available} из {DATA_COMPLETENESS.periods_total} лет
-                  </dd>
-                </div>
-                <div>
-                  <dt>валидное покрытие территории</dt>
-                  <dd className="tabular">{DATA_COMPLETENESS.valid_coverage_pct} %</dd>
-                </div>
-                <div>
-                  <dt>последнее валидное наблюдение</dt>
-                  <dd>{DATA_COMPLETENESS.latest_observation_date}</dd>
-                </div>
-                <div>
-                  <dt>пропущенные годы</dt>
-                  <dd>{DATA_COMPLETENESS.missing_years.join(", ")}</dd>
-                </div>
-              </dl>
-              <p className="ov-note">
-                Период — один год. Если валидных наблюдений в периоде сверки нет, блок возвращает
-                «данных недостаточно» вместо результата.
-              </p>
-            </Card>
-
-            <Card title="Доверие к измерению" className="plot-block">
-              <div className="kv__head">
-                <span>общий уровень</span>
-                <ConfidencePill value={plot.measurement_confidence_overall} />
-              </div>
-              <dl className="kv">
-                {CONFIDENCE_PARTS.map((c) => (
-                  <div key={c.label}>
-                    <dt>
-                      {c.label}
-                      <em>{c.basis}</em>
-                    </dt>
-                    <dd>
-                      <ConfidencePill value={c.value} />
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="ov-note">
-                Единой числовой оценки доверия вида «83 %» не существует — ни в данных, ни на
-                экране.
-              </p>
-            </Card>
-          </div>
-        </>
-      )}
-
-      {/* ---------------- Нарушения ---------------- */}
-      {(tab === "Нарушения" || showOverview) && (
-        <Card title="История нарушений" note="Hansen v1.13 + MODIS MCD64A1" className="plot-block">
-          <div className="bars">
-            {DISTURBANCE_SERIES.map((d) => {
-              const missing = d.area_ha === null;
-              const h = missing ? 0 : Math.max(((d.area_ha as number) / max) * 170, 4);
-              const tone = d.year === 2021 ? "peak" : d.year >= 2024 ? "fresh" : "plain";
-              return (
-                <div key={d.year} className="bars__col">
-                  {missing ? (
-                    <span className="bars__missing" title="нет валидных наблюдений" />
-                  ) : (
-                    <span className={`bars__bar bars__bar--${tone}`} style={{ height: `${h}px` }} />
-                  )}
-                  <span className="bars__year">{String(d.year).slice(2)}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          <table className="tbl" style={{ marginTop: 20 }}>
-            <thead>
-              <tr>
-                <th>год</th>
-                <th className="num">площадь, га</th>
-                <th>тип события</th>
-                <th>пожарные признаки</th>
-                <th>доверие</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {EVENTS.map((e) => (
-                <tr key={e.event_id} className="is-clickable" onClick={() => setEvent(e)}>
-                  <td>{e.year}</td>
-                  <td className="num">{e.area_ha}</td>
-                  <td>{EVENT_LABEL[e.event_type]}</td>
-                  <td>{e.fire_evidence ? "обнаружены" : "нет"}</td>
-                  <td>
-                    <ConfidencePill value={e.confidence} />
-                  </td>
-                  <td>
-                    <button className="row-open" type="button" aria-label="Открыть событие">
-                      →
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <p className="ov-note">
-            «Не связано с пожаром» не означает рубку: тип остаётся неопределённым, пока нет
-            дополнительных сведений. Пустые столбцы — годы без валидных наблюдений.
-          </p>
-        </Card>
-      )}
-
-      {/* ---------------- Сверка ---------------- */}
-      {withProject && (tab === "Сверка" || showOverview) && (
-        <Card title="Расхождения с заявленным" className="plot-block">
-          <div className="claim-head">
-            Сверка ведётся на дату отчётности <b>{CLAIM_CHECK.reference_date}</b> · использовано
-            валидное наблюдение {CLAIM_CHECK.observation_year_used} года, а не последнее доступное
-          </div>
-
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>показатель</th>
-                <th className="num">заявлено</th>
-                <th className="num">независимые данные</th>
-                <th className="num">расхождение</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {CLAIM_CHECK.rows.map((r) => (
-                <tr key={r.metric} className={r.comparable ? "" : "is-muted"}>
-                  <td>{r.label}</td>
-                  <td className="num">{r.reported !== null ? formatNumber(r.reported) : "—"}</td>
-                  <td className="num">{r.observed !== null ? formatNumber(r.observed) : "—"}</td>
-                  <td className="num">
-                    {r.discrepancy_pct !== null ? `${r.discrepancy_pct} %` : "—"}
-                  </td>
-                  <td>
-                    {r.comparable ? (
-                      <span
-                        className={
-                          Math.abs(r.discrepancy_pct ?? 0) > 10 ? "lvl lvl--high" : "lvl lvl--low"
-                        }
-                      >
-                        {Math.abs(r.discrepancy_pct ?? 0) > 10 ? "вне ±10 %" : "в пределах"}
-                      </span>
-                    ) : (
-                      <span className="lvl lvl--none">не сопоставимо</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <p className="ov-note">
-            Заявленный эффект — предотвращённые выбросы: оценка того, сколько сгорело бы без
-            проекта. Величина контрфактическая, базовых линий мы не считаем. Строка показана, но
-            не проверяется.
-          </p>
-
-          {/* События после даты отчётности — не расхождение, а устаревание */}
-          <div className="after">
-            <div className="after__head">
-              <b>Появилось после даты отчётности</b>
-              <span>
-                не расхождение — отчёт {CLAIM_CHECK.observation_year_used} года не мог их содержать
-              </span>
-            </div>
-            {CLAIM_CHECK.events_after_reference_date.map((e) => (
-              <button key={e.event_id} className="after__row" type="button" onClick={() => setEvent(e)}>
-                <span>{e.year}</span>
-                <span className="tabular">{e.area_ha} га</span>
-                <span>{EVENT_LABEL[e.event_type]}</span>
-                <span className="after__arrow">→</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="claim-foot">
-            <ClaimPill status={CLAIM_CHECK.status} />
-            <span>{CLAIM_CHECK.likely_cause}</span>
-          </div>
-
-          <p className="ov-note">
-            Формулировок «проект врёт» и «обнаружен гринвошинг» система не использует.
-            Максимально жёсткое допустимое утверждение — «требует проверки».
-          </p>
-        </Card>
-      )}
-
-      {/* ---------------- Уязвимость ---------------- */}
-      {tab === "Уязвимость" && (
-        <Card title="Уязвимость климатического эффекта" className="plot-block">
-          <div className="vuln">
-            <LevelPill level={VULNERABILITY.level} />
-          </div>
-          <p className="tile__label" style={{ marginBottom: 10 }}>
-            основные драйверы
-          </p>
-          <ul className="drivers">
-            {VULNERABILITY.drivers.map((d) => (
-              <li key={d}>{d}</li>
-            ))}
-          </ul>
-          <dl className="kv">
-            <div>
-              <dt>метод</dt>
-              <dd>{VULNERABILITY.method}</dd>
-            </div>
-            <div>
-              <dt>версия модели</dt>
-              <dd>{VULNERABILITY.model_version ?? "модель не подключена, работает эвристика"}</dd>
-            </div>
-          </dl>
-          <div className="disclaimer">
-            Аналитический скрининг, а не официальный расчёт риска реверсии. Числовой вероятности
-            вида «36,73 %» нет ни в данных, ни на экране: оценка подаётся аналитику как основание
-            для суждения, а не как множитель к деньгам.
-          </div>
-        </Card>
-      )}
-
-      {/* ---------------- Экономика ---------------- */}
-      {tab === "Экономика" && (
-        <div className="plot-row plot-row--econ">
-          <Card title="Допущения пользователя" note="подписаны источником" className="plot-block">
-            <div className="field">
-              <span className="tile__label">ожидаемый объём эффекта</span>
-              <div className="field__box tabular">
-                {formatNumber(SCENARIO.expected_effect_co2_t_year)} т CO₂/год
-              </div>
-              <span className="field__src">ⓘ заявлено проектом по данным реестра</span>
-            </div>
-
-            <div className="field">
-              <span className="tile__label">цена углеродной единицы</span>
-              <div className="scen">
-                {SCENARIO.price_scenarios.map((s) => (
-                  <button
-                    key={s.key}
-                    type="button"
-                    className={!manualPrice && price === s.price ? "scen__item is-on" : "scen__item"}
-                    onClick={() => {
-                      setPrice(s.price);
-                      setManualPrice(false);
-                    }}
-                  >
-                    {s.label} {s.price} ₽
-                  </button>
-                ))}
-                <input
-                  className="scen__input tabular"
-                  type="number"
-                  value={price}
-                  onChange={(e) => {
-                    setPrice(Number(e.target.value) || 0);
-                    setManualPrice(true);
-                  }}
-                  aria-label="цена вручную"
-                />
-              </div>
-              <span className="field__src">
-                ⓘ {manualPrice ? "задано пользователем — выбор сценария снят" : "сценарий из конфигурации"}
-              </span>
-            </div>
-
-            <div className="field">
-              <span className="tile__label">дисконт сценария</span>
-              <div className="slider">
-                <input
-                  type="range"
-                  min={0}
-                  max={60}
-                  step={5}
-                  value={haircut}
-                  onChange={(e) => setHaircut(Number(e.target.value))}
-                  aria-label="дисконт сценария"
-                />
-                <b className="tabular">{haircut} %</b>
-              </div>
-              <span className="field__src">ⓘ задан пользователем вручную</span>
-            </div>
-
-            <div className="disclaimer">
-              Дисконт задаёт аналитик. Он никогда не выводится из оценки уязвимости: официальный
-              процент резервирования устанавливают методология и реестр, а не наша модель.
-            </div>
-          </Card>
-
-          <div className="plot-econ-right">
-            <Card tone="dark" title="Сценарная выручка" className="plot-block">
-              <div className="econ__big tabular">
-                {formatDecimal(revenue / 1_000_000)} <small>млн ₽ / год</small>
-              </div>
-              <div className="econ__sub tabular">
-                {formatNumber(perHa)} <small>₽ / га · база: площадь полигона</small>
-              </div>
-              <p className="ov-note" style={{ color: "#b9c2ae" }}>
-                Сценарная оценка, не NPV: {SCENARIO.npv_unavailable_reason}.
-              </p>
-            </Card>
-
-            <Card title="Чувствительность" note="млн ₽ в год" className="plot-block">
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>дисконт \ цена</th>
-                    {SCENARIO.price_scenarios.map((s) => (
-                      <th key={s.key} className="num">
-                        {s.price} ₽
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[0, 20, 40].map((h) => (
-                    <tr key={h}>
-                      <td style={{ color: "var(--c-muted-alt)" }}>{h} %</td>
-                      {SCENARIO.price_scenarios.map((s) => (
-                        <td key={s.key} className="num">
-                          {formatDecimal(
-                            (SCENARIO.expected_effect_co2_t_year * s.price * (1 - h / 100)) /
-                              1_000_000
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/* ---------------- Аудит ---------------- */}
-      {tab === "Аудит" && (
-        <Card title="Аудит расчёта" note={plot.calc_id} className="plot-block">
-          <dl className="kv">
-            <div>
-              <dt>версия методики</dt>
-              <dd>v1.0</dd>
-            </div>
-            <div>
-              <dt>версия алгоритма</dt>
-              <dd>calc-0.1</dd>
-            </div>
-            <div>
-              <dt>хеш входных данных</dt>
-              <dd style={{ wordBreak: "break-all", fontSize: 13 }}>{PROVENANCE.input_hash}</dd>
-            </div>
-            <div>
-              <dt>даты снимков</dt>
-              <dd>{PROVENANCE.observation_dates.join(" · ")}</dd>
-            </div>
-            <div>
-              <dt>коэффициенты</dt>
-              <dd className="tabular">
-                углеродная доля {PROVENANCE.parameters.carbon_fraction} · CO₂-фактор{" "}
-                {PROVENANCE.parameters.co2_factor}
-              </dd>
-            </div>
-          </dl>
-
-          <p className="tile__label" style={{ margin: "18px 0 10px" }}>
-            источники данных
-          </p>
-          <ul className="drivers">
-            {PROVENANCE.datasets.map((d) => (
-              <li key={d.name}>
-                {d.name} — {d.version}
-              </li>
-            ))}
-          </ul>
-
-          <button
-            className="btn btn--dark"
-            type="button"
-            style={{ marginTop: 20 }}
-            onClick={() => downloadCalcJson(plot.calc_id)}
-          >
-            <span>Выгрузить расчёт в JSON</span>
-          </button>
-          <p className="ov-note">
-            Выгрузка нужна, чтобы расчёт можно было перепроверить независимо, не доверяя нашему
-            интерфейсу.
-          </p>
-        </Card>
-      )}
-
-      {event && <EventDrawer event={event} onClose={() => setEvent(null)} />}
+      {tab === "Запас" && <StockTab area={area} period={period} />}
+      {tab === "Динамика" && <DynamicsTab area={area} period={period} />}
+      {tab === "Изменения" && <ChangesTab area={area} period={period} events={events} />}
+      {tab === "Неопределённость" && <UncertaintyTab period={period} />}
+      {tab === "Единицы" && <UnitsTab area={area} period={period} />}
+      {tab === "Отчёт" && <ReportTab area={area} period={period} />}
     </>
   );
 }
 
-/* Ряд лесопокрытой площади: линия по точкам, разрывы на годах без данных */
-function CoverChart() {
-  const vals = COVER_SERIES.map((c) => c.forest_area_ha).filter((v): v is number => v !== null);
-  const min = Math.min(...vals) * 0.995;
-  const max = Math.max(...vals) * 1.002;
+/* ------------------------------------------------------------ Запас ---- */
 
-  return (
-    <div className="cover">
-      {COVER_SERIES.map((c) => {
-        const missing = c.forest_area_ha === null;
-        const h = missing ? 0 : (((c.forest_area_ha as number) - min) / (max - min)) * 170 + 12;
-        return (
-          <div key={c.year} className="cover__col">
-            {missing ? (
-              <span className="bars__missing" title="нет валидных наблюдений" />
-            ) : (
-              <span className="cover__bar" style={{ height: `${h}px` }}>
-                <em className="tabular">{Math.round((c.forest_area_ha as number) / 1000)}k</em>
-              </span>
-            )}
-            <span className="bars__year">{String(c.year).slice(2)}</span>
-          </div>
-        );
-      })}
-    </div>
+function Sign({ value }: { value: number }) {
+  return value > 0 ? (
+    <span className="lvl lvl--high">потеря углерода</span>
+  ) : (
+    <span className="lvl lvl--low">накопление</span>
   );
 }
 
-/* Выгрузка расчёта файлом — реальное действие, а не заглушка */
-function downloadCalcJson(calcId: string) {
-  const payload = {
+function StockTab({ area, period }: { area: Area; period: Period }) {
+  return (
+    <>
+      <div className="plot-tiles">
+        <Card>
+          <span className="tile__label">запас на {period.year_start}</span>
+          <div className="plot-tiles__value tabular">
+            {formatDecimal(period.c_start_t_ha, 2)} <small>т C/га</small>
+          </div>
+          <span className="tile__note">
+            всего {formatNumber(Math.round(period.stock_start_tc))} т C
+          </span>
+        </Card>
+        <Card>
+          <span className="tile__label">запас на {period.year_end}</span>
+          <div className="plot-tiles__value tabular">
+            {formatDecimal(period.c_end_t_ha, 2)} <small>т C/га</small>
+          </div>
+          <span className="tile__note">
+            всего {formatNumber(Math.round(period.stock_end_tc))} т C
+          </span>
+        </Card>
+        <Card tone="dark">
+          <span className="tile__label" style={{ color: "#b9c2ae" }}>
+            результат за период
+          </span>
+          <div className="plot-tiles__value tabular" style={{ color: "var(--c-lime)" }}>
+            {period.e_tco2e > 0 ? "+" : "−"}
+            {formatNumber(Math.abs(Math.round(period.e_tco2e)))}{" "}
+            <small style={{ color: "#b9c2ae" }}>т CO₂-экв.</small>
+          </div>
+          <span className="tile__note" style={{ color: "#b9c2ae" }}>
+            {formatDecimal(period.e_per_ha_year, 3)} т CO₂-экв./га/год
+          </span>
+        </Card>
+        <Card tone="soft">
+          <span className="tile__label">знак результата</span>
+          <div style={{ margin: "10px 0" }}>
+            <Sign value={period.e_tco2e} />
+          </div>
+          <span className="tile__note">
+            Положительное E — потеря из учитываемого пула. Это не объём выброса в атмосферу.
+          </span>
+        </Card>
+      </div>
+
+      <div className="plot-row plot-row--even">
+        <Card title="Как получен результат" className="plot-block">
+          <ol className="chain">
+            <li>
+              <span>биомасса → углерод</span>
+              <b className="tabular">
+                c = b × {PARAMETERS.carbon_fraction}
+              </b>
+            </li>
+            <li>
+              <span>суммарный запас по площади пересечения пикселей</span>
+              <b className="tabular">
+                C = Σ aᵢ × cᵢ = {formatNumber(Math.round(period.stock_end_tc))} т C
+              </b>
+            </li>
+            <li>
+              <span>разность запасов</span>
+              <b className="tabular">
+                ΔC = {formatDecimal(period.delta_stock_tc, 1)} т C
+              </b>
+            </li>
+            <li>
+              <span>перевод в CO₂-эквивалент</span>
+              <b className="tabular">
+                E = −ΔC × 44/12 = {formatDecimal(period.e_tco2e, 1)}
+              </b>
+            </li>
+            <li>
+              <span>нормирование по площади и длительности</span>
+              <b className="tabular">
+                e = E / (A × Δt) = {formatDecimal(period.e_per_ha_year, 3)}
+              </b>
+            </li>
+          </ol>
+          <p className="ov-note">
+            Площадь A = {formatDecimal(period.area_ha, 2)} га посчитана как сумма пересечений
+            пикселей с контуром. На сетке в градусах пиксель CCI на этой широте примерно 0,54 га,
+            а не гектар.
+          </p>
+        </Card>
+
+        <Card title="Границы учитываемого пула" className="plot-block">
+          <dl className="kv">
+            <div>
+              <dt>входит в расчёт</dt>
+              <dd>живая надземная древесная биомасса</dd>
+            </div>
+            <div>
+              <dt>не входит</dt>
+              <dd>корни, мёртвая древесина, подстилка, почва, древесная продукция</dd>
+            </div>
+            <div>
+              <dt>обе даты в одних границах</dt>
+              <dd>включая участки, утратившие лесной покров</dd>
+            </div>
+            <div>
+              <dt>двойной учёт</dt>
+              <dd>последствия пожара отдельно не прибавляются к разности запасов</dd>
+            </div>
+          </dl>
+          <div className="disclaimer">
+            Отсутствие пула в расчёте не означает, что его запас равен нулю. Для полного
+            углеродного баланса экосистемы нужны данные, которых в наборе нет.
+          </div>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+/* --------------------------------------------------------- Динамика ---- */
+
+function DynamicsTab({ area, period }: { area: Area; period: Period }) {
+  const shown = area.series.filter(
+    (p) => p.year >= period.year_start && p.year <= period.year_end
+  );
+  const values = shown.map((p) => p.c_t_ha);
+  const min = Math.min(...values) * 0.96;
+  const max = Math.max(...values) * 1.02;
+  const base = area.baseline_stock_t_ha;
+
+  let cumulative = 0;
+
+  return (
+    <>
+      <Card
+        title="Годовой ряд запаса"
+        note={`ESA CCI Biomass v7.0 · ${period.year_start}—${period.year_end}`}
+        className="plot-block"
+      >
+        <div className="cover">
+          {shown.map((p) => {
+            const h = ((p.c_t_ha - min) / (max - min)) * 190 + 14;
+            const baseline = base[String(p.year)];
+            return (
+              <div key={p.year} className="cover__col">
+                <span className="cover__bar" style={{ height: `${h}px` }}>
+                  <em className="tabular">{formatDecimal(p.c_t_ha, 1)}</em>
+                </span>
+                {baseline !== undefined && (
+                  <span
+                    className="cover__baseline"
+                    style={{ bottom: `${((baseline - min) / (max - min)) * 190 + 14 + 22}px` }}
+                    title={`базовая линия ${formatDecimal(baseline, 2)} т C/га`}
+                  />
+                )}
+                <span className="bars__year">{p.year}</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="ov-note">
+          Столбик — наблюдение, штрих — сценарный запас базовой линии на тот же год. Карты CCI
+          содержат годовые модельные оценки состояния, а не даты съёмки.
+        </p>
+      </Card>
+
+      <Card title="Накопленное изменение" note="т C относительно начала периода" className="plot-block">
+        <div className="tbl__scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>год</th>
+                <th className="num">запас, т C/га</th>
+                <th className="num">±SD продукта, т/га</th>
+                <th className="num">суммарно, т C</th>
+                <th className="num">накоплено, т C</th>
+                <th className="num">базовая линия, т C/га</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((p, i) => {
+                if (i > 0) cumulative = p.stock_tc - shown[0].stock_tc;
+                return (
+                  <tr key={p.year}>
+                    <td>{p.year}</td>
+                    <td className="num">{formatDecimal(p.c_t_ha, 2)}</td>
+                    <td className="num">±{formatDecimal(p.agb_sd_t_ha, 1)}</td>
+                    <td className="num">{formatNumber(Math.round(p.stock_tc))}</td>
+                    <td className="num">{i === 0 ? "—" : formatNumber(Math.round(cumulative))}</td>
+                    <td className="num" style={{ color: "var(--c-muted-alt)" }}>
+                      {base[String(p.year)] !== undefined
+                        ? formatDecimal(base[String(p.year)], 2)
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="ov-note">
+          Накопленный результат не складывается с годовыми результатами за тот же период — это
+          был бы повторный учёт одного эффекта.
+        </p>
+      </Card>
+    </>
+  );
+}
+
+/* -------------------------------------------------------- Изменения ---- */
+
+function ChangesTab({
+  area,
+  period,
+  events,
+}: {
+  area: Area;
+  period: Period;
+  events: ReturnType<typeof eventsFor>;
+}) {
+  const inPeriod = area.cover_loss.filter(
+    (l) => l.year > period.year_start && l.year <= period.year_end
+  );
+  const lossArea = inPeriod.reduce((a, b) => a + b.area_ha, 0);
+  const share = (lossArea / area.area_ha) * 100;
+  /* Вклад затронутой территории: доля площади, помноженная на результат.
+     Это оценка вклада, а не измеренная величина по этим же пикселям. */
+  const contribution = period.e_tco2e * (share / 100);
+
+  return (
+    <>
+      <div className="plot-row">
+        <Card title="Где изменился запас" note={`${period.year_start} → ${period.year_end}`} className="plot-block">
+          <ChangeMap area={area} />
+        </Card>
+
+        <Card title="Вклад изменившейся территории" className="plot-block">
+          <dl className="kv">
+            <div>
+              <dt>потери покрова за период</dt>
+              <dd className="tabular">{formatDecimal(lossArea, 1)} га</dd>
+            </div>
+            <div>
+              <dt>доля участка</dt>
+              <dd className="tabular">{formatDecimal(share, 2)} %</dd>
+            </div>
+            <div>
+              <dt>оценка вклада в результат</dt>
+              <dd className="tabular">{formatNumber(Math.round(contribution))} т CO₂-экв.</dd>
+            </div>
+            <div>
+              <dt>событий с подтверждением</dt>
+              <dd className="tabular">{events.length}</dd>
+            </div>
+          </dl>
+          <p className="ov-note">
+            Вклад оценён по доле площади. Это не независимое измерение по тем же пикселям:
+            разрешение продукта потерь (30 м) и продукта биомассы (100 м) не совпадает.
+          </p>
+        </Card>
+      </div>
+
+      <Card title="Потери древесного покрова по годам" note="Hansen GFC v1.13" className="plot-block">
+        {area.cover_loss.length === 0 ? (
+          <p className="ov-note" style={{ marginTop: 0 }}>
+            Потерь покрова выше порога {PARAMETERS.treecover_threshold_pct} % на участке не найдено.
+          </p>
+        ) : (
+          <>
+            <div className="bars">
+              {area.cover_loss.map((l) => {
+                const peak = Math.max(...area.cover_loss.map((x) => x.area_ha));
+                const h = Math.max((l.area_ha / peak) * 170, 3);
+                const within = l.year > period.year_start && l.year <= period.year_end;
+                return (
+                  <div key={l.year} className="bars__col">
+                    <span
+                      className={`bars__bar bars__bar--${within ? "peak" : "plain"}`}
+                      style={{ height: `${h}px` }}
+                      title={`${l.year}: ${formatDecimal(l.area_ha, 1)} га`}
+                    />
+                    <span className="bars__year">{String(l.year).slice(2)}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="ov-note">
+              Тёмные столбцы попадают в выбранный период. Потеря — снижение древесного покрова по
+              продукту Hansen, а не установленная вырубка: причина здесь не определяется.
+            </p>
+          </>
+        )}
+      </Card>
+
+      <Card title="События с внешним подтверждением" className="plot-block">
+        {events.length === 0 ? (
+          <p className="ov-note" style={{ marginTop: 0 }}>
+            Событий, подтверждённых внешними продуктами, на участке нет. Изменения покрова есть,
+            но их причина не установлена — статус так и остаётся.
+          </p>
+        ) : (
+          events.map((e) => (
+            <div key={e.event_id} className="event">
+              <div className="event__head">
+                <b>{e.cause_supported}</b>
+                <span className="lvl lvl--medium">{e.evidence_type}</span>
+              </div>
+              <dl className="kv">
+                <div>
+                  <dt>доступный интервал дат</dt>
+                  <dd>
+                    {e.date_min} — {e.date_max} · неопределённость {e.uncertainty_days[0]}—
+                    {e.uncertainty_days[1]} дней
+                  </dd>
+                </div>
+                <div>
+                  <dt>доля затронутых пикселей продукта</dt>
+                  <dd className="tabular">
+                    {e.burned_pixels} из {e.all_pixels} ·{" "}
+                    {formatDecimal((e.burned_pixels / e.all_pixels) * 100, 0)} %
+                  </dd>
+                </div>
+                <div>
+                  <dt>источник</dt>
+                  <dd>{e.source_id}</dd>
+                </div>
+                <div>
+                  <dt>контекст</dt>
+                  <dd>
+                    <a href={e.context_url} target="_blank" rel="noreferrer">
+                      сообщение МЧС
+                    </a>
+                  </dd>
+                </div>
+              </dl>
+              <div className="disclaimer">{e.limitations}</div>
+            </div>
+          ))
+        )}
+      </Card>
+    </>
+  );
+}
+
+/* -------------------------------------------- Неопределённость ---- */
+
+function UncertaintyTab({ period }: { period: Period }) {
+  const relative = Math.abs(period.h_tco2e / (period.e_tco2e || 1)) * 100;
+
+  return (
+    <>
+      <div className="plot-row plot-row--even">
+        <Card title="Диапазон результата" note="охват 90 %, нормальное приближение" className="plot-block">
+          <div className="range">
+            <span className="range__end tabular">{formatNumber(Math.round(period.lower_tco2e))}</span>
+            <span className="range__bar">
+              <span className="range__dot" />
+            </span>
+            <span className="range__end tabular">{formatNumber(Math.round(period.upper_tco2e))}</span>
+          </div>
+          <p className="range__mid tabular">
+            оценка {formatNumber(Math.round(period.e_tco2e))} т CO₂-экв. · полуширина H ={" "}
+            {formatNumber(Math.round(period.h_tco2e))}
+          </p>
+          <dl className="kv">
+            <div>
+              <dt>σ результата</dt>
+              <dd className="tabular">{formatNumber(Math.round(period.sigma_e_tco2e))} т CO₂-экв.</dd>
+            </div>
+            <div>
+              <dt>H к величине результата</dt>
+              <dd className="tabular">{formatDecimal(relative, 0)} %</dd>
+            </div>
+            <div>
+              <dt>источник ошибки</dt>
+              <dd>канал AGB_SD продукта CCI, попиксельно</dd>
+            </div>
+          </dl>
+          <div className="disclaimer">
+            Это сценарный диапазон, а не эмпирически откалиброванный интервал: независимых
+            наземных измерений углерода в наборе нет, и калибровать его не на чем.
+          </div>
+        </Card>
+
+        <Card title="Как перенесена ошибка" className="plot-block">
+          <ol className="chain">
+            <li>
+              <span>ошибка пикселя</span>
+              <b className="tabular">AGB_SD × CF</b>
+            </li>
+            <li>
+              <span>сумма по территории с корреляцией ρs</span>
+              <b className="tabular">
+                σ² = (1−ρs)Σ(aᵢsᵢ)² + ρs(Σaᵢsᵢ)²
+              </b>
+            </li>
+            <li>
+              <span>разность двух лет с корреляцией ρt</span>
+              <b className="tabular">σΔ² = σ₀² + σ₁² − 2ρtσ₀σ₁</b>
+            </li>
+            <li>
+              <span>полуширина интервала</span>
+              <b className="tabular">H = {PARAMETERS.k_sigma} × σΔ × 44/12</b>
+            </li>
+          </ol>
+          <p className="ov-note">
+            Пространственная корреляция ρs = {PARAMETERS.rho_spatial} и временная ρt ={" "}
+            {PARAMETERS.rho_temporal} — допущения. Их влияние показано ниже и оказывается
+            решающим.
+          </p>
+        </Card>
+      </div>
+
+      {period.sensitivity && (
+        <Card
+          title="Чувствительность к допущениям о корреляции"
+          note="число единиц или отношение H/R"
+          className="plot-block"
+        >
+          <div className="tbl__scroll">
+            <table className="tbl sens">
+              <thead>
+                <tr>
+                  <th>ρs \ ρt</th>
+                  {period.sensitivity[0].map((c) => (
+                    <th key={c.rho_temporal} className="num">
+                      {c.rho_temporal}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {period.sensitivity.map((row) => (
+                  <tr key={row[0].rho_spatial}>
+                    <td>{row[0].rho_spatial}</td>
+                    {row.map((c) => (
+                      <td key={c.rho_temporal} className="num">
+                        {c.units ? (
+                          <b>{formatNumber(c.units)}</b>
+                        ) : c.h_over_r === null ? (
+                          <span className="dash">—</span>
+                        ) : (
+                          <span style={{ color: "var(--c-muted-alt)" }}>
+                            H/R {formatDecimal(c.h_over_r, 1)}
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="ov-note">
+            Прочерк — результат не превышает базовую линию, единицы не считаются вовсе. Там, где
+            стоит H/R, неопределённость не меньше самого результата и число единиц равно нулю по
+            правилу кейса. Единицы появляются только при независимой ошибке между пикселями и
+            почти полной её повторяемости между годами — то есть при самом благоприятном наборе
+            допущений, который нечем подтвердить.
+          </p>
+        </Card>
+      )}
+
+      <Card title="Принятые допущения" className="plot-block">
+        <div className="tbl__scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>параметр</th>
+                <th>значение</th>
+                <th>статус</th>
+                <th>происхождение</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ASSUMPTIONS.map((a) => (
+                <tr key={a.key}>
+                  <td>{a.label}</td>
+                  <td className="tabular">{a.value}</td>
+                  <td>
+                    <span
+                      className={
+                        a.kind === "допущение" ? "lvl lvl--medium" : "lvl lvl--none"
+                      }
+                    >
+                      {a.kind}
+                    </span>
+                  </td>
+                  <td style={{ color: "var(--c-muted-alt)" }}>{a.source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </>
+  );
+}
+
+/* ----------------------------------------------------------- Единицы ---- */
+
+function UnitsTab({ area, period }: { area: Area; period: Period }) {
+  const available = period.units !== null;
+
+  return (
+    <>
+      <div className="plot-row plot-row--even">
+        <Card title="Сравнение с базовой линией" className="plot-block">
+          <dl className="kv">
+            <div>
+              <dt>результат по данным, E_proj</dt>
+              <dd className="tabular">{formatNumber(Math.round(period.e_proj_tco2e))}</dd>
+            </div>
+            <div>
+              <dt>результат базовой линии, E_base</dt>
+              <dd className="tabular">{formatNumber(Math.round(period.e_base_tco2e))}</dd>
+            </div>
+            <div>
+              <dt>утечка LK</dt>
+              <dd className="tabular">{period.leakage_tco2e}</dd>
+            </div>
+            <div>
+              <dt>результат относительно базовой линии, R</dt>
+              <dd className="tabular">
+                <b>{formatNumber(Math.round(period.r_tco2e))}</b>
+              </dd>
+            </div>
+          </dl>
+          <p className="ov-note">
+            Базовая линия {area.baseline_id} продолжает историческую динамику 2015—2019:{" "}
+            {formatDecimal(area.baseline_rate_tc_ha_year, 3)} т C/га/год. Это условие кейса, а не
+            установленная дополнительность реального проекта.
+          </p>
+        </Card>
+
+        <Card tone="dark" title="Потенциальные единицы" className="plot-block">
+          <div className="econ__big tabular">
+            {available ? formatNumber(period.units ?? 0) : "—"}{" "}
+            <small>{available ? "единиц" : "расчёт недоступен"}</small>
+          </div>
+          {period.reason && (
+            <p className="ov-note" style={{ color: "#b9c2ae" }}>
+              {period.reason}
+            </p>
+          )}
+          <p className="ov-note" style={{ color: "#b9c2ae" }}>
+            Расчёт по условиям кейса, а не сертифицированные единицы. Одна единица — 1 т CO₂-экв.
+            после вычетов.
+          </p>
+        </Card>
+      </div>
+
+      <Card title="Ход расчёта единиц" className="plot-block">
+        <ol className="chain">
+          <li>
+            <span>R = E_base − E_proj − LK</span>
+            <b className="tabular">{formatDecimal(period.r_tco2e, 1)}</b>
+          </li>
+          <li>
+            <span>H — полуширина диапазона</span>
+            <b className="tabular">{formatDecimal(period.h_tco2e, 1)}</b>
+          </li>
+          <li>
+            <span>H / R</span>
+            <b className="tabular">
+              {period.h_over_r === null ? "не вычисляется при R ≤ 0" : formatDecimal(period.h_over_r, 3)}
+            </b>
+          </li>
+          <li>
+            <span>UNC = min(1, max(0, H/R − 0,10))</span>
+            <b className="tabular">
+              {period.unc_share === null ? "—" : formatDecimal(period.unc_share, 3)}
+            </b>
+          </li>
+          <li>
+            <span>R_adj = R × (1 − UNC)</span>
+            <b className="tabular">
+              {period.r_adjusted_tco2e === null ? "—" : formatDecimal(period.r_adjusted_tco2e, 1)}
+            </b>
+          </li>
+          <li>
+            <span>резерв B = R_adj × 0,15</span>
+            <b className="tabular">
+              {period.buffer_tco2e === null ? "—" : formatDecimal(period.buffer_tco2e, 1)}
+            </b>
+          </li>
+          <li>
+            <span>Q = floor(R_adj × 0,85)</span>
+            <b className="tabular">{available ? formatNumber(period.units ?? 0) : "—"}</b>
+          </li>
+        </ol>
+        <p className="ov-note">
+          При R ≤ 0 отношение H/R не вычисляется вовсе. При H/R ≥ 1 число единиц равно нулю:
+          неопределённость не меньше самого результата. Дробный остаток после округления вниз
+          в Q не включается.
+        </p>
+      </Card>
+
+      <Card title="Сценарная стоимость" note="V = Q × p" className="plot-block">
+        <div className="tbl__scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>сценарий цены</th>
+                <th className="num">цена, ₽/ед.</th>
+                <th className="num">стоимость, ₽</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(["low", "base", "high"] as const).map((key) => (
+                <tr key={key}>
+                  <td>{key === "low" ? "низкий" : key === "base" ? "базовый" : "высокий"}</td>
+                  <td className="num">{formatNumber(PARAMETERS.prices_rub[key])}</td>
+                  <td className="num">{formatNumber(period.value_rub[key])}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="ov-note">
+          Цены заданы условиями кейса и не являются прогнозом рыночной цены.
+        </p>
+      </Card>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------- Отчёт ---- */
+
+function ReportTab({ area, period }: { area: Area; period: Period }) {
+  const calcId = useMemo(
+    () => `CALC-${area.aoi_id}-${period.year_start}-${period.year_end}`,
+    [area.aoi_id, period.year_start, period.year_end]
+  );
+  const generatedAt = useMemo(() => new Date().toISOString().slice(0, 19).replace("T", " "), []);
+
+  const report = {
     calc_id: calcId,
-    methodology_version: "1.0",
-    algorithm_version: "calc-0.1",
-    input_hash: PROVENANCE.input_hash,
-    claim_check: CLAIM_CHECK,
-    summary: SUMMARY,
-    provenance: PROVENANCE,
-    data_completeness: DATA_COMPLETENESS,
+    generated_at: generatedAt,
+    methodology_version: "case-v1.0",
+    algorithm_version: "calc-1.0",
+    area: {
+      aoi_id: area.aoi_id,
+      name: area.name,
+      region: area.region,
+      bbox_wgs84: area.bbox,
+      area_ha: area.area_ha,
+      role: area.role,
+      status: area.status,
+    },
+    period: { start: period.year_start, end: period.year_end, transitions: period.years },
+    pool: "живая надземная древесная биомасса",
+    stock: {
+      c_start_t_ha: period.c_start_t_ha,
+      c_end_t_ha: period.c_end_t_ha,
+      stock_start_tc: period.stock_start_tc,
+      stock_end_tc: period.stock_end_tc,
+      delta_stock_tc: period.delta_stock_tc,
+      e_tco2e: period.e_tco2e,
+      e_per_ha_year: period.e_per_ha_year,
+      sign: period.e_tco2e > 0 ? "потеря углерода" : "накопление",
+    },
+    uncertainty: {
+      sigma_e_tco2e: period.sigma_e_tco2e,
+      lower_tco2e: period.lower_tco2e,
+      upper_tco2e: period.upper_tco2e,
+      h_tco2e: period.h_tco2e,
+      method: "перенос AGB_SD с заданной пространственной и временной корреляцией",
+      status: "сценарный диапазон, не эмпирическая калибровка",
+    },
+    baseline: {
+      baseline_id: area.baseline_id,
+      rate_tc_ha_year: area.baseline_rate_tc_ha_year,
+      c_start_t_ha: period.baseline_c_start_t_ha,
+      c_end_t_ha: period.baseline_c_end_t_ha,
+      e_base_tco2e: period.e_base_tco2e,
+    },
+    units: {
+      r_tco2e: period.r_tco2e,
+      h_over_r: period.h_over_r,
+      unc_share: period.unc_share,
+      r_adjusted_tco2e: period.r_adjusted_tco2e,
+      buffer_tco2e: period.buffer_tco2e,
+      units: period.units,
+      reason: period.reason,
+      status: "расчёт по условиям кейса, не сертифицированные единицы",
+      value_rub: period.value_rub,
+    },
+    parameters: PARAMETERS,
+    assumptions: ASSUMPTIONS,
+    datasets: DATASETS,
+    cover_loss_ha_by_year: area.cover_loss,
+    limitations: [
+      "Независимых наземных измерений углерода в наборе нет.",
+      "Сравнение спутниковых продуктов не является наземной валидацией.",
+      "Причина изменения покрова указывается только при наличии подтверждения.",
+      "Базовая линия задана условиями кейса и не устанавливает дополнительность.",
+    ],
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${calcId}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+
+  const download = () => {
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${calcId}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <Card title="Отчёт о расчёте" note={calcId} className="plot-block">
+        <dl className="kv">
+          <div>
+            <dt>территория и период</dt>
+            <dd>
+              {area.name} · {formatDecimal(area.area_ha, 1)} га · {period.year_start}—
+              {period.year_end}
+            </dd>
+          </div>
+          <div>
+            <dt>результат</dt>
+            <dd className="tabular">
+              {formatNumber(Math.round(period.e_tco2e))} т CO₂-экв. (
+              {formatNumber(Math.round(period.lower_tco2e))} …{" "}
+              {formatNumber(Math.round(period.upper_tco2e))})
+            </dd>
+          </div>
+          <div>
+            <dt>потенциальные единицы</dt>
+            <dd className="tabular">
+              {period.units === null ? "недоступно" : formatNumber(period.units)}
+              {period.reason ? ` · ${period.reason}` : ""}
+            </dd>
+          </div>
+          <div>
+            <dt>методика и алгоритм</dt>
+            <dd>case-v1.0 / calc-1.0</dd>
+          </div>
+          <div>
+            <dt>дата расчёта</dt>
+            <dd>{generatedAt}</dd>
+          </div>
+        </dl>
+
+        <p className="tile__label" style={{ margin: "18px 0 10px" }}>
+          источники и версии
+        </p>
+        <div className="tbl__scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>набор</th>
+                <th>версия</th>
+                <th>роль в расчёте</th>
+                <th>сетка</th>
+              </tr>
+            </thead>
+            <tbody>
+              {DATASETS.map((d) => (
+                <tr key={d.id}>
+                  <td>
+                    <b>{d.name}</b>
+                  </td>
+                  <td style={{ color: "var(--c-muted-alt)" }}>{d.version}</td>
+                  <td style={{ color: "var(--c-muted-alt)" }}>{d.role}</td>
+                  <td style={{ color: "var(--c-muted-alt)" }}>{d.grid}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="tile__label" style={{ margin: "18px 0 10px" }}>
+          ограничения
+        </p>
+        <ul className="drivers">
+          {report.limitations.map((l) => (
+            <li key={l}>{l}</li>
+          ))}
+        </ul>
+
+        <button className="btn btn--dark" type="button" style={{ marginTop: 20 }} onClick={download}>
+          <span>Выгрузить отчёт в JSON</span>
+        </button>
+        <p className="ov-note">
+          Выгрузка содержит все параметры, допущения, источники и промежуточные величины —
+          достаточно, чтобы повторить расчёт независимо от интерфейса.
+        </p>
+      </Card>
+    </>
+  );
 }

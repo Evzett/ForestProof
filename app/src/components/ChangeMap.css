@@ -1,0 +1,98 @@
+.cmap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cmap__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cmap__tab {
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: var(--c-page);
+  font-size: 12px;
+  color: var(--c-ink-black);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cmap__tab:hover {
+  background: #d9dcd3;
+}
+
+.cmap__tab.is-on {
+  background: var(--c-ink);
+  color: #fff;
+  font-weight: 500;
+}
+
+.cmap__canvas {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-img-md);
+  background: #eceee8;
+}
+
+/* Пиксель продукта показывается пикселем: сглаживание обещало бы
+   разрешение, которого у слоя нет. */
+.cmap__canvas img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.cmap__scale {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 5px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 11px;
+  color: var(--c-muted-alt);
+}
+
+.cmap__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.cmap__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cmap__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.cmap__swatch--loss {
+  background: #b77341;
+}
+
+.cmap__swatch--gain {
+  background: #a7bb2f;
+}
+
+.cmap__swatch--recent {
+  background: #9a5240;
+}
+
+.cmap__swatch--old {
+  background: #96988c;
+}
+
+.cmap__note {
+  color: #8d9188;
+}

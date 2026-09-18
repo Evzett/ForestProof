@@ -1,26 +1,30 @@
 import type { ReactNode } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { REGISTRY_META } from "../data/mock";
+import { AREAS, GENERATED_FROM } from "../data/case";
 import { WizardProvider, useWizard } from "./Wizard";
 import "./AppShell.css";
 
 /* Каркас приложения: постоянная навигация из шести разделов.
    Требования FR-02 — FR-04.
    Элементов авторизации здесь нет и не появится: одно рабочее
-   пространство, состояние на сервере (NFR-05). */
+   пространство, состояние на сервере (NFR-05).
+
+   Раздел «Проекты» переименован в «Участки»: в наборе кейса это
+   исследовательские участки, а не зарегистрированные климатические
+   проекты, и называть их проектами значит подменять статус данных. */
 
 const NAV = [
   { to: "/app/overview", label: "Обзор" },
-  { to: "/app/projects", label: "Проекты" },
-  { to: "/app/territories", label: "Территории" },
-  { to: "/app/monitoring", label: "Наблюдение" },
+  { to: "/app/areas", label: "Участки" },
+  { to: "/app/compare", label: "Сравнение" },
   { to: "/app/calculations", label: "Расчёты" },
+  { to: "/app/monitoring", label: "Наблюдение" },
   { to: "/app/methodology", label: "Методика" },
 ];
 
 /* Кнопка добавления участка. Главное действие продукта,
    поэтому доступна из любого раздела (FR-03). */
-export function AddPlotButton({ className = "", label = "Добавить участок" }) {
+export function AddPlotButton({ className = "", label = "Задать контур" }) {
   const { open } = useWizard();
   return (
     <button className={`add-btn ${className}`.trim()} type="button" onClick={() => open()}>
@@ -55,11 +59,11 @@ function Shell() {
         </nav>
 
         <div className="sidebar__foot">
-          <span>выгрузка реестра</span>
+          <span>набор данных</span>
           <span className="sidebar__foot-strong">
-            {REGISTRY_META.export_date} · {REGISTRY_META.total} проекта
+            {AREAS.length} участка · 2019—2024
           </span>
-          <span>без входа · одно пространство</span>
+          <span>{GENERATED_FROM}</span>
         </div>
       </aside>
 

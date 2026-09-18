@@ -1,0 +1,121 @@
+.areas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 24px 24px;
+}
+
+.area__map {
+  position: relative;
+  aspect-ratio: 73 / 46;
+  margin-bottom: 4px;
+  border-radius: var(--r-img-md);
+  overflow: hidden;
+  background: #eceee8;
+}
+
+.area__map img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.area__pick {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  padding: 7px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.area__role {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  max-width: calc(100% - 24px);
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  color: var(--c-ink-black);
+}
+
+.area__name {
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.area__name a {
+  color: var(--c-ink);
+  text-decoration: none;
+}
+
+.area__name a:hover {
+  text-decoration: underline;
+}
+
+.area__meta {
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.area__kv {
+  display: flex;
+  flex-direction: column;
+  margin: 6px 0 0;
+}
+
+.area__kv > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.area__kv > div:last-child {
+  border-bottom: 0;
+}
+
+.area__kv dt {
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.area__kv dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.area__why {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--c-muted-alt);
+}
+
+.area__bbox {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #8d9188;
+}
+
+.area__open {
+  align-self: flex-start;
+  margin-top: 6px;
+  text-decoration: none;
+}
