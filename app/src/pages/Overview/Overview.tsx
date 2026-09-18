@@ -21,6 +21,12 @@ import "./Overview.css";
    Пустой результат — такой же ответ, как число, и он должен быть виден
    на первом экране, а не находиться в глубине карточки. */
 
+const LOSS_RANGES = [
+  { value: "2019", label: "период анализа" },
+  { value: "2011", label: "с 2011 года" },
+  { value: "all", label: "весь ряд, 25 лет" },
+];
+
 const PERIODS = [
   { value: "2019-2024", label: "2019 — 2024" },
   { value: "2019-2021", label: "2019 — 2021" },
@@ -54,6 +60,7 @@ function buildSummary(startYear: number, endYear: number) {
 export default function Overview() {
   const { priceKey, price, label, setPriceKey } = useScenario();
   const [range, setRange] = useState("2019-2024");
+  const [lossRange, setLossRange] = useState("2019");
   const [startYear, endYear] = range.split("-").map(Number);
 
   const rows = useMemo(
@@ -106,7 +113,26 @@ export default function Overview() {
     }
     return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([year, area_ha]) => ({ year, area_ha }));
   }, []);
-  const lossPeak = Math.max(...lossYears.map((l) => l.area_ha), 1);
+
+  /* Глубина ряда. По умолчанию показан период анализа: 2011 год весит
+     больше всех остальных лет вместе, и на полном ряде он придавливает
+     их в полоску толщиной в пиксель — график перестаёт что-либо значить.
+     Полный ряд никуда не делся, он открывается фильтром. */
+  const shownLoss = useMemo(() => {
+    const from = lossRange === "all" ? -Infinity : Number(lossRange);
+    return lossYears.filter((l) => l.year >= from);
+  }, [lossYears, lossRange]);
+
+  const shownPeak = useMemo(
+    () => shownLoss.reduce((a, b) => (b.area_ha > a.area_ha ? b : a), shownLoss[0]),
+    [shownLoss]
+  );
+  const shownTotal = shownLoss.reduce((s, l) => s + l.area_ha, 0);
+  const peakShare = shownTotal > 0 ? (shownPeak.area_ha / shownTotal) * 100 : 0;
+  /* Выноска ставится над самым высоким столбцом: столбцы равной ширины,
+     поэтому центр нужного — это его порядковый номер плюс половина. */
+  const calloutLeft =
+    ((shownLoss.findIndex((l) => l.year === shownPeak.year) + 0.5) / shownLoss.length) * 100;
 
   return (
     <>
@@ -330,26 +356,90 @@ export default function Overview() {
           <div className="ov-summary__head">
             <h2 className="card__title">Потери покрова по годам</h2>
             <span className="ov-summary__spacer" />
+            <FilterSelect
+              value={lossRange}
+              onChange={setLossRange}
+              options={LOSS_RANGES}
+              label="глубина ряда"
+            />
             <CircleBtn to="/app/areas" label="Открыть участки" />
           </div>
-          <div className="bars" style={{ height: 180 }}>
-            {lossYears.map((l) => {
-              const within = l.year >= YEARS[0] && l.year <= YEARS[YEARS.length - 1];
-              return (
-                <div key={l.year} className="bars__col">
-                  <span
-                    className={`bars__bar bars__bar--${within ? "peak" : "plain"}`}
-                    style={{ height: `${Math.max((l.area_ha / lossPeak) * 140, 3)}px` }}
-                    title={`${l.year}: ${formatDecimal(l.area_ha, 1)} га`}
-                  />
-                  <span className="bars__year">{String(l.year).slice(2)}</span>
-                </div>
-              );
-            })}
+
+          <div className="yloss">
+            <div className="yloss__info">
+              <span className="yloss__badge">{shownLoss.length} лет наблюдения</span>
+              <div className="yloss__total tabular">
+                {formatArea(Math.round(shownTotal))} <small>га</small>
+              </div>
+              <p className="yloss__caption">
+                суммарная площадь, потерявшая
+                <br />
+                древесный покров за показанные годы
+              </p>
+              <ul className="yloss__legend">
+                <li>
+                  <i className="yloss__dot yloss__dot--peak" />
+                  наибольший год ряда
+                </li>
+                <li>
+                  <i className="yloss__dot yloss__dot--within" />
+                  внутри периода анализа
+                </li>
+                <li>
+                  <i className="yloss__dot yloss__dot--outside" />
+                  вне периода анализа
+                </li>
+              </ul>
+            </div>
+
+            <div className="yloss__plot">
+              {shownLoss.map((l) => {
+                const within = l.year >= YEARS[0] && l.year <= YEARS[YEARS.length - 1];
+                const isPeak = l.year === shownPeak.year;
+                const share = (l.area_ha / shownPeak.area_ha) * 100;
+                /* Столбцы разной высоты, но одной формы: нижняя граница в
+                   14 % держит скруглённую пилюлю и в год, когда потеряли
+                   гектар. Без неё малые годы схлопываются в полоску. */
+                const height = Math.max(share, 14);
+                return (
+                  <div key={l.year} className="yloss__col">
+                    <div
+                      className={`yloss__bar ${
+                        isPeak
+                          ? "yloss__bar--peak"
+                          : within
+                            ? "yloss__bar--within"
+                            : "yloss__bar--outside"
+                      }`}
+                      style={{ height: `${height}%` }}
+                      title={`${l.year}: ${formatDecimal(l.area_ha, 1)} га`}
+                    >
+                      {(isPeak || share >= 22) && (
+                        <span className="yloss__value">{formatArea(Math.round(l.area_ha))} га</span>
+                      )}
+                    </div>
+                    <span className="yloss__year">{l.year}</span>
+                  </div>
+                );
+              })}
+
+              <div
+                className={`yloss__callout ${calloutLeft < 30 ? "yloss__callout--flip" : ""}`.trim()}
+                style={{ left: `${calloutLeft}%` }}
+              >
+                <span className="yloss__share tabular">{formatDecimal(peakShare, 0)} %</span>
+                <span className="yloss__of">ряда пришлось на {shownPeak.year} год</span>
+                <i className="yloss__leader" aria-hidden="true" />
+              </div>
+            </div>
           </div>
+
           <p className="ov-note">
-            Пики 2011 и 2021 годов — площади, потерявшие покров по Hansen. Тёмные столбцы попадают
-            в период анализа. Причина потери продуктом не определяется.
+            Площади, потерявшие древесный покров по Hansen GFC v1.13, порог покрова{" "}
+            {PARAMETERS.treecover_threshold_pct} %. Причина потери продуктом не определяется:
+            столбец отвечает на вопрос «сколько», а не «почему». По умолчанию показан период
+            анализа: на полном ряде 2011 год даёт 74 % всех потерь и придавливает остальные
+            двадцать четыре в полоску. Полный ряд открывается фильтром.
           </p>
         </Card>
       </div>

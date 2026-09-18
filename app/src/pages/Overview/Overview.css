@@ -59,8 +59,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 26px 30px 28px;
+  gap: 5px;
+  justify-content: center;
+  min-height: clamp(168px, 10vw, 192px);
+  padding: 28px 34px 30px;
   border-radius: 40px;
   background: var(--c-surface);
 }
@@ -82,7 +84,7 @@
 
 .tile__label {
   padding-right: 52px;
-  font-size: var(--t-body);
+  font-size: clamp(15px, 0.95vw, 18px);
   font-weight: 500;
   line-height: 1.2;
   color: var(--c-ink);
@@ -97,23 +99,23 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-top: auto;
-  font-size: clamp(30px, 2.6vw, 44px);
-  font-weight: 600;
+  font-size: clamp(44px, 3.9vw, 70px);
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   color: var(--c-ink);
 }
 
 .tile__unit {
-  font-size: 14px;
+  font-size: clamp(14px, 1.25vw, 24px);
   font-weight: 400;
   color: var(--c-muted-alt);
 }
 
 .tile__note {
-  font-size: 12px;
+  font-size: clamp(13px, 0.83vw, 16px);
   line-height: 1.3;
+  opacity: 0.55;
   color: var(--c-muted-alt);
 }
 
@@ -476,158 +478,248 @@
   text-decoration: none;
 }
 
-/* ---------- Диаграмма нарушений ---------- */
-.bars {
+
+/* ---------- Потери покрова по годам ----------
+   Снято с макета «Нарушения по годам»: карточка 1019x435, столбцы
+   шириной 96 со скруглением 30, диагональная штриховка белым на 16 %,
+   значение пилюлей поверх столбца, слева колонка с итогом и легендой. */
+.yloss {
   display: flex;
-  align-items: flex-end;
-  gap: clamp(6px, 0.8vw, 14px);
-  height: 220px;
+  gap: clamp(20px, 2.6vw, 50px);
+  align-items: stretch;
 }
 
-.bars__col {
+.yloss__info {
+  display: flex;
+  flex: 0 0 clamp(220px, 19vw, 300px);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.yloss__badge {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  background: var(--c-ink);
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.yloss__total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: clamp(38px, 3.2vw, 56px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--c-ink);
+}
+
+.yloss__total small {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--c-muted-alt);
+}
+
+.yloss__caption {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--c-muted-alt);
+}
+
+.yloss__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  list-style: none;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+}
+
+.yloss__legend li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.yloss__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.yloss__dot--peak {
+  background: var(--c-lime);
+}
+
+.yloss__dot--within {
+  background: var(--c-ink);
+}
+
+.yloss__dot--outside {
+  background: #d4d4cd;
+}
+
+/* ---- поле со столбцами ---- */
+.yloss__plot {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  align-items: flex-end;
+  gap: clamp(6px, 0.9vw, 16px);
+  height: clamp(240px, 19vw, 300px);
+  --yloss-head: 66px;  /* место выноске над самым высоким столбцом */
+  padding-top: var(--yloss-head);
+}
+
+.yloss__col {
   display: flex;
   flex: 1 1 0;
   min-width: 0;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
+  gap: 12px;
+  height: 100%;
   justify-content: flex-end;
 }
 
-.bars__bar {
+.yloss__bar {
   position: relative;
-  width: 100%;
-  max-width: 48px;
-  border-radius: 16px;
-  background: var(--c-page);
+  border-radius: var(--r-pill);
+  /* Штриховка макета: полосы шириной 7 с шагом 22 под −45°.
+     В макете это 29 отдельных прямоугольников, здесь — один градиент,
+     поэтому обрезка по скруглению не нужна: фон её и так соблюдает.
+     А без обрезки пилюля со значением не режется узким столбцом. */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 15px,
+    rgba(255, 255, 255, 0.16) 15px 22px
+  );
 }
 
-/* Широкий режим: когда лет мало, столбики шире и подписаны значением */
-.bars--wide {
-  height: 250px;
-  align-items: flex-end;
-  padding-left: 170px;
+.yloss__bar--peak {
+  background-color: var(--c-lime);
 }
 
-.bars--wide .bars__bar {
-  max-width: 96px;
+.yloss__bar--within {
+  background-color: var(--c-ink);
 }
 
-.bars--dense {
-  padding-left: 170px;
+.yloss__bar--outside {
+  background-color: var(--c-page);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 15px,
+    rgba(140, 140, 133, 0.22) 15px 22px
+  );
 }
 
-.bars--dense .bars__bar {
-  max-width: 48px;
-}
-
-.bars__pill {
+/* Значение пилюлей внутри верхушки столбца — как в макете */
+.yloss__value {
   position: absolute;
-  top: 14px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 1;
   padding: 7px 14px;
-  border-radius: 20px;
+  border-radius: var(--r-pill);
   background: var(--c-surface);
-  font-size: 12px;
-  font-style: normal;
+  box-shadow: 0 1px 6px rgb(27 27 23 / 12%);
+  font-size: 13px;
+  font-weight: 500;
   white-space: nowrap;
-  color: var(--c-ink-black);
+  color: var(--c-ink);
 }
 
-.bars__bar--plain .bars__pill {
-  background: #f4f5f1;
-}
-
-.bars__bar--peak {
-  background: var(--c-ink-deep);
-}
-
-.bars__bar--fresh {
-  background: var(--c-lime);
-}
-
-/* Год без валидных наблюдений: пунктирная засечка, а не нулевой столбик */
-.bars__missing {
-  width: 100%;
-  max-width: 48px;
-  height: 4px;
-  border-top: 2px dashed #b6b6ae;
-}
-
-.bars__year {
-  font-size: 11px;
+.yloss__year {
+  font-size: 13px;
+  text-align: center;
   color: var(--c-muted-alt);
+}
+
+/* ---- выноска над пиком ---- */
+.yloss__callout {
+  position: absolute;
+  top: 0;
+  display: flex;
+  height: var(--yloss-head);
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 2px;
+  /* left приходит из разметки — центр самого высокого столбца.
+     Сдвигаем блок влево от него и оставляем справа место поводку.
+     Высота блока равна отступу сверху, поэтому его низ приходится
+     ровно на верхушку столбца — туда же смотрит поводок. */
+  transform: translateX(calc(-100% - 18px));
+  text-align: right;
+  pointer-events: none;
+}
+
+/* Если пик стоит в начале ряда, выноска слева вылезла бы за карточку —
+   тогда она уходит вправо, а поводок разворачивается вместе с ней. */
+.yloss__callout--flip {
+  align-items: flex-start;
+  transform: translateX(18px);
+  text-align: left;
+}
+
+.yloss__share {
+  font-size: clamp(28px, 2.3vw, 42px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-ink-deep);
+}
+
+.yloss__of {
+  font-size: 13px;
+  white-space: nowrap;
+  color: var(--c-muted-alt);
+}
+
+/* Поводок от текста к столбцу: линия и точка на его торце */
+.yloss__leader {
+  position: absolute;
+  bottom: 7px;
+  left: 100%;
+  width: 18px;
+  height: 2px;
+  background: #cfcfc8;
+}
+
+.yloss__callout--flip .yloss__leader {
+  left: auto;
+  right: 100%;
+}
+
+.yloss__leader::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--c-ink-deep);
+  border-radius: 50%;
+  background: var(--c-surface);
+  transform: translateY(-50%);
+}
+
+.yloss__callout--flip .yloss__leader::after {
+  right: auto;
+  left: -5px;
 }
 
 .ov-note {
   margin-top: 16px;
   font-size: 12px;
   line-height: 1.4;
-  color: var(--c-muted-alt);
-}
-
-/* ---------- Радиальная шкала ---------- */
-.ov-gauge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.gauge {
-  position: relative;
-  width: 280px;
-  height: 150px;
-  margin: 10px 0 6px;
-}
-
-.gauge__tick {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 9px;
-  height: 28px;
-  margin-left: -4.5px;
-  border-radius: 5px;
-  background: var(--c-page);
-  transform-origin: 50% 100%;
-}
-
-.gauge__tick.is-on {
-  background: var(--c-ink);
-}
-
-.gauge__tick.is-lime {
-  background: var(--c-lime);
-}
-
-.gauge__center {
-  position: absolute;
-  left: 50%;
-  bottom: 6px;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  transform: translateX(-50%);
-}
-
-.gauge__value {
-  font-size: 48px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--c-ink);
-}
-
-.gauge__pct {
-  font-size: 18px;
-  color: var(--c-muted-alt);
-}
-
-.gauge__caption {
-  margin-bottom: 12px;
-  font-size: 12px;
-  text-align: center;
   color: var(--c-muted-alt);
 }
 
@@ -689,10 +781,6 @@
   .ov-market {
     width: 100%;
     margin-left: 0;
-  }
-
-  .ov-gauge {
-    align-items: flex-start;
   }
 
   .ov-chart__body {
