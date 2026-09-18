@@ -30,7 +30,10 @@ export default function Welcome() {
           ForestProof
         </p>
 
-        <img className="hero__art" src="/images/hero-rock.png" alt="" />
+        <div className="hero__float" aria-hidden="true">
+          <span className="hero__shadow" />
+          <img className="hero__art" src="/images/hero-rock.png" alt="" />
+        </div>
 
         <div className="hero__grid">
           <div className="hero__copy">

@@ -22,6 +22,7 @@
    Всё масштабируется от ширины окна: картинка, вотермарк, отступы.
    Жёстких координат макета нет — на узком экране они наезжали друг на друга. */
 .hero {
+  --art: clamp(340px, 52vw, 1006px);
   position: relative;
   min-height: clamp(420px, 52vw, 1006px);
   padding-bottom: clamp(32px, 4vw, 80px);
@@ -43,14 +44,77 @@
   user-select: none;
 }
 
-.hero__art {
+/* Остров парит: медленное вертикальное движение с лёгким наклоном.
+   Центрирование через left/right/auto, а не transform — transform занят анимацией. */
+.hero__float {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: clamp(340px, 52vw, 1006px);
-  height: auto;
+  left: 0;
+  right: 0;
+  width: var(--art);
+  margin: 0 auto;
   pointer-events: none;
+}
+
+.hero__art {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: hero-float 9s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Тень дышит в противофазе: когда остров выше — она меньше и бледнее */
+.hero__shadow {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--art) * 0.78);
+  width: calc(var(--art) * 0.46);
+  height: calc(var(--art) * 0.055);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(46, 62, 40, 0.42) 0%,
+    rgba(46, 62, 40, 0.18) 45%,
+    rgba(46, 62, 40, 0) 72%
+  );
+  animation: hero-shadow 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes hero-float {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-2.4%) rotate(-0.7deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes hero-shadow {
+  0% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) scale(0.86);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Если пользователь отключил анимации — остров просто стоит */
+@media (prefers-reduced-motion: reduce) {
+  .hero__art,
+  .hero__shadow {
+    animation: none;
+  }
 }
 
 /* Контент лежит поверх картинки: слева заголовок, справа плашки и лид */
@@ -227,11 +291,14 @@
     padding-bottom: 32px;
   }
 
-  .hero__art {
+  .hero__float {
     position: static;
-    transform: none;
     width: min(100%, 560px);
     margin: 8px auto 0;
+  }
+
+  .hero__shadow {
+    display: none;
   }
 
   .hero__grid {
