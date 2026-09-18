@@ -44,6 +44,7 @@ from forestproof_core.scenario_economics import (  # noqa: E402
     ScenarioEconomicsConfig,
     calculate_scenario_value,
 )
+from forestproof_core.summary_generator import generate_summary  # noqa: E402
 from tools.geotiff import read_geotiff
 from tools.sentinel_evidence import build_event_evidence, build_period_evidence
 
@@ -311,7 +312,7 @@ def build_aoi(
     has_fire = bool(aoi_events)
     loss = gfc_loss_by_year(data_dir, aoi, contour)
 
-    return {
+    area_result = {
         "aoi_id": aoi,
         "maps": render_maps(data_dir, aoi, contour, maps_dir, config) if maps_dir else None,
         "sentinel": _sentinel_block(data_dir, aoi, aoi_events, box, maps_dir),
@@ -340,6 +341,10 @@ def build_aoi(
             for e in range(s + 1, 2025)
         ],
     }
+    summary = generate_summary(area_result)
+    if summary is not None:
+        area_result["summary"] = summary
+    return area_result
 
 
 def main() -> None:
