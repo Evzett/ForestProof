@@ -83,6 +83,116 @@
         ],
         "recent_loss_pct": 0.2842
       }
+    },
+    {
+      "aoi_id": "RU_TVER_05",
+      "available": true,
+      "probability": 0.22632019907086398,
+      "category": "low",
+      "label": 0,
+      "future_loss_pct": 0.0592,
+      "forecast": {
+        "probability": 0.22253305574313528,
+        "category": "low",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 0.045
+      }
+    },
+    {
+      "aoi_id": "RU_TVER_06",
+      "available": true,
+      "probability": 0.2854514626197461,
+      "category": "low",
+      "label": 1,
+      "future_loss_pct": 1.4747,
+      "forecast": {
+        "probability": 0.5380643720721796,
+        "category": "medium",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 1.2531
+      }
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_07",
+      "available": true,
+      "probability": 0.9969528831716954,
+      "category": "high",
+      "label": 1,
+      "future_loss_pct": 1.8263,
+      "forecast": {
+        "probability": 0.46761457831996783,
+        "category": "medium",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 0.6206
+      }
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_09",
+      "available": true,
+      "probability": 0.26479291973601554,
+      "category": "low",
+      "label": 1,
+      "future_loss_pct": 7.0445,
+      "forecast": {
+        "probability": 0.5339044475783156,
+        "category": "medium",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 1.2748
+      }
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_10",
+      "available": false,
+      "reason": "участок не проходит порог леса: сомкнутость крон ниже 30 % более чем на 70 % площади"
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_11",
+      "available": true,
+      "probability": 0.27412717036612355,
+      "category": "low",
+      "label": 0,
+      "future_loss_pct": 0.064,
+      "forecast": {
+        "probability": 0.2631167426430561,
+        "category": "low",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 0.045
+      }
     }
   ],
   "method": "логистическая регрессия с L2, подбор регуляризации по скользящему контролю",

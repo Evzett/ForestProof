@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from dataclasses import dataclass
 import math
 from pathlib import Path
 import sys
@@ -45,6 +46,7 @@ from forestproof_core.scenario_economics import (  # noqa: E402
     calculate_scenario_value,
 )
 from forestproof_core.summary_generator import generate_summary  # noqa: E402
+from tools.fetch import _tile_name_cci, _tile_name_gfc, cci_url  # noqa: E402
 from tools.geotiff import read_geotiff
 from tools.sentinel_evidence import build_event_evidence, build_period_evidence
 
@@ -55,18 +57,152 @@ CONFIG = CaseCalculationConfig()
 # Порог древесного покрова для маски GFC: доля кроны на 2000 год
 TREECOVER_THRESHOLD = 30
 
+# ------------------------------------------------------- источники растров --
+
+# Участки кейса приходят с вырезанными растрами внутри `data/<AOI>/`.
+# Участки, добавленные нами, приходят только контуром, и те же самые
+# продукты для них читаются окном из тайла в кэше.
+#
+# Числа от этого не меняются: тайл и вложенный файл — один и тот же
+# продукт, и по четырём участкам кейса они совпадают до шестого знака
+# (см. tools/build_area_from_tiles.py и tests/test_area_from_tiles.py).
+# Но версия продукта гарей отличается, поэтому источник каждого слоя
+# пишется в выгрузку: на экране должно быть видно, откуда взято.
+
+CCI_CACHE = Path("data/cache/cci-biomass")
+GFC_CACHE = Path("data/cache/hansen-gfc")
+GFC_TILE_VERSION = "Hansen GFC v1.12 (тайл)"
+GFC_LOCAL_VERSION = "Hansen GFC v1.13 (вложен в набор)"
+
+
+@dataclass(frozen=True, slots=True)
+class YearRaster:
+    """Биомасса и её погрешность за год плюс сетка, по которой считать вес."""
+
+    agb: np.ndarray
+    sd: np.ndarray
+    grid: object
+    source: str
+
+
+@dataclass(frozen=True, slots=True)
+class CoverRaster:
+    """Сомкнутость крон на 2000 год и год потери покрова."""
+
+    treecover: np.ndarray
+    lossyear: np.ndarray
+    grid: object
+    source: str
+
+
+def _bounds(box) -> tuple[float, float, float, float]:
+    """Рамка запроса. Контур приходит то четвёркой чисел, то геометрией
+    GeoJSON — тайл выбирается одинаково и по той, и по другой."""
+    if isinstance(box, dict):
+        lons: list[float] = []
+        lats: list[float] = []
+
+        def walk(node) -> None:
+            if (
+                isinstance(node, (list, tuple))
+                and len(node) >= 2
+                and all(isinstance(v, (int, float)) for v in node[:2])
+            ):
+                lons.append(float(node[0]))
+                lats.append(float(node[1]))
+                return
+            if isinstance(node, (list, tuple)):
+                for item in node:
+                    walk(item)
+
+        walk(box.get("coordinates", []))
+        if not lons:
+            raise ValueError("в геометрии нет координат")
+        return min(lons), min(lats), max(lons), max(lats)
+    return float(box[0]), float(box[1]), float(box[2]), float(box[3])
+
+
+def _centre(box) -> tuple[float, float]:
+    west, south, east, north = _bounds(box)
+    return (west + east) / 2, (south + north) / 2
+
+
+def open_cci(data_dir: Path, aoi: str, year: int, box) -> YearRaster:
+    local = data_dir / aoi / f"CCI_Biomass_{year}.tif"
+    if local.exists():
+        raster = read_geotiff(str(local))
+        agb = raster.band(0).astype(float)
+        sd = raster.band(1).astype(float)
+        if raster.nodata is not None:
+            agb[agb == raster.nodata] = np.nan
+            sd[sd == raster.nodata] = np.nan
+        return YearRaster(agb, sd, raster, "вложен в набор")
+
+    lon, lat = _centre(box)
+    tile = _tile_name_cci(lon, lat)
+    agb_path = CCI_CACHE / cci_url(tile, year, "AGB").rsplit("/", 1)[-1]
+    sd_path = CCI_CACHE / cci_url(tile, year, "AGB_SD").rsplit("/", 1)[-1]
+    for path in (agb_path, sd_path):
+        if not path.exists():
+            raise FileNotFoundError(
+                f"нет ни {local}, ни тайла {path.name}; "
+                "сначала: python tools/fetch.py --bbox <W S E N> --years ..."
+            )
+
+    window = _bounds(box)
+    agb_raster = read_geotiff(str(agb_path), bbox=window)
+    sd_raster = read_geotiff(str(sd_path), bbox=window)
+    agb = agb_raster.band(0).astype(float)
+    sd = sd_raster.band(0).astype(float)
+    if agb_raster.nodata is not None:
+        agb[agb == agb_raster.nodata] = np.nan
+    if sd_raster.nodata is not None:
+        sd[sd == sd_raster.nodata] = np.nan
+    return YearRaster(agb, sd, agb_raster, f"тайл {tile}")
+
+
+def open_gfc(data_dir: Path, aoi: str, box) -> CoverRaster:
+    local = data_dir / aoi / "GFC_2025_v1_13.tif"
+    if local.exists():
+        raster = read_geotiff(str(local))
+        return CoverRaster(
+            raster.band(0).astype(float),
+            raster.band(1).astype(int),
+            raster,
+            GFC_LOCAL_VERSION,
+        )
+
+    lon, lat = _centre(box)
+    tile = _tile_name_gfc(lon, lat)
+    loss_path = GFC_CACHE / f"Hansen_GFC-2024-v1.12_lossyear_{tile}.tif"
+    cover_path = GFC_CACHE / f"Hansen_GFC-2024-v1.12_treecover2000_{tile}.tif"
+    for path in (loss_path, cover_path):
+        if not path.exists():
+            raise FileNotFoundError(
+                f"нет ни {local}, ни тайла {path.name}; "
+                "сначала: python tools/fetch.py --bbox <W S E N> --cover"
+            )
+
+    window = _bounds(box)
+    loss = read_geotiff(str(loss_path), bbox=window)
+    cover = read_geotiff(str(cover_path), bbox=window)
+    return CoverRaster(
+        cover.band(0).astype(float),
+        loss.band(0).astype(int),
+        loss,
+        f"{GFC_TILE_VERSION} {tile}",
+    )
+
+
 # ------------------------------------------------------------------- расчёт
 
 
 def read_year(data_dir: Path, aoi: str, year: int, box, config: CaseCalculationConfig = CONFIG) -> dict:
-    raster = read_geotiff(str(data_dir / aoi / f"CCI_Biomass_{year}.tif"))
-    weights = pixel_intersection_weights(raster, box)
-    agb = raster.band(0).astype(float)
-    sd = raster.band(1).astype(float)
-    if raster.nodata is not None:
-        agb[agb == raster.nodata] = np.nan
-        sd[sd == raster.nodata] = np.nan
-    return calculate_year(year, agb, sd, weights, config)
+    source = open_cci(data_dir, aoi, year, box)
+    weights = pixel_intersection_weights(source.grid, box)
+    result = calculate_year(year, source.agb, source.sd, weights, config)
+    result["source"] = source.source
+    return result
 
 
 def gfc_loss_by_year(data_dir: Path, aoi: str, box) -> list[dict]:
@@ -75,10 +211,10 @@ def gfc_loss_by_year(data_dir: Path, aoi: str, box) -> list[dict]:
     Потеря — снижение древесного покрова по продукту Hansen, а не
     установленная вырубка: причина здесь не определяется.
     """
-    raster = read_geotiff(str(data_dir / aoi / "GFC_2025_v1_13.tif"))
-    weights = pixel_intersection_weights(raster, box)
-    treecover = raster.band(0).astype(float)
-    lossyear = raster.band(1).astype(int)
+    source = open_gfc(data_dir, aoi, box)
+    weights = pixel_intersection_weights(source.grid, box)
+    treecover = source.treecover
+    lossyear = source.lossyear
     forest = treecover >= TREECOVER_THRESHOLD
     out = []
     for code in range(1, 26):
@@ -99,13 +235,13 @@ def render_maps(data_dir: Path, aoi: str, box, out_dir: Path, config: CaseCalcul
     from PIL import Image
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    start = read_geotiff(str(data_dir / aoi / "CCI_Biomass_2019.tif"))
-    end = read_geotiff(str(data_dir / aoi / "CCI_Biomass_2024.tif"))
-    weights = pixel_intersection_weights(start, box)
+    start = open_cci(data_dir, aoi, 2019, box)
+    end = open_cci(data_dir, aoi, 2024, box)
+    weights = pixel_intersection_weights(start.grid, box)
     inside = weights > 0
 
-    c_start = carbon_density_t_ha(start.band(0), config)
-    c_end = carbon_density_t_ha(end.band(0), config)
+    c_start = carbon_density_t_ha(start.agb, config)
+    c_end = carbon_density_t_ha(end.agb, config)
     delta = c_end - c_start
 
     def save(rgb: np.ndarray, alpha: np.ndarray, name: str) -> str:
@@ -136,10 +272,11 @@ def render_maps(data_dir: Path, aoi: str, box, out_dir: Path, config: CaseCalcul
     save(change_rgb, change_alpha, f"{aoi}_change.png")
 
     # потери покрова Hansen на своей, более мелкой сетке
-    gfc = read_geotiff(str(data_dir / aoi / "GFC_2025_v1_13.tif"))
+    gfc_source = open_gfc(data_dir, aoi, box)
+    gfc = gfc_source.grid
     gfc_weights = pixel_intersection_weights(gfc, box)
-    lossyear = gfc.band(1).astype(int)
-    treecover = gfc.band(0).astype(float)
+    lossyear = gfc_source.lossyear
+    treecover = gfc_source.treecover
     recent = (lossyear >= 19) & (lossyear <= 24) & (treecover >= TREECOVER_THRESHOLD)
     older = (lossyear > 0) & (lossyear < 19) & (treecover >= TREECOVER_THRESHOLD)
     rgb = np.zeros((*lossyear.shape, 3))
@@ -153,7 +290,9 @@ def render_maps(data_dir: Path, aoi: str, box, out_dir: Path, config: CaseCalcul
         "change": f"{aoi}_change.png",
         "loss": f"{aoi}_loss.png",
         "change_span_tc_ha": float(span),
-        "size": [int(start.data.shape[2]), int(start.data.shape[1])],
+        "source_cci": start.source,
+        "source_gfc": gfc_source.source,
+        "size": [int(start.grid.data.shape[2]), int(start.grid.data.shape[1])],
         "loss_size": [int(lossyear.shape[1]), int(lossyear.shape[0])],
     }
 
@@ -190,14 +329,18 @@ def render_terrain(
     """
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    years = sorted(
+    local = sorted(
         int(path.stem.split("_")[-1])
         for path in (data_dir / aoi).glob("CCI_Biomass_*.tif")
     )
+    # У добавленных участков вложенных файлов нет — годы берутся те же,
+    # что у участков кейса, и читаются окном из тайла.
+    years = local or list(range(2015, 2025))
     if not years:
         return None
 
-    first = read_geotiff(str(data_dir / aoi / f"CCI_Biomass_{years[0]}.tif"))
+    first_source = open_cci(data_dir, aoi, years[0], box)
+    first = first_source.grid
     weights = pixel_intersection_weights(first, box)
     inside = weights > 0
     if not inside.any():
@@ -212,8 +355,7 @@ def render_terrain(
     grids: dict[str, list[int]] = {}
     peak = 0.0
     for year in years:
-        raster = read_geotiff(str(data_dir / aoi / f"CCI_Biomass_{year}.tif"))
-        density = carbon_density_t_ha(raster.band(0), config)
+        density = carbon_density_t_ha(open_cci(data_dir, aoi, year, box).agb, config)
         grids[str(year)] = grid(density)
         peak = max(peak, float(np.percentile(density[inside], 99)))
 
@@ -226,11 +368,14 @@ def render_terrain(
     # раз, и подсветка «что упало в 2022» не теряет клетки, задетые ещё
     # и раньше.
     loss_years = [0] * (rows * cols)
-    gfc_path = data_dir / aoi / "GFC_2025_v1_13.tif"
-    if gfc_path.exists():
-        gfc = read_geotiff(str(gfc_path))
-        cover = gfc.band(0).astype(float)
-        lossyear = gfc.band(1).astype(int)
+    try:
+        gfc_source = open_gfc(data_dir, aoi, box)
+    except FileNotFoundError:
+        gfc_source = None
+    if gfc_source is not None:
+        gfc = gfc_source.grid
+        cover = gfc_source.treecover
+        lossyear = gfc_source.lossyear
         forest = cover >= TREECOVER_THRESHOLD
         marked = np.where(forest, lossyear, 0)
 

@@ -1,6 +1,5 @@
 {
   "type": "FeatureCollection",
-  "name": "Analytical forest AOIs; not registered climate projects",
   "features": [
     {
       "type": "Feature",
@@ -193,6 +192,300 @@
             [
               43.244,
               54.78025
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RU_TVER_05",
+      "properties": {
+        "aoi_id": "RU_TVER_05",
+        "name": "Тверская область стабильный массив",
+        "region": "Тверская область",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1750.4733,
+        "selection_role": "контроль без нарушений",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 32.84,
+        "bbox_south": 56.59,
+        "bbox_east": 32.904,
+        "bbox_north": 56.63,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              32.904,
+              56.59
+            ],
+            [
+              32.904,
+              56.63
+            ],
+            [
+              32.84,
+              56.63
+            ],
+            [
+              32.84,
+              56.59
+            ],
+            [
+              32.904,
+              56.59
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RU_TVER_06",
+      "properties": {
+        "aoi_id": "RU_TVER_06",
+        "name": "Тверская область зона активного прироста",
+        "region": "Тверская область",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1748.1739,
+        "selection_role": "участок с накоплением запаса",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 32.91,
+        "bbox_south": 56.64,
+        "bbox_east": 32.974,
+        "bbox_north": 56.68,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              32.974,
+              56.64
+            ],
+            [
+              32.974,
+              56.68
+            ],
+            [
+              32.91,
+              56.68
+            ],
+            [
+              32.91,
+              56.64
+            ],
+            [
+              32.974,
+              56.64
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RU_VOLOGDA_07",
+      "properties": {
+        "aoi_id": "RU_VOLOGDA_07",
+        "name": "Вологодская область сплошная вырубка",
+        "region": "Вологодская область",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1617.7077,
+        "selection_role": "сплошная вырубка с четкой границей",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 40.6,
+        "bbox_south": 59.43,
+        "bbox_east": 40.664,
+        "bbox_north": 59.47,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              40.664,
+              59.43
+            ],
+            [
+              40.664,
+              59.47
+            ],
+            [
+              40.6,
+              59.47
+            ],
+            [
+              40.6,
+              59.43
+            ],
+            [
+              40.664,
+              59.43
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RU_VOLOGDA_09",
+      "properties": {
+        "aoi_id": "RU_VOLOGDA_09",
+        "name": "Вологодская область зона лесовосстановления",
+        "region": "Вологодская область",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1617.7077,
+        "selection_role": "лесовосстановление и подрост",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 40.74,
+        "bbox_south": 59.43,
+        "bbox_east": 40.804,
+        "bbox_north": 59.47,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              40.804,
+              59.43
+            ],
+            [
+              40.804,
+              59.47
+            ],
+            [
+              40.74,
+              59.47
+            ],
+            [
+              40.74,
+              59.43
+            ],
+            [
+              40.804,
+              59.43
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RU_MORDOVIA_10",
+      "properties": {
+        "aoi_id": "RU_MORDOVIA_10",
+        "name": "Мордовия очаг гари 2021",
+        "region": "Республика Мордовия",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1829.5986,
+        "selection_role": "гарь с подтверждением MODIS",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 43.1,
+        "bbox_south": 54.85025,
+        "bbox_east": 43.164,
+        "bbox_north": 54.89025,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              43.164,
+              54.85025
+            ],
+            [
+              43.164,
+              54.89025
+            ],
+            [
+              43.1,
+              54.89025
+            ],
+            [
+              43.1,
+              54.85025
+            ],
+            [
+              43.164,
+              54.85025
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RU_MORDOVIA_11",
+      "properties": {
+        "aoi_id": "RU_MORDOVIA_11",
+        "name": "Мордовия деградирующий древостой",
+        "region": "Республика Мордовия",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1829.5986,
+        "selection_role": "падающая историческая динамика (g < 0)",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 43.24,
+        "bbox_south": 54.85025,
+        "bbox_east": 43.304,
+        "bbox_north": 54.89025,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              43.304,
+              54.85025
+            ],
+            [
+              43.304,
+              54.89025
+            ],
+            [
+              43.24,
+              54.89025
+            ],
+            [
+              43.24,
+              54.85025
+            ],
+            [
+              43.304,
+              54.85025
             ]
           ]
         ]

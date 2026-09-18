@@ -139,7 +139,7 @@ def test_missing_covered_agb_does_not_become_zero_stock_or_units():
     assert result["status"] == "unavailable"
 
 
-def test_extractor_treats_raster_nodata_as_missing(monkeypatch):
+def test_extractor_treats_raster_nodata_as_missing(monkeypatch, tmp_path):
     raster = Raster(
         data=np.array([[[100.0, -9999.0]], [[1.0, 1.0]]]),
         lon_origin=30.0,
@@ -149,9 +149,16 @@ def test_extractor_treats_raster_nodata_as_missing(monkeypatch):
         nodata=-9999.0,
         metadata="",
     )
-    monkeypatch.setattr(extract_case_data, "read_geotiff", lambda _path: raster)
+    monkeypatch.setattr(extract_case_data, "read_geotiff", lambda _path, **_: raster)
+    # Растр теперь берётся либо из файла набора, либо окном из тайла, и
+    # выбор делается по наличию файла. Тест про nodata касается ветки с
+    # файлом, поэтому файл должен существовать — читать его всё равно
+    # будет подменённая функция.
+    aoi_dir = tmp_path / "AOI"
+    aoi_dir.mkdir()
+    (aoi_dir / "CCI_Biomass_2019.tif").write_bytes(b"")
     box = (30.0, 56.0 - raster.lat_step, 30.0 + 2 * raster.lon_step, 56.0)
-    result = extract_case_data.read_year(Path("unused"), "AOI", 2019, box)
+    result = extract_case_data.read_year(tmp_path, "AOI", 2019, box)
     assert result["stock_tc"] is None
     assert result["valid_area_ha"] < result["area_ha"]
 
