@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   Card,
   FilterSelect,
@@ -29,6 +29,7 @@ import { useScenario } from "../../data/scenario";
 import { summaryForPeriod } from "../../data/summary";
 import { COVERAGE, recompute } from "../../data/units";
 import type { Area, Period } from "../../data/case";
+import type { ReportBlock } from "../../reportPdf";
 import { YearLossChart } from "../../components/YearLossChart";
 import "./Plot.css";
 
@@ -66,8 +67,18 @@ export default function Plot() {
   const events = eventsFor(area.aoi_id);
 
   const [tab, setTab] = useState<(typeof TABS)[number]>("Запас");
-  const [start, setStart] = useState("2019");
-  const [end, setEnd] = useState("2024");
+
+  /* Период можно задать ссылкой: раздел «Что изменилось» ведёт сюда с уже
+     выбранными годами пересчёта, и открывать страницу на периоде по
+     умолчанию значило бы потерять то, ради чего пользователь пришёл.
+     Год из ссылки принимается, только если он есть в наборе. */
+  const [search] = useSearchParams();
+  const yearFromLink = (key: string, fallback: string) => {
+    const raw = search.get(key);
+    return raw !== null && (YEARS as readonly number[]).includes(Number(raw)) ? raw : fallback;
+  };
+  const [start, setStart] = useState(() => yearFromLink("start", "2019"));
+  const [end, setEnd] = useState(() => yearFromLink("end", "2024"));
 
   /* Конечный год должен быть больше начального — условие постановки.
      Вместо ошибки подтягиваем конец за началом: пользователь не обязан
@@ -119,7 +130,7 @@ export default function Plot() {
           label="конечный год"
         />
         <span className="period__hint">
-          {period.years} годовых перехода · учитываемый пул — живая надземная древесная биомасса
+          {period.years} {plural(period.years, ["годовой переход", "годовых перехода", "годовых переходов"])} · учитываемый пул — живая надземная древесная биомасса
         </span>
       </div>
 
@@ -1544,6 +1555,105 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
     ],
   };
 
+  /* PDF собирается из тех же величин, что уже показаны выше, а не считается
+     заново: второй источник тех же чисел рано или поздно разойдётся с первым
+     и отчёт перестанет соответствовать экрану. */
+  const pdfBlocks = (): ReportBlock[] => {
+    const num = (v: number) => formatNumber(Math.round(v));
+    const rangeLine = `${num(period.e_tco2e)} т CO₂-экв. (${num(period.lower_tco2e)} … ${num(period.upper_tco2e)})`;
+    const unitsLine =
+      period.units === null
+        ? `недоступно${period.reason ? ` · ${period.reason}` : ""}`
+        : `${formatNumber(period.units)}${period.reason ? ` · ${period.reason}` : ""}`;
+
+    return [
+      {
+        kind: "title",
+        text: "Отчёт о расчёте",
+        sub: `${calcId} · сформирован ${generatedAt}`,
+      },
+      {
+        kind: "kv",
+        rows: [
+          ["территория", `${area.name}, ${area.region}`],
+          ["площадь", `${formatDecimal(area.area_ha, 1)} га`],
+          ["период", `${period.year_start}—${period.year_end}`],
+          ["учитываемый пул", "живая надземная древесная биомасса"],
+          ["результат", rangeLine],
+          ["потенциальные единицы", unitsLine],
+          ["методика и алгоритм", "case-v1.0 / calc-1.0"],
+          ["статус данных", "воспроизводимый локальный кэш открытых продуктов"],
+        ],
+      },
+      { kind: "heading", text: "Как получен результат" },
+      {
+        kind: "steps",
+        rows: [
+          [
+            "Растры",
+            `ESA CCI Biomass v7.0, биомасса и канал AGB_SD за ${period.year_start} и ${period.year_end}.`,
+          ],
+          [
+            "Площадь",
+            `${formatDecimal(period.area_ha, 4)} га по доле пересечения каждого пикселя с контуром; пиксель сетки CCI на этой широте — около 0,54 га, а не гектар.`,
+          ],
+          [
+            "Запас",
+            `биомасса × CF ${PARAMETERS.carbon_fraction} = ${formatDecimal(period.c_start_t_ha, 2)} т C/га на ${period.year_start} и ${formatDecimal(period.c_end_t_ha, 2)} на ${period.year_end}.`,
+          ],
+          [
+            "Изменение",
+            `ΔC = ${num(period.delta_stock_tc)} т C, затем × 44/12 и знак меняется: E = ${period.e_tco2e > 0 ? "+" : ""}${num(period.e_tco2e)} т CO₂-экв. ${period.e_tco2e > 0 ? "— потеря из учитываемого пула." : "— накопление."}`,
+          ],
+          [
+            "Неопределённость",
+            `перенос AGB_SD при ρs ${PARAMETERS.rho_spatial}, ρt ${PARAMETERS.rho_temporal}, k ${PARAMETERS.k_sigma} даёт H = ${num(period.h_tco2e)} т CO₂-экв. Это сценарный диапазон, а не эмпирически откалиброванный интервал.`,
+          ],
+          [
+            "Базовая линия",
+            `историческая динамика g = ${formatDecimal(area.baseline_rate_tc_ha_year, 3)} т C/га/год даёт E_base = ${num(period.e_base_tco2e)} т CO₂-экв.`,
+          ],
+          [
+            "Единицы",
+            `R = E_base − E − LK = ${num(period.r_tco2e)} т CO₂-экв.` +
+              (period.r_tco2e <= 0
+                ? " ≤ 0 → Q = 0, отношение H/R не вычисляется."
+                : period.h_over_r !== null && period.h_over_r >= 1
+                  ? ` · H/R = ${formatDecimal(period.h_over_r, 2)} ≥ 1 → Q = 0.`
+                  : ` · вычет UNC ${period.unc_share === null ? "—" : formatDecimal(period.unc_share, 3)}, резерв ${PARAMETERS.buffer_share}, округление вниз → Q = ${period.units ?? "недоступно"}.`),
+          ],
+        ],
+      },
+      { kind: "heading", text: "Источники и версии" },
+      {
+        kind: "table",
+        head: ["набор", "версия", "роль в расчёте", "сетка"],
+        rows: DATASETS.map((d) => [d.name, d.version, d.role, d.grid]),
+      },
+      { kind: "heading", text: "Ограничения" },
+      { kind: "list", items: report.limitations },
+      {
+        kind: "note",
+        text: "Значения получены по условиям кейса и не являются сертифицированными углеродными единицами. Полный машинный набор параметров и промежуточных величин выгружается кнопкой «Выгрузить отчёт в JSON».",
+      },
+    ];
+  };
+
+  const [pdfState, setPdfState] = useState<"idle" | "busy" | "failed">("idle");
+
+  const downloadPdf = async () => {
+    setPdfState("busy");
+    try {
+      const { downloadReportPdf } = await import("../../reportPdf");
+      await downloadReportPdf(`${calcId}.pdf`, pdfBlocks());
+      setPdfState("idle");
+    } catch {
+      // Молча ничего не делать нельзя: пользователь ждёт файл и должен
+      // узнать, что его не будет, а не гадать, сохранился он или нет.
+      setPdfState("failed");
+    }
+  };
+
   const download = () => {
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -1626,6 +1736,72 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
           </table>
         </div>
 
+        {/* Цепочка вывода. Проверяющему нужно не итоговое число, а то,
+            как оно получено: какой параметр дал какую величину. Раньше
+            отчёт показывал результат и источники, но не путь между ними. */}
+        <p className="tile__label" style={{ margin: "18px 0 10px" }}>
+          как получен результат
+        </p>
+        <ol className="chain">
+          <li>
+            <b>Растры</b>
+            <span>
+              ESA CCI Biomass v7.0, биомасса и канал AGB_SD за {period.year_start} и{" "}
+              {period.year_end}
+            </span>
+          </li>
+          <li>
+            <b>Площадь</b>
+            <span>
+              {formatDecimal(period.area_ha, 4)} га по доле пересечения каждого пикселя с контуром;
+              пиксель сетки CCI на этой широте — около 0,54 га, а не гектар
+            </span>
+          </li>
+          <li>
+            <b>Запас</b>
+            <span>
+              биомасса × CF {PARAMETERS.carbon_fraction} ={" "}
+              {formatDecimal(period.c_start_t_ha, 2)} т C/га на {period.year_start} и{" "}
+              {formatDecimal(period.c_end_t_ha, 2)} на {period.year_end}
+            </span>
+          </li>
+          <li>
+            <b>Изменение</b>
+            <span>
+              ΔC = {formatNumber(Math.round(period.delta_stock_tc))} т C, затем × 44/12 и знак
+              меняется: E = {period.e_tco2e > 0 ? "+" : ""}
+              {formatNumber(Math.round(period.e_tco2e))} т CO₂-экв.{" "}
+              {period.e_tco2e > 0 ? "— потеря из учитываемого пула" : "— накопление"}
+            </span>
+          </li>
+          <li>
+            <b>Неопределённость</b>
+            <span>
+              перенос AGB_SD при ρs {PARAMETERS.rho_spatial}, ρt {PARAMETERS.rho_temporal}, k{" "}
+              {PARAMETERS.k_sigma} даёт H = {formatNumber(Math.round(period.h_tco2e))} т CO₂-экв.
+              Это сценарный диапазон, а не эмпирически откалиброванный интервал
+            </span>
+          </li>
+          <li>
+            <b>Базовая линия</b>
+            <span>
+              историческая динамика g = {formatDecimal(area.baseline_rate_tc_ha_year, 3)} т C/га/год
+              даёт E_base = {formatNumber(Math.round(period.e_base_tco2e))} т CO₂-экв.
+            </span>
+          </li>
+          <li>
+            <b>Единицы</b>
+            <span>
+              R = E_base − E − LK = {formatNumber(Math.round(period.r_tco2e))} т CO₂-экв.
+              {period.r_tco2e <= 0
+                ? " ≤ 0 → Q = 0, отношение H/R не вычисляется"
+                : period.h_over_r !== null && period.h_over_r >= 1
+                  ? ` · H/R = ${formatDecimal(period.h_over_r, 2)} ≥ 1 → Q = 0`
+                  : ` · вычет UNC ${period.unc_share === null ? "—" : formatDecimal(period.unc_share, 3)}, резерв ${PARAMETERS.buffer_share}, округление вниз → Q = ${period.units ?? "недоступно"}`}
+            </span>
+          </li>
+        </ol>
+
         <p className="tile__label" style={{ margin: "18px 0 10px" }}>
           ограничения
         </p>
@@ -1635,12 +1811,29 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
           ))}
         </ul>
 
-        <button className="btn btn--dark" type="button" style={{ marginTop: 20 }} onClick={download}>
-          <span>Выгрузить отчёт в JSON</span>
-        </button>
+        <div className="report-actions">
+          <button
+            className="btn btn--dark"
+            type="button"
+            onClick={downloadPdf}
+            disabled={pdfState === "busy"}
+          >
+            <span>{pdfState === "busy" ? "Готовим PDF…" : "Скачать отчёт в PDF"}</span>
+          </button>
+          <button className="btn btn--outline" type="button" onClick={download}>
+            <span>Выгрузить отчёт в JSON</span>
+          </button>
+        </div>
+        {pdfState === "failed" && (
+          <p className="ov-note" role="alert">
+            PDF собрать не удалось — файл не скачан. Отчёт целиком есть в выгрузке JSON, а эту же
+            страницу можно сохранить документом через печать браузера.
+          </p>
+        )}
         <p className="ov-note">
-          Выгрузка содержит все параметры, допущения, источники и промежуточные величины —
-          достаточно, чтобы повторить расчёт независимо от интерфейса.
+          PDF повторяет то, что на экране: результат с диапазоном, цепочку вывода, источники и
+          ограничения — по нему видно, как получено число. JSON содержит все параметры, допущения и
+          промежуточные величины — достаточно, чтобы повторить расчёт независимо от интерфейса.
         </p>
       </Card>
     </>

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, Checkbox, formatDecimal, formatNumber } from "../../components/ui";
+import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
-import { AREAS, ASSUMPTIONS, DATASETS, EVENTS, PARAMETERS } from "../../data/case";
+import { AREAS, ASSUMPTIONS, DATASETS, EVENTS, PARAMETERS, YEARS } from "../../data/case";
 import type { Area, Period } from "../../data/case";
 import "./Sections.css";
 
@@ -256,164 +256,235 @@ export function Calculations() {
   );
 }
 
-/* ================= Наблюдение ================= */
+/* ================= Что изменилось с прошлого расчёта ================= */
+
+/* Раньше здесь было «Наблюдение»: список тех же участков с лентой событий.
+   Он не отвечал ни на один вопрос пользователя — что именно наблюдаем и
+   что с этим делать. Постановка кейса такого раздела не требует вовсе.
+
+   Теперь раздел отвечает на один вопрос: отчёт, который у меня на руках,
+   ещё действителен? Для этого сохранённый расчёт сравнивается с тем, что
+   есть в наборе сейчас: появились ли новые годы наблюдений, нашлись ли
+   новые подтверждённые события, менялись ли версии продуктов. KAN-58. */
+
+type ChangeWeight = "material" | "none";
+
+type Change = {
+  title: string;
+  detail: string;
+  weight: ChangeWeight;
+};
+
+const LATEST_YEAR = YEARS[YEARS.length - 1];
+
+/* Год события берётся из ранней границы интервала: продукт гарей даёт дату
+   с погрешностью, и поздняя граница может увести событие в следующий год. */
+function eventYear(e: (typeof EVENTS)[number]): number {
+  return Number(e.date_min.slice(0, 4));
+}
+
+function changesSince(entry: Entry): Change[] {
+  const changes: Change[] = [];
+  const { area, period } = entry;
+
+  if (period.year_end < LATEST_YEAR) {
+    changes.push({
+      title: "появились новые годы наблюдений",
+      detail: `расчёт заканчивается ${period.year_end}, а карты биомассы в наборе есть по ${LATEST_YEAR} включительно: ${period.year_end + 1}—${LATEST_YEAR} в отчёт не вошли`,
+      weight: "material",
+    });
+  }
+
+  const newEvents = EVENTS.filter(
+    (e) => e.aoi_id === area.aoi_id && eventYear(e) > period.year_end
+  );
+  for (const e of newEvents) {
+    changes.push({
+      title: "в продукте гарей нашлось событие после расчёта",
+      detail: `${e.date_min} — ${e.date_max}: ${e.cause_supported}; затронуто ${e.burned_pixels} из ${e.all_pixels} пикселей, неопределённость даты ${e.uncertainty_days[0]}—${e.uncertainty_days[1]} дней`,
+      weight: "material",
+    });
+  }
+
+  const lateLoss = area.cover_loss.filter((l) => l.year > period.year_end && l.area_ha > 0);
+  const lateLossHa = lateLoss.reduce((s, l) => s + l.area_ha, 0);
+  if (lateLoss.length > 0) {
+    /* Горизонты продуктов не совпадают: Hansen доходит до 2025, карты
+       биомассы — до 2024. Потерю за 2025 пересчёт не покроет, и об этом
+       нужно сказать, иначе кнопка обещает больше, чем делает. */
+    const beyond = lateLoss.filter((l) => l.year > LATEST_YEAR).map((l) => l.year);
+    changes.push({
+      title: "после расчёта зафиксирована потеря древесного покрова",
+      detail:
+        `${formatDecimal(lateLossHa, 1)} га за ${lateLoss.map((l) => l.year).join(", ")} по Hansen. ` +
+        "Это снижение покрова, а не установленная вырубка: причину продукт не определяет" +
+        (beyond.length > 0
+          ? `. Потеря за ${beyond.join(", ")} в пересчёт не войдёт: карты биомассы заканчиваются ${LATEST_YEAR} годом`
+          : ""),
+      weight: "material",
+    });
+  }
+
+  /* Версии источников сравниваются честно: в наборе одна версия каждого
+     продукта, и подставлять несуществующее обновление нельзя. Строка
+     остаётся — пользователю важно видеть, что это проверено. */
+  changes.push({
+    title: "версии продуктов не менялись",
+    detail: DATASETS.map((d) => `${d.name} — ${d.version}`).join("; "),
+    weight: "none",
+  });
+
+  return changes;
+}
+
+/* Пересчёт — это тот же участок с концом периода на последнем доступном
+   годе. Хеш входа считается той же функцией, что и в журнале: если он
+   совпал, пересчитывать нечего, и это видно, а не заявлено. */
+function recalcTarget(entry: Entry) {
+  const start = entry.period.year_start;
+  const end = LATEST_YEAR;
+  const period = entry.area.periods.find((p) => p.year_start === start && p.year_end === end);
+  return {
+    start,
+    end,
+    available: Boolean(period),
+    hash: period ? inputHash(entry.area, period) : null,
+  };
+}
 
 export function Monitoring() {
-  const [watched, setWatched] = useState(() => AREAS.slice(0, 2).map((a) => a.aoi_id));
-  const notWatched = AREAS.filter((a) => !watched.includes(a.aoi_id));
+  const journal = useMemo(buildJournal, []);
 
-  const add = () => {
-    if (notWatched.length === 0) return;
-    setWatched((prev) => [...prev, notWatched[0].aoi_id]);
-  };
+  /* По одному сохранённому расчёту на участок — самому раннему по концу
+     периода. Он и есть «прошлый расчёт»: остальные строки журнала уже
+     новее и отвечают на тот же вопрос дважды. */
+  const saved = useMemo(() => {
+    const byArea = new Map<string, Entry>();
+    for (const e of journal) {
+      const kept = byArea.get(e.area.aoi_id);
+      if (!kept || e.period.year_end < kept.period.year_end) byArea.set(e.area.aoi_id, e);
+    }
+    return [...byArea.values()];
+  }, [journal]);
 
-  /* Лента строится из данных, а не из выдуманных новостей: событие с
-     подтверждением и год крупнейшей потери покрова — это то, что
-     действительно есть в наборе. */
-  const feed = useMemo(() => {
-    const items: { date: string; name: string; text: string; level: string }[] = [];
-    for (const e of EVENTS) {
-      const area = AREAS.find((a) => a.aoi_id === e.aoi_id)!;
-      items.push({
-        date: `${e.date_min} — ${e.date_max}`,
-        name: area.name,
-        text: `${e.cause_supported}; затронуто ${e.burned_pixels} из ${e.all_pixels} пикселей продукта, неопределённость даты ${e.uncertainty_days[0]}—${e.uncertainty_days[1]} дней`,
-        level: "high",
-      });
-    }
-    for (const area of AREAS) {
-      const top = [...area.cover_loss].sort((a, b) => b.area_ha - a.area_ha)[0];
-      if (top) {
-        items.push({
-          date: String(top.year),
-          name: area.name,
-          text: `крупнейшая потеря древесного покрова ${formatDecimal(top.area_ha, 1)} га; причина продуктом не определяется`,
-          level: top.year >= 2019 ? "medium" : "none",
-        });
-      }
-    }
-    return items.sort((a, b) => b.date.localeCompare(a.date));
-  }, []);
+  const rows = useMemo(
+    () =>
+      saved.map((entry) => {
+        const changes = changesSince(entry);
+        return {
+          entry,
+          changes,
+          material: changes.filter((c) => c.weight === "material"),
+          target: recalcTarget(entry),
+        };
+      }),
+    [saved]
+  );
+
+  const stale = rows.filter((r) => r.material.length > 0);
 
   return (
     <>
       <PageHead
-        title="Наблюдение"
-        subtitle="Что известно об изменениях на отслеживаемых участках и чем это подтверждено"
-        action={
-          <button
-            className="add-btn"
-            type="button"
-            onClick={add}
-            disabled={notWatched.length === 0}
-          >
-            <span aria-hidden="true">+</span> добавить в наблюдение
-          </button>
-        }
+        title="Что изменилось с прошлого расчёта"
+        subtitle="Сохранённый расчёт сравнивается с тем, что есть в наборе сейчас: новые годы наблюдений, новые подтверждённые события, версии продуктов"
       />
 
       <div className="banner">
-        <b>Наблюдение — дополнительная функция</b>
+        <b>
+          {stale.length === 0
+            ? "Все сохранённые расчёты актуальны"
+            : `${stale.length} из ${rows.length} ${plural(rows.length, ["расчёта", "расчётов", "расчётов"])} стоит повторить`}
+        </b>
         <span>
-          Обязательная часть кейса заканчивается отчётом по запросу. Слежение за участком между
-          расчётами нужно владельцу проекта и инвестору: оно показывает, что изменилось с момента
-          последнего отчёта и когда расчёт стоит повторить.
+          Обязательная часть кейса заканчивается отчётом по запросу. Этот раздел нужен после него:
+          он показывает владельцу проекта и инвестору, что отчёт устарел, не заставляя перечитывать
+          его целиком. Ничего не пересчитывается само — решение остаётся за пользователем.
         </span>
       </div>
 
-      <Card
-        title="Отслеживаемые участки"
-        note={`${watched.length} из ${AREAS.length}`}
-        className="mb20"
-      >
-        {watched.length === 0 ? (
-          <p className="ov-note" style={{ marginTop: 0 }}>
-            Ни одного участка не отслеживается.
-          </p>
-        ) : (
-          <div className="tbl__scroll">
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>участок</th>
-                  <th className="num">E за 2019—2024</th>
-                  <th className="num">потери 2020—2024, га</th>
-                  <th>подтверждённое событие</th>
-                  <th>единицы</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {watched.map((id) => {
-                  const area = AREAS.find((a) => a.aoi_id === id)!;
-                  const p = area.period_2019_2024;
-                  const loss = area.cover_loss
-                    .filter((l) => l.year > 2019 && l.year <= 2024)
-                    .reduce((s, l) => s + l.area_ha, 0);
-                  const event = EVENTS.find((e) => e.aoi_id === id);
-                  return (
-                    <tr key={id}>
-                      <td>
-                        <span className="tbl__name">
-                          <Link to={`/app/area/${id}`}>
-                            <b>{area.name}</b>
-                          </Link>
-                          <span>{area.region}</span>
-                        </span>
-                      </td>
-                      <td className="num">{formatNumber(Math.round(p.e_tco2e))}</td>
-                      <td className="num">{formatDecimal(loss, 1)}</td>
-                      <td>
-                        {event ? (
-                          <span className="lvl lvl--medium">{event.evidence_type}</span>
-                        ) : (
-                          <span className="lvl lvl--none">причина не установлена</span>
-                        )}
-                      </td>
-                      <td>
-                        {p.units === null ? (
-                          <span className="dash">—</span>
-                        ) : (
-                          <span className="lvl lvl--none">{p.units}</span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          className="link-btn"
-                          type="button"
-                          onClick={() => setWatched((prev) => prev.filter((x) => x !== id))}
-                        >
-                          убрать
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {rows.map(({ entry, changes, material, target }) => (
+        <Card
+          key={entry.calc_id}
+          title={entry.area.name}
+          note={`${entry.calc_id} · вход ${entry.input_hash.slice(0, 12)}`}
+          className="mb20"
+        >
+          <dl className="kv">
+            <div>
+              <dt>сохранённый расчёт</dt>
+              <dd>
+                {entry.period.year_start}—{entry.period.year_end} ·{" "}
+                {formatNumber(Math.round(entry.period.e_tco2e))} т CO₂-экв. ·{" "}
+                {entry.period.units === null ? "единицы недоступны" : `${entry.period.units} ед.`}
+              </dd>
+            </div>
+            <div>
+              <dt>вывод</dt>
+              <dd>
+                {material.length === 0
+                  ? "пересчёт даст тот же результат: входные данные не изменились"
+                  : `стоит пересчитать — ${plural(material.length, ["изменение", "изменения", "изменений"])} во входных данных`}
+              </dd>
+            </div>
+          </dl>
 
-      <Card title="Лента событий" note="из данных набора, без выдуманных новостей">
-        <ul className="feed">
-          {feed.map((f, i) => (
-            <li key={i}>
-              <span className="feed__date">{f.date}</span>
-              <span className="feed__body">
-                <b>{f.name}</b>
-                <span>{f.text}</span>
-              </span>
-              <span className={`lvl lvl--${f.level}`}>
-                {f.level === "high" ? "подтверждено" : "потеря покрова"}
-              </span>
-            </li>
-          ))}
+          <ul className="feed" style={{ marginTop: 14 }}>
+            {changes.map((c) => (
+              <li key={c.title + c.detail}>
+                <span className="feed__body">
+                  <b>{c.title}</b>
+                  <span>{c.detail}</span>
+                </span>
+                <span className={`lvl lvl--${c.weight === "material" ? "medium" : "none"}`}>
+                  {c.weight === "material" ? "влияет на результат" : "без изменений"}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {material.length > 0 && target.available && (
+            <div className="report-actions">
+              <Link
+                className="btn btn--dark"
+                to={`/app/area/${entry.area.aoi_id}?start=${target.start}&end=${target.end}`}
+              >
+                <span>
+                  Пересчитать за {target.start}—{target.end}
+                </span>
+              </Link>
+            </div>
+          )}
+
+          {material.length > 0 && target.available && target.hash && (
+            <p className="ov-note">
+              Хеш входных данных после пересчёта: {target.hash.slice(0, 12)} вместо{" "}
+              {entry.input_hash.slice(0, 12)} — это другой вход, а значит и другой отчёт.
+            </p>
+          )}
+
+          {material.length > 0 && !target.available && (
+            <p className="ov-note">
+              Пересчёт за {target.start}—{target.end} в наборе не подготовлен: пару состояний для
+              этих лет получить не из чего. Пересчитать можно на странице участка за доступный
+              период.
+            </p>
+          )}
+        </Card>
+      ))}
+
+      <Card title="Чего этот раздел не делает">
+        <ul className="drivers">
+          <li>
+            Не следит за участком сам: набор данных локальный и воспроизводимый, новые версии
+            продуктов появляются при обновлении набора, а не в фоне.
+          </li>
+          <li>Не рассылает уведомления по почте — подписки в прототипе не реализованы.</li>
+          <li>
+            Не пересчитывает автоматически: пересчёт меняет число в отчёте, и это должно быть
+            осознанным действием пользователя.
+          </li>
         </ul>
-        <p className="ov-note">
-          Уведомления по почте и подписки на участки в прототипе не реализованы. Строка «потеря
-          покрова» означает снижение древесного покрова по Hansen, а не установленную вырубку.
-        </p>
       </Card>
     </>
   );

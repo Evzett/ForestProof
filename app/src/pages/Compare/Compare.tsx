@@ -1,5 +1,5 @@
-import { Fragment, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Fragment, useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS } from "../../data/case";
@@ -179,13 +179,35 @@ export default function Compare() {
      ещё читалось, но сравнение — это выбор, а не список всего, что есть:
      как только участков станет двенадцать, таблица перестанет помещаться
      на экран, и выбирать всё равно придётся. */
-  const [picked, setPicked] = useState<string[]>(() => AREAS.slice(0, 2).map((a) => a.aoi_id));
+  /* Выбор живёт в адресе, а не в памяти компонента: так он переживает
+     перезагрузку и передаётся ссылкой. Тот же принцип, по которому расчёт
+     открывается по идентификатору и совпадает сам с собой. Каталог кладёт
+     сюда ?ids=…, и сравнение открывается ровно с теми участками, которые
+     там отметили. */
+  const [params, setParams] = useSearchParams();
 
-  const rows = useMemo(() => AREAS.filter((a) => picked.includes(a.aoi_id)), [picked]);
+  const known = useMemo(() => new Set(AREAS.map((a) => a.aoi_id)), []);
+  const picked = useMemo(() => {
+    const fromUrl = (params.get("ids") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((id) => known.has(id));
+    // Адрес без ids — показываем первые два, чтобы экран не был пустым
+    // при прямом заходе из навигации.
+    return fromUrl.length > 0 ? fromUrl : AREAS.slice(0, 2).map((a) => a.aoi_id);
+  }, [params, known]);
+
+  /* Порядок столбцов — порядок выбора, а не порядок набора. */
+  const rows = useMemo(
+    () => picked.map((id) => AREAS.find((a) => a.aoi_id === id)).filter((a) => a !== undefined),
+    [picked]
+  );
   const summary = useMemo(() => buildCompareSummary(rows), [rows]);
 
-  const toggle = (id: string) =>
-    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const toggle = (id: string) => {
+    const next = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
+    setParams(next.length > 0 ? { ids: next.join(",") } : {}, { replace: true });
+  };
 
   return (
     <>

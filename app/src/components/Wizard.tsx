@@ -7,6 +7,14 @@ import {
   type ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  ApiError,
+  geometryFromGeoJson,
+  polygonFromPoints,
+  postCalc,
+  type CalcResult,
+  type GeoJsonPolygon,
+} from "../api";
 import { CALC_STEPS, GEOMETRY_CHECKS } from "../data/mock";
 import { formatArea, formatNumber } from "./ui";
 import "./Wizard.css";
@@ -53,14 +61,89 @@ const TITLES = [
   "Участок добавлен",
 ];
 
-type Method = "file" | "draw" | "coords";
+type Method = "file" | "draw" | "coords" | "table";
 type Point = { x: number; y: number };
 
 const METHODS: [Method, string, string][] = [
   ["file", "Загрузить файл границы", "GeoJSON или Shapefile, система координат EPSG:4326"],
   ["draw", "Обвести полигон на карте", "если файла нет — контур рисуется кликами поверх снимка"],
   ["coords", "Ввести координаты", "список вершин в десятичных градусах, по одной паре в строке"],
+  ["table", "Загрузить таблицу", "CSV со столбцами name, lat, lon, order — контуры из ведомости"],
 ];
+
+/* Разбор ведомости с вершинами.
+
+   Нужен не для красоты: у лесохозяйственных организаций контуры чаще
+   лежат в таблице, чем в GeoJSON. Столбец name разделяет несколько
+   участков в одном файле, order задаёт порядок обхода вершин.
+
+   Разбор идёт здесь, на клиенте: на сервер уходит уже готовая геометрия,
+   а не файл целиком. */
+type TableContour = { name: string; points: { lat: number; lon: number }[] };
+
+function parseContourTable(text: string): { contours: TableContour[]; error: string } {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return { contours: [], error: "В таблице нет строк с данными" };
+
+  const sep = [";", "\t", ","].find((s) => lines[0].includes(s)) ?? ",";
+  const header = lines[0].split(sep).map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ""));
+  const col = (...names: string[]) => header.findIndex((h) => names.includes(h));
+
+  const iLat = col("lat", "latitude", "широта");
+  const iLon = col("lon", "lng", "longitude", "долгота");
+  if (iLat < 0 || iLon < 0) {
+    return { contours: [], error: "Не найдены столбцы lat и lon. Ожидается заголовок: name, lat, lon, order" };
+  }
+  const iName = col("name", "название", "участок");
+  const iOrder = col("order", "порядок", "n");
+
+  const rows: { name: string; lat: number; lon: number; order: number }[] = [];
+  const bad: number[] = [];
+  lines.slice(1).forEach((line, idx) => {
+    const cells = line.split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+    const lat = Number(cells[iLat]?.replace(",", "."));
+    const lon = Number(cells[iLon]?.replace(",", "."));
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      bad.push(idx + 2);
+      return;
+    }
+    rows.push({
+      name: (iName >= 0 ? cells[iName] : "") || "участок",
+      lat,
+      lon,
+      order: iOrder >= 0 ? Number(cells[iOrder]) || idx : idx,
+    });
+  });
+
+  if (rows.length === 0) {
+    return { contours: [], error: "Ни одна строка не разобралась как пара широта/долгота" };
+  }
+
+  const byName = new Map<string, { lat: number; lon: number; order: number }[]>();
+  for (const r of rows) {
+    if (!byName.has(r.name)) byName.set(r.name, []);
+    byName.get(r.name)!.push(r);
+  }
+
+  const contours: TableContour[] = [];
+  for (const [name, pts] of byName) {
+    if (pts.length < 3) continue;
+    contours.push({
+      name,
+      points: [...pts].sort((a, b) => a.order - b.order).map(({ lat, lon }) => ({ lat, lon })),
+    });
+  }
+
+  if (contours.length === 0) {
+    return { contours: [], error: "В каждом контуре нужно хотя бы три вершины" };
+  }
+  return {
+    contours,
+    // Плохие строки не молчим: пользователь должен знать, что часть
+    // ведомости не разобралась, а не гадать, почему площадь меньше.
+    error: bad.length > 0 ? `Пропущено строк: ${bad.length} (${bad.slice(0, 5).join(", ")}…)` : "",
+  };
+}
 
 /* Площадь простого полигона по формуле шнурования.
    Для демонстрации достаточно плоского приближения: на широте 60°
@@ -123,6 +206,23 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
   const [coordText, setCoordText] = useState("");
   const parsed = parseCoords(coordText);
 
+  /* --- способ 4: таблица-ведомость --- */
+  const tableInput = useRef<HTMLInputElement>(null);
+  const [table, setTable] = useState<{ file: string; contours: TableContour[] } | null>(null);
+  const [tableIndex, setTableIndex] = useState(0);
+  const [tableError, setTableError] = useState("");
+
+  /* Выбранный контур из ведомости. Объявлен здесь, а не рядом с разбором:
+     от него зависят geometryReady и оценка площади ниже. */
+  const tableContour = table?.contours[tableIndex] ?? null;
+
+  /* Геометрия, которая уйдёт на расчёт. Раньше мастер разбирал файл ради
+     числа вершин и выбрасывал сам полигон — считать было нечего. */
+  const [geometry, setGeometry] = useState<GeoJsonPolygon | null>(null);
+  const [calc, setCalc] = useState<CalcResult | null>(null);
+  const [calcError, setCalcError] = useState("");
+  const [calcPending, setCalcPending] = useState(false);
+
   const navigate = useNavigate();
 
   const pickFile = async (f: File) => {
@@ -136,21 +236,25 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     let vertices: number | null = null;
     if (/\.(geojson|json)$/i.test(f.name)) {
       try {
-        const data = JSON.parse(await f.text());
-        const geom =
-          data.type === "FeatureCollection"
-            ? data.features?.[0]?.geometry
-            : data.type === "Feature"
-              ? data.geometry
-              : data;
-        const ring = geom?.coordinates?.[0];
+        const geom = geometryFromGeoJson(JSON.parse(await f.text()));
+        const ring = (geom.coordinates as number[][][])[0];
         if (!Array.isArray(ring)) throw new Error("no ring");
-        vertices = Array.isArray(ring[0][0]) ? ring[0].length : ring.length;
-      } catch {
-        setFileError("Файл не разбирается как GeoJSON с полигоном");
+        vertices = Array.isArray(ring[0][0]) ? (ring[0] as unknown[]).length : ring.length;
+        setGeometry(geom);
+      } catch (err) {
+        setFileError(
+          err instanceof Error && err.message
+            ? err.message
+            : "Файл не разбирается как GeoJSON с полигоном"
+        );
         setFile(null);
+        setGeometry(null);
         return;
       }
+    } else {
+      // Shapefile в архиве мы не разбираем на клиенте: расчёт по нему
+      // недоступен, и лучше сказать это, чем принять файл молча.
+      setGeometry(null);
     }
     setFile({ name: f.name, size: f.size, vertices });
   };
@@ -161,21 +265,91 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
       ? file !== null
       : method === "draw"
         ? points.length >= 3
-        : parsed.points.length >= 3;
+        : method === "table"
+          ? tableContour !== null
+          : parsed.points.length >= 3;
 
   const vertexCount =
     method === "file"
       ? file?.vertices
       : method === "draw"
         ? points.length
-        : parsed.points.length;
+        : method === "table"
+          ? (tableContour?.points.length ?? null)
+          : parsed.points.length;
 
+  /* Оценка площади на клиенте — только чтобы пользователь понял масштаб
+     до расчёта. Настоящую площадь считает сервер по доле пересечения
+     каждого пикселя с контуром, и она будет отличаться. */
   const drawnAreaHa =
-    method === "coords" && parsed.points.length >= 3 ? polygonAreaHa(parsed.points) : null;
+    method === "coords" && parsed.points.length >= 3
+      ? polygonAreaHa(parsed.points)
+      : method === "table" && tableContour
+        ? polygonAreaHa(tableContour.points)
+        : null;
 
   /* Источник границы обязателен (FR-21): все числа считаются по этому контуру,
      и если он обведён по лесничеству, допущение обязаны назвать мы. */
   const canSubmit = source.trim().length > 0;
+
+  const pickTable = async (f: File) => {
+    setTableError("");
+    if (/\.xlsx?$/i.test(f.name)) {
+      // XLSX — бинарный формат, разбор которого требует библиотеки.
+      // Честнее сказать это сразу, чем принять файл и не посчитать.
+      setTableError("XLSX пока не разбирается. Сохраните лист как CSV и загрузите его.");
+      setTable(null);
+      return;
+    }
+    const { contours, error } = parseContourTable(await f.text());
+    if (contours.length === 0) {
+      setTableError(error || "Таблица не разобралась");
+      setTable(null);
+      return;
+    }
+    setTableError(error);
+    setTable({ file: f.name, contours });
+    setTableIndex(0);
+  };
+
+  /* Геометрия для отправки: файл и таблица дают её напрямую, координаты
+     собираются в полигон. Обводка на карте живёт в процентах экрана, а не
+     в градусах, поэтому географией не является и на расчёт не уходит. */
+  const requestGeometry = (): GeoJsonPolygon | null => {
+    if (method === "file") return geometry;
+    if (method === "coords" && parsed.points.length >= 3) return polygonFromPoints(parsed.points);
+    if (method === "table" && tableContour) return polygonFromPoints(tableContour.points);
+    return null;
+  };
+
+  const runCalculation = async () => {
+    setStep(3);
+    setCalc(null);
+    setCalcError("");
+
+    const geom = requestGeometry();
+    if (!geom) {
+      setCalcError(
+        method === "draw"
+          ? "Обводка на карте задаёт контур в координатах экрана, а не в градусах. " +
+              "Для расчёта загрузите файл границы или введите координаты вершин."
+          : "Граница не задана в пригодном для расчёта виде."
+      );
+      return;
+    }
+
+    setCalcPending(true);
+    try {
+      // Период по умолчанию — весь доступный диапазон кейса.
+      setCalc(await postCalc({ geometry: geom, year_start: 2019, year_end: 2024 }));
+    } catch (err) {
+      // Причина от сервиса показывается как есть: «контур вне набора»,
+      // «площадь превышает предел». Выдумывать числа вместо неё нельзя.
+      setCalcError(err instanceof ApiError ? err.message : "Не удалось посчитать участок");
+    } finally {
+      setCalcPending(false);
+    }
+  };
 
   const addPoint = (e: React.MouseEvent<SVGSVGElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -194,13 +368,24 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
       <div className="wz__panel">
         <header className="wz__head">
           <div>
-            <h2 className="wz__title">{TITLES[step]}</h2>
+            {/* На последнем шаге заголовок обязан совпадать с тем, что ниже:
+                «Участок добавлен» над сообщением об отказе — ровно та ложь,
+                которую замечают первой. */}
+            <h2 className="wz__title">
+              {step === 4 && calc === null ? "Участок не посчитан" : TITLES[step]}
+            </h2>
             <p className="wz__step">
               {step < 3
                 ? `шаг ${step + 1} из 3`
                 : step === 3
-                  ? "расчёт идёт"
-                  : "CALC-0151 · методика v1.0 · алгоритм calc-0.1"}
+                  ? calcPending
+                    ? "расчёт идёт"
+                    : calcError
+                      ? "расчёт не выполнен"
+                      : "расчёт готов"
+                  : calc
+                    ? `${calc.calc_id} · методика 1.0 · алгоритм calc-1.0`
+                    : "расчёт недоступен"}
             </p>
           </div>
           <button className="wz__close" type="button" onClick={onClose} aria-label="Закрыть">
@@ -320,9 +505,73 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                 </div>
               )}
 
+              {method === "table" && (
+                <div className="wz__pane">
+                  <input
+                    ref={tableInput}
+                    type="file"
+                    accept=".csv,.tsv,.txt,.xlsx,.xls"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void pickTable(f);
+                    }}
+                  />
+                  <button
+                    className="btn btn--outline"
+                    type="button"
+                    onClick={() => tableInput.current?.click()}
+                  >
+                    <span>{table ? "Выбрать другую таблицу" : "Выбрать файл ведомости"}</span>
+                  </button>
+
+                  {table && (
+                    <>
+                      <div className="wz__file">
+                        <b>{table.file}</b>
+                        <span>
+                          · контуров: {table.contours.length}
+                          {tableContour && ` · вершин: ${tableContour.points.length}`}
+                        </span>
+                      </div>
+                      {table.contours.length > 1 && (
+                        <div className="wz__modes">
+                          {table.contours.map((c, i) => (
+                            <button
+                              key={c.name + i}
+                              type="button"
+                              className={`wz__mode ${i === tableIndex ? "is-on" : ""}`}
+                              onClick={() => setTableIndex(i)}
+                            >
+                              {c.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div className="wz__draw-foot">
+                        <span>
+                          {tableContour?.points.length ?? 0} вершин
+                          {drawnAreaHa !== null &&
+                            ` · примерно ${formatArea(Math.round(drawnAreaHa))} га`}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {tableError && <p className="wz__err">{tableError}</p>}
+
+                  <p className="wz__note">
+                    Ожидаются столбцы <b>name</b>, <b>lat</b>, <b>lon</b>, <b>order</b>. Несколько
+                    участков в одном файле разделяются столбцом name, порядок обхода вершин задаёт
+                    order. Разбор идёт здесь, в браузере: на сервер уходит готовая геометрия, а не
+                    файл целиком.
+                  </p>
+                </div>
+              )}
+
               <p className="wz__note">
-                Проекты из реестра загружать не нужно — все 132 уже в каталоге. Здесь добавляется
-                только граница участка: реестр геометрию проектов не публикует.
+                Контур можно задать четырьмя способами. Участки набора загружать не нужно — они уже
+                посчитаны и открываются из каталога.
               </p>
             </>
           )}
@@ -416,54 +665,105 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
           {step === 3 && (
             <>
               <ul className="wz__checks">
-                {CALC_STEPS.map((s, i) => (
-                  <li key={s.label}>
-                    <span className={`wz__dot wz__dot--${i < 2 ? "ok" : i === 2 ? "run" : "wait"}`}>
-                      {i < 2 ? "✓" : i === 2 ? "⟳" : ""}
-                    </span>
-                    <b style={i > 2 ? { color: "var(--c-muted-alt)" } : undefined}>{s.label}</b>
-                    <span className="wz__val">{i === 2 ? "идёт" : s.result}</span>
-                  </li>
-                ))}
+                {CALC_STEPS.map((s, i) => {
+                  const done = calc !== null || (!calcPending && !calcError);
+                  const state = calcError
+                    ? "wait"
+                    : calc !== null
+                      ? "ok"
+                      : calcPending && i === 0
+                        ? "run"
+                        : "wait";
+                  return (
+                    <li key={s.label}>
+                      <span className={`wz__dot wz__dot--${state}`}>
+                        {state === "ok" ? "✓" : state === "run" ? "⟳" : ""}
+                      </span>
+                      <b style={state === "wait" ? { color: "var(--c-muted-alt)" } : undefined}>
+                        {s.label}
+                      </b>
+                      <span className="wz__val">{done && calc !== null ? "готово" : ""}</span>
+                    </li>
+                  );
+                })}
               </ul>
               <div className="wz__track">
-                <span style={{ width: "44%" }} />
+                <span style={{ width: calc !== null ? "100%" : calcPending ? "60%" : "0%" }} />
               </div>
-              <p className="wz__note">
-                Окно можно закрыть — расчёт продолжится, готовый появится в журнале.
-              </p>
+              {calcError ? (
+                <p className="wz__note" style={{ color: "#9c3f66" }}>
+                  {calcError}
+                </p>
+              ) : (
+                <p className="wz__note">
+                  Считаем по тем же растрам и тем же кодом, что и участки набора.
+                  {calc !== null && ` Расчёт ${calc.calc_id} записан в журнал.`}
+                </p>
+              )}
             </>
           )}
 
           {step === 4 && (
             <>
-              <div className="wz__big tabular">
-                {drawnAreaHa !== null ? formatNumber(Math.round(drawnAreaHa)) : "18 200"}{" "}
-                <small>га</small>
-              </div>
-              <ul className="wz__summary">
-                <li>
-                  <span>лесопокрытая площадь</span>
-                  <b className="tabular">16 940 га</b>
-                </li>
-                <li>
-                  <span>биомасса</span>
-                  <b className="tabular">154 ± 26 т/га</b>
-                </li>
-                <li>
-                  <span>полнота данных</span>
-                  <b className="tabular">11 из 12 лет</b>
-                </li>
-                <li>
-                  <span>уязвимость</span>
-                  <span className="lvl lvl--low">низкая</span>
-                </li>
-              </ul>
-              <p className="wz__note">
-                {link === "project"
-                  ? "Блок сверки посчитан: участок привязан к проекту 04-2023-00000008."
-                  : "Вкладки сверки у этого участка нет: проекта нет, заявлять нечего."}
-              </p>
+              {calc === null ? (
+                /* «Данных недостаточно» — полноценный вид блока, а не пустота:
+                   причина названа, и видно, что нужно, чтобы её снять. */
+                <>
+                  <div className="wz__big" style={{ fontSize: 28, lineHeight: 1.2 }}>
+                    Расчёт недоступен
+                  </div>
+                  <p className="wz__note">
+                    {calcError || "Расчёт не выполнялся."}
+                  </p>
+                  <p className="wz__note">
+                    Участки набора посчитаны заранее и открываются без сервиса. Расчёт по своему
+                    контуру требует запущенного бэкенда: предпосчитать чужой полигон невозможно.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="wz__big tabular">
+                    {formatNumber(Math.round(calc.area_ha))} <small>га</small>
+                  </div>
+                  <ul className="wz__summary">
+                    <li>
+                      <span>запас на {calc.period.year_start}</span>
+                      <b className="tabular">{calc.period.c_start_t_ha.toFixed(2)} т C/га</b>
+                    </li>
+                    <li>
+                      <span>запас на {calc.period.year_end}</span>
+                      <b className="tabular">{calc.period.c_end_t_ha.toFixed(2)} т C/га</b>
+                    </li>
+                    <li>
+                      <span>
+                        результат E, т CO₂-экв.
+                      </span>
+                      <b className="tabular">
+                        {calc.period.e_tco2e > 0 ? "+" : ""}
+                        {formatNumber(Math.round(calc.period.e_tco2e))}
+                      </b>
+                    </li>
+                    <li>
+                      <span>потенциальных единиц</span>
+                      <b className="tabular">
+                        {calc.period.available ? (calc.period.units ?? 0) : "недоступно"}
+                      </b>
+                    </li>
+                  </ul>
+                  <p className="wz__note">
+                    {calc.period.e_tco2e > 0
+                      ? "Положительное E — потеря углерода из учитываемого пула. Это не объём немедленного выброса в атмосферу."
+                      : "Отрицательное E — накопление углерода в учитываемом пуле."}
+                  </p>
+                  <p className="wz__note">
+                    {calc.baseline_note}. {calc.status}.
+                  </p>
+                  <p className="wz__note">
+                    Расчёт {calc.calc_id}, хеш входа {calc.input_hash.slice(0, 12)}… — по нему
+                    результат воспроизводится независимо.
+                  </p>
+                </>
+              )}
             </>
           )}
         </div>
@@ -503,7 +803,7 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
               type="button"
               disabled={!canSubmit}
               title={canSubmit ? undefined : "Укажите, как построена граница"}
-              onClick={() => setStep(3)}
+              onClick={runCalculation}
             >
               <span>Добавить и посчитать</span>
             </button>
@@ -513,8 +813,13 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
               <button className="btn btn--ghost" type="button" onClick={onClose}>
                 <span>Свернуть</span>
               </button>
-              <button className="btn btn--dark" type="button" onClick={() => setStep(4)}>
-                <span>Показать результат</span>
+              <button
+                className="btn btn--dark"
+                type="button"
+                disabled={calcPending}
+                onClick={() => setStep(4)}
+              >
+                <span>{calcPending ? "Считаем…" : "Показать результат"}</span>
               </button>
             </>
           )}
