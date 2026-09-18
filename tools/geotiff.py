@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import math
+import mmap
 import struct
 import zlib
 from dataclasses import dataclass
@@ -197,8 +198,17 @@ def read_geotiff(path: str, bbox: tuple[float, float, float, float] | None = Non
     123 МБ сжатых и около 500 МБ в памяти, а участок кейса занимает в нём
     меньше тысячной доли. Распаковываем только задетые блоки.
     """
-    with open(path, "rb") as handle:
-        buf = handle.read()
+    # Файл отображается в память, а не читается целиком: тайл Hansen
+    # весит 452 МБ, а окно затрагивает доли процента страниц. При чтении
+    # через read() каждый вызов стоил бы полгигабайта дискового ввода,
+    # и нарезка четырёхсот участков превращалась в двести гигабайт.
+    handle = open(path, "rb")
+    try:
+        buf = mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ)
+    except ValueError:
+        # пустой файл — mmap на нём не работает
+        handle.close()
+        raise ValueError(f"{path}: пустой файл")
 
     if buf[:2] not in (b"II", b"MM"):
         raise ValueError(f"{path}: не TIFF")
@@ -319,29 +329,58 @@ def read_geotiff(path: str, bbox: tuple[float, float, float, float] | None = Non
                         data[band, dst_r : dst_r + rows, dst_c : dst_c + cols] = piece[:, :, band]
     else:
         rows_per_strip = tags.get(TAG_ROWS_PER_STRIP, (height,))[0]
-        chunks = blocks(TAG_STRIP_OFFSETS, TAG_STRIP_COUNTS)
-        full = np.zeros((samples, height, width), dtype=dtype)
+        offsets = tags[TAG_STRIP_OFFSETS]
+        counts = tags[TAG_STRIP_COUNTS]
         planes = samples if planar == 2 else 1
-        per_plane = len(chunks) // planes
+        per_plane = len(offsets) // planes
+        data = np.zeros((samples, out_h, out_w), dtype=dtype)
+
+        def decode_strip(position: int) -> bytes:
+            chunk = buf[offsets[position] : offsets[position] + counts[position]]
+            if compression in (8, 32946):
+                return zlib.decompress(chunk)
+            if compression == 5:
+                return _lzw_decode(chunk)
+            return chunk
+
+        # Разжимаем только те полосы, которые задевает окно. У тайлов
+        # Hansen одна строка на полосу и сорок тысяч полос: распаковывать
+        # их все ради окна в сто шестьдесят строк — это тридцать секунд
+        # и полтора гигабайта там, где хватает десятой доли секунды.
+        first_strip = row0 // rows_per_strip
+        last_strip = min((row1 - 1) // rows_per_strip, per_plane - 1)
+
         for plane in range(planes):
-            for index in range(per_plane):
-                raw = chunks[plane * per_plane + index]
+            for index in range(first_strip, last_strip + 1):
+                raw = decode_strip(plane * per_plane + index)
                 r0 = index * rows_per_strip
                 rows = min(rows_per_strip, height - r0)
                 depth = 1 if planar == 2 else samples
                 raw = _undo_predictor(raw, predictor, width, rows, depth, dtype)
                 strip = np.frombuffer(raw, dtype=dtype).reshape(rows, width, depth)
+
+                src_r = max(row0 - r0, 0)
+                dst_r = max(r0 - row0, 0)
+                take = min(rows - src_r, out_h - dst_r)
+                if take <= 0:
+                    continue
+                piece = strip[src_r : src_r + take, col0:col1]
                 if planar == 2:
-                    full[plane, r0 : r0 + rows] = strip[:, :, 0]
+                    data[plane, dst_r : dst_r + take] = piece[:, :, 0]
                 else:
                     for band in range(samples):
-                        full[band, r0 : r0 + rows] = strip[:, :, band]
-        data = full[:, row0:row1, col0:col1]
+                        data[band, dst_r : dst_r + take] = piece[:, :, band]
 
     nodata_raw = tags.get(TAG_NODATA)
     nodata = None
     if isinstance(nodata_raw, str) and nodata_raw.strip().lower() not in ("", "none", "nan"):
         nodata = float(nodata_raw)
+
+    # Копируем результат до закрытия отображения: numpy может держать
+    # ссылку на буфер, и обращение к нему после close() уронит процесс.
+    data = np.array(data, copy=True)
+    buf.close()
+    handle.close()
 
     return Raster(
         data=data,

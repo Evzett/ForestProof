@@ -4,6 +4,7 @@ import Welcome from "./pages/Welcome/Welcome";
 import Overview from "./pages/Overview/Overview";
 import Areas from "./pages/Areas/Areas";
 import Compare from "./pages/Compare/Compare";
+import ClaimProjects from "./pages/ClaimProjects/ClaimProjects";
 import Plot from "./pages/Plot/Plot";
 import { Calculations, Methodology, Monitoring } from "./pages/Sections/Sections";
 
@@ -27,10 +28,10 @@ export default function App() {
           <Route path="areas" element={<Areas />} />
           <Route path="area/:id" element={<Plot />} />
           <Route path="compare" element={<Compare />} />
+          <Route path="projects" element={<ClaimProjects />} />
           <Route path="calculations" element={<Calculations />} />
           <Route path="monitoring" element={<Monitoring />} />
           <Route path="methodology" element={<Methodology />} />
-          <Route path="projects" element={<Navigate to="/app/areas" replace />} />
           <Route path="plot/:id" element={<Navigate to="/app/areas" replace />} />
           <Route path="territories" element={<Navigate to="/app/areas" replace />} />
         </Route>

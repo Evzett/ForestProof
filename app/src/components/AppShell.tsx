@@ -18,6 +18,7 @@ const NAV = [
   { to: "/app/overview", label: "Обзор" },
   { to: "/app/areas", label: "Участки" },
   { to: "/app/compare", label: "Сравнение" },
+  { to: "/app/projects", label: "Проекты" },
   { to: "/app/calculations", label: "Расчёты" },
   { to: "/app/monitoring", label: "Наблюдение" },
   { to: "/app/methodology", label: "Методика" },
