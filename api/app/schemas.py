@@ -36,3 +36,17 @@ class WatchlistAddRequest(BaseModel):
     """Раздел 12, `POST /api/watchlist`."""
 
     project_id: str
+
+
+class CalcRequest(BaseModel):
+    """`POST /api/calc` — расчёт по контуру и периоду (документ 06, раздел 6.1).
+
+    Контур задаётся либо геометрией GeoJSON, либо идентификатором участка
+    набора. Диапазон лет проверяется в case_service, а не здесь: там же
+    лежит и причина отказа, которую увидит пользователь.
+    """
+
+    geometry: dict | None = None
+    aoi_id: str | None = None
+    year_start: int = Field(ge=2019, le=2024)
+    year_end: int = Field(ge=2019, le=2024)
