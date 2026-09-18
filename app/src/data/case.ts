@@ -73,9 +73,29 @@ export type AreaMaps = {
   loss_size: [number, number];
 };
 
+export type StabilityDriver = {
+  label: string;
+  value: number;
+  unit: string;
+  threshold: number;
+  points: number;
+};
+
+export type Stability = {
+  level: "low" | "medium" | "high";
+  score: number;
+  max_score: number;
+  features: Record<string, number>;
+  drivers: StabilityDriver[];
+  method: string;
+  model_version: string | null;
+  limitation: string;
+};
+
 export type Area = {
   aoi_id: string;
   maps: AreaMaps | null;
+  stability: Stability;
   name: string;
   region: string;
   role: string;
@@ -133,6 +153,14 @@ export const EVENTS = data.events;
 export const GENERATED_FROM = data.generated_from;
 
 export const YEARS = [2019, 2020, 2021, 2022, 2023, 2024] as const;
+
+export type PriceKey = "low" | "base" | "high";
+
+export const PRICE_SCENARIOS: { key: PriceKey; label: string; price: number }[] = [
+  { key: "low", label: "минимальный", price: PARAMETERS.prices_rub.low },
+  { key: "base", label: "базовый", price: PARAMETERS.prices_rub.base },
+  { key: "high", label: "оптимистичный", price: PARAMETERS.prices_rub.high },
+];
 
 export function areaById(id: string | undefined): Area {
   return AREAS.find((a) => a.aoi_id === id) ?? AREAS[0];

@@ -266,13 +266,25 @@
   overflow: hidden;
 }
 
+/* Полоса леса прижата к правому краю блока и подрезана им.
+   Картинка — диагональная полоса, поэтому вертикально центрируем её,
+   а не сажаем на нижнюю границу: снизу у неё прозрачный угол. */
 .closing__art {
   position: absolute;
-  right: -10%;
-  bottom: -50%;
-  width: min(1400px, 80%);
-  opacity: 0.2;
+  right: -4%;
+  top: 50%;
+  width: min(1180px, 64%);
+  transform: translateY(-46%);
+  opacity: 0.3;
   pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .closing__art {
+    right: -14%;
+    width: 90%;
+    opacity: 0.22;
+  }
 }
 
 .closing__content {

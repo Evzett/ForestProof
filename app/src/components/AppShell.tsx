@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { AREAS, GENERATED_FROM } from "../data/case";
 import { WizardProvider, useWizard } from "./Wizard";
+import { ScenarioProvider } from "../data/scenario";
 import "./AppShell.css";
 
 /* Каркас приложения: постоянная навигация из шести разделов.
@@ -76,9 +77,11 @@ function Shell() {
 
 export default function AppShell() {
   return (
-    <WizardProvider>
-      <Shell />
-    </WizardProvider>
+    <ScenarioProvider>
+      <WizardProvider>
+        <Shell />
+      </WizardProvider>
+    </ScenarioProvider>
   );
 }
 

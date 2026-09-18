@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Card, FilterSelect, formatDecimal, formatNumber } from "../../components/ui";
+import { Card, FilterSelect, LevelPill, formatDecimal, formatNumber } from "../../components/ui";
 import ChangeMap from "../../components/ChangeMap";
 import {
   ASSUMPTIONS,
   DATASETS,
   PARAMETERS,
+  PRICE_SCENARIOS,
   YEARS,
   areaById,
   eventsFor,
   periodFor,
 } from "../../data/case";
+import { useScenario } from "../../data/scenario";
 import type { Area, Period } from "../../data/case";
 import "./Plot.css";
 
@@ -30,6 +32,7 @@ const TABS = [
   "Изменения",
   "Неопределённость",
   "Единицы",
+  "Устойчивость",
   "Отчёт",
 ] as const;
 
@@ -114,6 +117,7 @@ export default function Plot() {
       {tab === "Изменения" && <ChangesTab area={area} period={period} events={events} />}
       {tab === "Неопределённость" && <UncertaintyTab period={period} />}
       {tab === "Единицы" && <UnitsTab area={area} period={period} />}
+      {tab === "Устойчивость" && <StabilityTab area={area} />}
       {tab === "Отчёт" && <ReportTab area={area} period={period} />}
     </>
   );
@@ -130,6 +134,9 @@ function Sign({ value }: { value: number }) {
 }
 
 function StockTab({ area, period }: { area: Area; period: Period }) {
+  const start = area.series.find((p) => p.year === period.year_start);
+  const end = area.series.find((p) => p.year === period.year_end);
+
   return (
     <>
       <div className="plot-tiles">
@@ -174,6 +181,54 @@ function StockTab({ area, period }: { area: Area; period: Period }) {
           </span>
         </Card>
       </div>
+
+      {/* Биомасса нигде не показывается без ±: погрешность продукта
+          сопоставима со значением, и прятать её значит обещать точность. */}
+      <Card
+        title="Биомасса, из которой посчитан запас"
+        note="ESA CCI Biomass v7.0, канал AGB_SD"
+        className="plot-block"
+      >
+        <dl className="kv">
+          <div>
+            <dt>{period.year_start} год</dt>
+            <dd className="tabular">
+              {start ? (
+                <>
+                  {formatDecimal(start.agb_t_ha, 1)} ± {formatDecimal(start.agb_sd_t_ha, 1)} т/га
+                </>
+              ) : (
+                "—"
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>{period.year_end} год</dt>
+            <dd className="tabular">
+              {end ? (
+                <>
+                  {formatDecimal(end.agb_t_ha, 1)} ± {formatDecimal(end.agb_sd_t_ha, 1)} т/га
+                </>
+              ) : (
+                "—"
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>погрешность к значению</dt>
+            <dd className="tabular">
+              {end && end.agb_t_ha
+                ? `${formatDecimal((end.agb_sd_t_ha / end.agb_t_ha) * 100, 0)} %`
+                : "—"}
+            </dd>
+          </div>
+        </dl>
+        <p className="ov-note">
+          Погрешность — свойство самого продукта, а не нашего расчёта. На этих участках она
+          составляет около половины значения, и именно поэтому диапазон результата получается
+          широким. Подробнее — вкладка «Неопределённость».
+        </p>
+      </Card>
 
       <div className="plot-row plot-row--even">
         <Card title="Как получен результат" className="plot-block">
@@ -414,7 +469,8 @@ function ChangesTab({
             </div>
             <p className="ov-note">
               Тёмные столбцы попадают в выбранный период. Потеря — снижение древесного покрова по
-              продукту Hansen, а не установленная вырубка: причина здесь не определяется.
+              продукту Hansen. Отсутствие пожарных признаков не означает рубку: причина
+              указывается только при наличии подтверждений, иначе остаётся неустановленной.
             </p>
           </>
         )}
@@ -724,29 +780,261 @@ function UnitsTab({ area, period }: { area: Area; period: Period }) {
         </p>
       </Card>
 
-      <Card title="Сценарная стоимость" note="V = Q × p" className="plot-block">
+      <Economics area={area} period={period} />
+    </>
+  );
+}
+
+/* --------------------------------------------------------- Экономика ---- */
+
+/* Деньги здесь стоят за пределами углеродного расчёта: цена умножается
+   на уже готовое Q и ни на один физический показатель не влияет.
+   Поэтому экономика показывает не одно число, а от чего это число
+   зависит — от сценария цены и от допущений о корреляции ошибки. */
+function Economics({ area, period }: { area: Area; period: Period }) {
+  const { priceKey, price, label, setPriceKey } = useScenario();
+
+  const units = period.units ?? 0;
+  const value = units * price;
+  const perHa = value / period.area_ha;
+
+  /* Стоимость накопленного запаса — справочная величина, а не выручка:
+     никто не платит за то, что лес уже стоит. Показываем, потому что
+     инвестор всё равно её прикидывает, и лучше подписать её честно. */
+  const stockValue = period.stock_end_tc * PARAMETERS.co2_per_carbon * price;
+
+  /* Сколько денег получилось бы при разных допущениях о корреляции.
+     Это и есть настоящая экономика на этих данных: результат меняется
+     не от цены, а от того, во что мы решили верить про ошибку. */
+  const grid = period.sensitivity ?? [];
+  const best = grid
+    .flat()
+    .filter((c) => (c.units ?? 0) > 0)
+    .sort((a, b) => (b.units ?? 0) - (a.units ?? 0))[0];
+
+  return (
+    <>
+      <Card title="Ценовой сценарий" note="задан условиями кейса" className="plot-block">
+        <div className="scen">
+          {PRICE_SCENARIOS.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              className={priceKey === s.key ? "scen__item is-on" : "scen__item"}
+              aria-pressed={priceKey === s.key}
+              onClick={() => setPriceKey(s.key)}
+            >
+              {s.label} · {formatNumber(s.price)} ₽
+            </button>
+          ))}
+        </div>
+        <p className="ov-note">
+          Выбранный сценарий действует во всём приложении. Цены заданы кейсом и не являются
+          прогнозом рыночной цены — это три точки для оценки чувствительности, а не диапазон
+          ожиданий.
+        </p>
+      </Card>
+
+      <div className="plot-row plot-row--even">
+        <Card tone="dark" title={`Стоимость единиц · ${label}`} className="plot-block">
+          <div className="econ__big tabular">
+            {formatNumber(value)} <small>₽</small>
+          </div>
+          <div className="econ__sub tabular">
+            {formatNumber(units)} <small>единиц × {formatNumber(price)} ₽</small>
+          </div>
+          <dl className="kv">
+            <div>
+              <dt style={{ color: "#b9c2ae" }}>на гектар</dt>
+              <dd className="tabular" style={{ color: "#fff" }}>
+                {formatDecimal(perHa, 2)} ₽/га
+              </dd>
+            </div>
+            <div>
+              <dt style={{ color: "#b9c2ae" }}>резерв удержан</dt>
+              <dd className="tabular" style={{ color: "#fff" }}>
+                {period.buffer_tco2e === null
+                  ? "—"
+                  : `${formatDecimal(period.buffer_tco2e, 1)} т CO₂-экв.`}
+              </dd>
+            </div>
+          </dl>
+          <p className="ov-note" style={{ color: "#b9c2ae" }}>
+            {units === 0
+              ? "Единиц нет, поэтому и стоимости нет. Это результат расчёта, а не отсутствие данных."
+              : "Расчёт по условиям кейса, а не сертифицированные единицы."}
+          </p>
+        </Card>
+
+        <Card title="Стоимость накопленного запаса" note="справочно" className="plot-block">
+          <div className="plot-tiles__value tabular">
+            {formatDecimal(stockValue / 1_000_000, 1)} <small>млн ₽</small>
+          </div>
+          <p className="ov-note" style={{ marginTop: 10 }}>
+            {formatNumber(Math.round(period.stock_end_tc))} т C на конец периода, переведённые в
+            CO₂-эквивалент и умноженные на {formatNumber(price)} ₽.
+          </p>
+          <div className="disclaimer">
+            Это не выручка и не то, что можно продать. Платят за поток, а не за запас: углерод,
+            который уже лежит в лесу, накопился без проекта. Величина показана только как
+            масштаб — чтобы видеть, что единицы составляют от неё доли процента.
+          </div>
+        </Card>
+      </div>
+
+      <Card
+        title="От чего зависит выручка"
+        note="стоимость при разных допущениях о корреляции ошибки"
+        className="plot-block"
+      >
+        {grid.length === 0 ? (
+          <p className="ov-note" style={{ marginTop: 0 }}>
+            Сетка чувствительности для этого периода не посчитана.
+          </p>
+        ) : (
+          <>
+            <div className="tbl__scroll">
+              <table className="tbl sens">
+                <thead>
+                  <tr>
+                    <th>ρs \ ρt</th>
+                    {grid[0].map((c) => (
+                      <th key={c.rho_temporal} className="num">
+                        {c.rho_temporal}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {grid.map((row) => (
+                    <tr key={row[0].rho_spatial}>
+                      <td>{row[0].rho_spatial}</td>
+                      {row.map((c) => (
+                        <td key={c.rho_temporal} className="num">
+                          {c.units ? (
+                            <b>{formatNumber(c.units * price)} ₽</b>
+                          ) : (
+                            <span className="dash">0</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="ov-note">
+              {best
+                ? `Максимум на этой сетке — ${formatNumber((best.units ?? 0) * price)} ₽ при ρs = ${best.rho_spatial} и ρt = ${best.rho_temporal}. Это самый благоприятный набор допущений, а не оценка.`
+                : "Ни при каком сочетании допущений выручки не получается: результат не превышает базовую линию."}{" "}
+              Цена меняет числа пропорционально и на сам факт наличия единиц не влияет — его
+              определяют физика и неопределённость, а не рынок.
+            </p>
+          </>
+        )}
+      </Card>
+    </>
+  );
+}
+
+/* ---------------------------------------------------- Устойчивость ---- */
+
+/* Прогноз показан отдельно от анализа прошедшего периода — этого прямо
+   требует постановка. На число единиц скрининг не влияет: вычет за
+   неопределённость выводится из H/R, резерв фиксирован условиями кейса. */
+function StabilityTab({ area }: { area: Area }) {
+  const s = area.stability;
+
+  return (
+    <>
+      <div className="plot-row plot-row--even">
+        <Card title="Устойчивость результата" note="горизонт 2024—2029" className="plot-block">
+          <div className="vuln">
+            <LevelPill level={s.level} />
+          </div>
+          <dl className="kv">
+            <div>
+              <dt>сработало признаков</dt>
+              <dd className="tabular">{s.drivers.length} из 6</dd>
+            </div>
+            <div>
+              <dt>сумма баллов</dt>
+              <dd className="tabular">
+                {s.score} из {s.max_score}
+              </dd>
+            </div>
+            <div>
+              <dt>метод</dt>
+              <dd>{s.method}</dd>
+            </div>
+            <div>
+              <dt>версия модели</dt>
+              <dd>{s.model_version ?? "модель не обучена, работают пороговые правила"}</dd>
+            </div>
+          </dl>
+          <div className="disclaimer">{s.limitation}</div>
+        </Card>
+
+        <Card title="Чего скрининг не делает" tone="soft" className="plot-block">
+          <ul className="meth__not" style={{ color: "var(--c-ink-black)" }}>
+            <li>
+              <span aria-hidden="true">✕</span> не влияет на число потенциальных единиц
+            </li>
+            <li>
+              <span aria-hidden="true">✕</span> не даёт числовой вероятности реверсии
+            </li>
+            <li>
+              <span aria-hidden="true">✕</span> не заменяет официальный расчёт риска
+            </li>
+            <li>
+              <span aria-hidden="true">✕</span> не переносится на другие природные зоны
+            </li>
+          </ul>
+          <p className="ov-note">
+            Вычет за неопределённость выводится из отношения H/R, резерв фиксирован условиями
+            кейса — подставить сюда выход скрининга значило бы нарушить правила расчёта.
+          </p>
+        </Card>
+      </div>
+
+      <Card title="Сработавшие признаки" note="каждый порог виден и оспорим" className="plot-block">
         <div className="tbl__scroll">
           <table className="tbl">
             <thead>
               <tr>
-                <th>сценарий цены</th>
-                <th className="num">цена, ₽/ед.</th>
-                <th className="num">стоимость, ₽</th>
+                <th>признак</th>
+                <th className="num">значение</th>
+                <th className="num">порог</th>
+                <th className="num">баллов</th>
               </tr>
             </thead>
             <tbody>
-              {(["low", "base", "high"] as const).map((key) => (
-                <tr key={key}>
-                  <td>{key === "low" ? "низкий" : key === "base" ? "базовый" : "высокий"}</td>
-                  <td className="num">{formatNumber(PARAMETERS.prices_rub[key])}</td>
-                  <td className="num">{formatNumber(period.value_rub[key])}</td>
+              {s.drivers.map((d) => (
+                <tr key={d.label}>
+                  <td>{d.label}</td>
+                  <td className="num">
+                    {formatDecimal(d.value, d.value >= 10 ? 1 : 2)} {d.unit}
+                  </td>
+                  <td className="num" style={{ color: "var(--c-muted-alt)" }}>
+                    ≥ {formatDecimal(d.threshold, 2)}
+                  </td>
+                  <td className="num">
+                    <b>{d.points}</b>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {s.drivers.length === 0 && (
+          <p className="ov-note" style={{ marginTop: 0 }}>
+            Ни один признак не сработал: по имеющимся данным поводов сомневаться в устойчивости
+            результата нет.
+          </p>
+        )}
         <p className="ov-note">
-          Цены заданы условиями кейса и не являются прогнозом рыночной цены.
+          Категория получена суммой баллов по шести признакам, посчитанным по тем же растрам, что
+          и основной расчёт. Порог до 4 баллов — низкая, до 8 — средняя, выше — высокая.
         </p>
       </Card>
     </>

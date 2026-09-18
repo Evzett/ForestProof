@@ -4,12 +4,14 @@ import {
   Card,
   CircleBtn,
   FilterSelect,
+  LevelPill,
   formatArea,
   formatDecimal,
   formatNumber,
 } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
-import { AREAS, EVENTS, PARAMETERS, YEARS, formatBbox } from "../../data/case";
+import { AREAS, EVENTS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
+import { useScenario } from "../../data/scenario";
 import "./Overview.css";
 
 /* Обзор — состояние набора и результатов по всем участкам сразу.
@@ -50,6 +52,7 @@ function buildSummary(startYear: number, endYear: number) {
 }
 
 export default function Overview() {
+  const { priceKey, price, label, setPriceKey } = useScenario();
   const [range, setRange] = useState("2019-2024");
   const [startYear, endYear] = range.split("-").map(Number);
 
@@ -201,6 +204,7 @@ export default function Overview() {
                   <th className="num">диапазон</th>
                   <th className="num">R</th>
                   <th>единицы</th>
+                  <th>устойчивость</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,6 +242,9 @@ export default function Overview() {
                         <span className="lvl lvl--low">{formatNumber(period.units)}</span>
                       )}
                     </td>
+                    <td>
+                      <LevelPill level={area.stability.level} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -246,7 +253,8 @@ export default function Overview() {
           <p className="ov-note">
             Положительное E означает потерю углерода из учитываемого пула, отрицательное —
             накопление. Ноль в колонке единиц — расчёт выполнен и дал ноль; «недоступно» — расчёт
-            не выполнялся из-за неполных входных данных. Это разные ответы.
+            не выполнялся из-за неполных входных данных. Это разные ответы. Устойчивость —
+            скрининг на горизонт 2024—2029, на число единиц он не влияет.
           </p>
         </Card>
 
@@ -256,44 +264,66 @@ export default function Overview() {
             <span className="ov-summary__spacer" />
             <CircleBtn tone="lime" to="/app/methodology" label="Открыть методику" />
           </div>
-          <span className="ov-market__label">базовая линия</span>
-          <span className="ov-market__price tabular" style={{ fontSize: 30 }}>
-            2019—2029
-          </span>
-          <span className="ov-market__note">
-            продолжение исторической динамики 2015—2019, задана набором
-          </span>
 
-          <div className="ov-market__divider" />
-          <span className="ov-market__label">сценарные цены, ₽/ед.</span>
+          <span className="ov-market__label">ценовой сценарий · {label}</span>
+          <span className="ov-market__price tabular">
+            {formatNumber(price)} <small>₽/ед.</small>
+          </span>
+          {/* Цены выбираются здесь и действуют во всём приложении.
+              На физические показатели и на число единиц выбор не влияет:
+              цена умножается уже на готовое Q. */}
           <ul className="ov-market__scenarios">
-            <li>
-              <span>низкий</span>
-              <span className="tabular">{formatNumber(PARAMETERS.prices_rub.low)}</span>
-            </li>
-            <li className="is-active">
-              <span>базовый</span>
-              <span className="tabular">{formatNumber(PARAMETERS.prices_rub.base)}</span>
-            </li>
-            <li>
-              <span>высокий</span>
-              <span className="tabular">{formatNumber(PARAMETERS.prices_rub.high)}</span>
-            </li>
+            {PRICE_SCENARIOS.map((sc) => (
+              <li key={sc.key}>
+                <button
+                  type="button"
+                  className={priceKey === sc.key ? "is-active" : ""}
+                  aria-pressed={priceKey === sc.key}
+                  onClick={() => setPriceKey(sc.key)}
+                >
+                  <span>{sc.label}</span>
+                  <span className="tabular">{formatNumber(sc.price)} ₽</span>
+                </button>
+              </li>
+            ))}
           </ul>
+          <span className="ov-market__note">
+            Заданы условиями кейса. Не прогноз рыночной цены
+          </span>
 
           <div className="ov-market__divider" />
-          <span className="ov-market__label">вычеты</span>
+          <span className="ov-market__label">базовая линия</span>
+          <span className="ov-market__value tabular">2019 — 2029</span>
           <span className="ov-market__note">
-            порог неопределённости {PARAMETERS.unc_threshold * 100} % · резерв{" "}
-            {PARAMETERS.buffer_share * 100} % · утечка {PARAMETERS.leakage_tco2e}
+            продолжение исторической динамики 2015—2019, задана набором и не
+            устанавливает дополнительность
           </span>
+
+          <div className="ov-market__divider" />
+          <span className="ov-market__label">вычеты и резерв</span>
+          <dl className="ov-market__kv">
+            <div>
+              <dt>порог неопределённости</dt>
+              <dd className="tabular">{PARAMETERS.unc_threshold * 100} %</dd>
+            </div>
+            <div>
+              <dt>резерв BUF</dt>
+              <dd className="tabular">{PARAMETERS.buffer_share * 100} %</dd>
+            </div>
+            <div>
+              <dt>утечка LK</dt>
+              <dd className="tabular">{PARAMETERS.leakage_tco2e}</dd>
+            </div>
+            <div>
+              <dt>углеродная доля CF</dt>
+              <dd className="tabular">{PARAMETERS.carbon_fraction}</dd>
+            </div>
+          </dl>
+
           <div className="ov-market__divider" />
           <Link to="/app/methodology" className="ov-market__cta">
             Как это считается
           </Link>
-          <span className="ov-market__note">
-            Цены не являются прогнозом рыночной цены
-          </span>
         </Card>
 
         <Card className="ov-gauge">

@@ -257,7 +257,86 @@ def potential_units(e_proj: float, e_base: float, half_width: float) -> dict:
     return result
 
 
-def build_aoi(data_dir: Path, meta: dict, baseline: list[dict], maps_dir: Path | None) -> dict:
+# Пороги скрининга устойчивости. Это правила, а не обученная модель:
+# четыре участка — не выборка, и назвать такое обучением было бы враньём.
+# Каждый порог виден на экране, и любой из них можно оспорить.
+RISK_RULES = [
+    ("доля потерь покрова за 2001—2024", "loss_share_pct", [(5.0, 2), (1.0, 1)], "%"),
+    ("число лет с потерями", "loss_years", [(8, 2), (4, 1)], ""),
+    ("подтверждённый пожар на участке", "fire_confirmed", [(1, 2)], ""),
+    ("волатильность годового ряда запаса", "volatility_rel", [(0.15, 2), (0.07, 1)], ""),
+    ("отношение погрешности продукта к запасу", "sd_to_stock", [(0.5, 2), (0.3, 1)], ""),
+    ("падающая историческая динамика", "baseline_decline", [(1.0, 2), (0.001, 1)], "т C/га/год"),
+]
+
+
+def stability_screening(series, cover_loss, area_ha, baseline_rate, has_fire) -> dict:
+    """Скрининг устойчивости результата на горизонт кредитования.
+
+    Отвечает на вопрос «насколько вероятно, что накопленное не удержится»,
+    и НЕ влияет на число единиц: вычет за неопределённость выводится из H/R,
+    резерв фиксирован условиями кейса. Числовой вероятности реверсии здесь
+    нет — только категория и перечень сработавших признаков.
+    """
+    loss_total = sum(l["area_ha"] for l in cover_loss)
+    diffs = [
+        series[i]["c_t_ha"] - series[i - 1]["c_t_ha"] for i in range(1, len(series))
+    ]
+    mean_stock = sum(p["c_t_ha"] for p in series) / len(series)
+    spread = (sum((d - sum(diffs) / len(diffs)) ** 2 for d in diffs) / len(diffs)) ** 0.5
+    last = series[-1]
+
+    features = {
+        "loss_share_pct": loss_total / area_ha * 100,
+        "loss_years": float(len(cover_loss)),
+        "fire_confirmed": 1.0 if has_fire else 0.0,
+        "volatility_rel": spread / mean_stock if mean_stock else 0.0,
+        "sd_to_stock": last["agb_sd_t_ha"] / last["agb_t_ha"] if last["agb_t_ha"] else 0.0,
+        "baseline_decline": max(0.0, -baseline_rate),
+    }
+
+    score = 0
+    drivers = []
+    for label, key, thresholds, unit in RISK_RULES:
+        value = features[key]
+        for limit, points in thresholds:
+            if value >= limit:
+                score += points
+                drivers.append(
+                    {
+                        "label": label,
+                        "value": value,
+                        "unit": unit,
+                        "threshold": limit,
+                        "points": points,
+                    }
+                )
+                break
+
+    level = "high" if score >= 8 else "medium" if score >= 4 else "low"
+    return {
+        "level": level,
+        "score": score,
+        "max_score": sum(t[0][1] for _, _, t, _ in RISK_RULES),
+        "features": features,
+        "drivers": drivers,
+        "method": "пороговые правила по шести признакам",
+        "model_version": None,
+        "limitation": (
+            "Правила, а не обученная модель: четырёх участков для обучения недостаточно. "
+            "Настроено на бореальную и умеренную зону, на другие зоны не переносится. "
+            "На число потенциальных единиц не влияет."
+        ),
+    }
+
+
+def build_aoi(
+    data_dir: Path,
+    meta: dict,
+    baseline: list[dict],
+    events: list[dict],
+    maps_dir: Path | None,
+) -> dict:
     box = (
         float(meta["bbox_west"]),
         float(meta["bbox_south"]),
@@ -337,9 +416,15 @@ def build_aoi(data_dir: Path, meta: dict, baseline: list[dict], maps_dir: Path |
             "sensitivity": grid,
         }
 
+    has_fire = any(e["aoi_id"] == aoi for e in events)
+    loss = gfc_loss_by_year(data_dir, aoi, box)
+
     return {
         "aoi_id": aoi,
         "maps": render_maps(data_dir, aoi, box, maps_dir) if maps_dir else None,
+        "stability": stability_screening(
+            series, loss, area, float(base_rows[0]["historical_rate_tc_ha_yr"]), has_fire
+        ),
         "name": meta["name"],
         "region": meta["region"],
         "role": meta["selection_role"],
@@ -351,7 +436,7 @@ def build_aoi(data_dir: Path, meta: dict, baseline: list[dict], maps_dir: Path |
         "baseline_rate_tc_ha_year": float(base_rows[0]["historical_rate_tc_ha_yr"]),
         "baseline_stock_t_ha": {str(k): v for k, v in sorted(base_stock.items())},
         "series": series,
-        "cover_loss": gfc_loss_by_year(data_dir, aoi, box),
+        "cover_loss": loss,
         "period_2019_2024": period(2019, 2024),
         "periods": [
             {k: v for k, v in period(s, e).items() if k != "sensitivity"}
@@ -389,7 +474,7 @@ def main() -> None:
             "treecover_threshold_pct": TREECOVER_THRESHOLD,
             "prices_rub": PRICES,
         },
-        "areas": [build_aoi(args.data, meta, baseline, args.maps) for meta in areas],
+        "areas": [build_aoi(args.data, meta, baseline, events, args.maps) for meta in areas],
         "events": [
             {
                 "event_id": e["event_id"],

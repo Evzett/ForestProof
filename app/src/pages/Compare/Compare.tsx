@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import { Card, formatDecimal, formatNumber } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
@@ -167,8 +168,10 @@ export default function Compare() {
             </thead>
             <tbody>
               {GROUPS.map((group) => (
-                <>
-                  <tr key={group.title} className="tbl__group">
+                /* Фрагмент с ключом: группа даёт две строки подряд,
+                   обернуть их в tbody нельзя — таблица уже в одном. */
+                <Fragment key={group.title}>
+                  <tr className="tbl__group">
                     <th colSpan={AREAS.length + 1}>{group.title}</th>
                   </tr>
                   {group.rows.map((row) => (
@@ -184,7 +187,7 @@ export default function Compare() {
                       ))}
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
