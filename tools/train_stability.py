@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -326,6 +327,10 @@ def main() -> None:
 
     payload = {
         "predictions": predictions,
+        # Отпечаток обучающей выборки. По нему видно, что показанное
+        # качество относится именно к той выборке, на которой модель
+        # училась, а не к другой, подложенной позже.
+        "training_fingerprint": hashlib.sha256(args.data.read_bytes()).hexdigest()[:12],
         "method": "логистическая регрессия с L2, подбор регуляризации по скользящему контролю",
         "features": FEATURES,
         "l2": l2,
