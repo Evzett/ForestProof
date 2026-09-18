@@ -10,6 +10,11 @@ docs/04-kontrakty-dannyh.md. Расхождение с контрактом — 
     observations        — наблюдения по годам (раздел 1)
     disturbance_events  — события нарушений (раздел 1)
     calculations        — расчёты, с аудит-полями (раздел 6 и 8) — ядро воспроизводимости
+    registry_import_meta — метаданные последней загрузки выгрузки реестра (раздел 12)
+    registry_catalog     — каталог всех проектов выгрузки реестра (раздел 12, KAN-43)
+    geometry_uploads     — временные проверенные геометрии между /plots/validate и /plots
+    plots                — участки, созданные через мастер загрузки границы (раздел 12)
+    watchlist            — отслеживаемые участки (раздел 12)
 """
 
 import enum
@@ -71,6 +76,28 @@ class Confidence(str, enum.Enum):
     low = "low"
 
 
+class DataStatus(str, enum.Enum):
+    """Раздел 12, GET /api/registry/projects."""
+
+    calculated = "calculated"
+    no_geometry = "no_geometry"
+    in_progress = "in_progress"
+
+
+class PlotStatus(str, enum.Enum):
+    """Статус расчёта, запущенного мастером (раздел 12). Не путать с
+    `claim_check.status` из раздела 6 — это состояние пайплайна, а не сверки."""
+
+    running = "running"
+    done = "done"
+    failed = "failed"
+
+
+class WatchStatus(str, enum.Enum):
+    attention = "attention"
+    quiet = "quiet"
+
+
 def _enum(python_enum: type[enum.Enum]):
     return Enum(python_enum, values_callable=lambda e: [m.value for m in e], native_enum=False)
 
@@ -85,6 +112,11 @@ class Project(Base):
     region: Mapped[str | None] = mapped_column(String(255))
     mode: Mapped[ProjectMode] = mapped_column(_enum(ProjectMode))
     geometry_path: Mapped[str] = mapped_column(String(512))
+    # Площадь полигона участка (раздел 1, `polygon_area_ha`) — статический атрибут
+    # геометрии, а не результата расчёта, поэтому живёт на проекте, а не в
+    # `calculations.result`. Используется как `area_ha` в GET /api/projects
+    # и как основа `revenue_rub_per_ha` при `area_basis: polygon` (раздел 6).
+    area_ha: Mapped[float] = mapped_column(Numeric(14, 2))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -232,3 +264,102 @@ class Calculation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     project: Mapped["Project"] = relationship(back_populates="calculations")
+
+
+class RegistryImportMeta(Base):
+    """Раздел 12, `GET /api/registry/projects` → `export_date`. Одна строка —
+    метаданные последней загруженной выгрузки реестра. `total_declared`
+    хранит число проектов, заявленное самой выгрузкой (для мок-набора может
+    расходиться с фактическим количеством строк в `registry_catalog`, если
+    загружен неполный/демонстрационный срез — тогда API честно отдаёт
+    количество реально загруженных строк, а не `total_declared`)."""
+
+    __tablename__ = "registry_import_meta"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    export_date: Mapped[date] = mapped_column(Date)
+    source: Mapped[str] = mapped_column(String(255))
+    total_declared: Mapped[int | None] = mapped_column(Integer)
+    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RegistryCatalogEntry(Base):
+    """Раздел 12, `GET /api/registry/projects`. Каталог ВСЕХ проектов из
+    выгрузки реестра (KAN-43) — не только тех, что уже посчитаны. При
+    `data_status != calculated` `project_id`/`calc_id` пустые (раздел 12)."""
+
+    __tablename__ = "registry_catalog"
+
+    registry_number: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    company: Mapped[str] = mapped_column(String(512))
+    region: Mapped[str] = mapped_column(String(255))
+    methodology: Mapped[str] = mapped_column(String(255))
+    effect_kind: Mapped[EffectKind | None] = mapped_column(_enum(EffectKind))
+    units_in_circulation: Mapped[int | None] = mapped_column(Integer)
+    data_status: Mapped[DataStatus] = mapped_column(_enum(DataStatus))
+    project_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("projects.project_id", ondelete="SET NULL")
+    )
+    calc_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("calculations.calc_id", ondelete="SET NULL")
+    )
+
+
+class GeometryUpload(Base):
+    """Раздел 12, `POST /api/plots/validate` → `upload_token`. Хранит
+    проверенную геометрию между шагом 2 (проверка) и шагом 3 (создание
+    участка) мастера — живёт до использования в `POST /api/plots`, старые
+    непринятые токены можно чистить по `created_at` отдельной задачей."""
+
+    __tablename__ = "geometry_uploads"
+
+    upload_token: Mapped[str] = mapped_column(String(32), primary_key=True)  # "tmp-7f31c9"
+    geometry: Mapped[dict] = mapped_column(JSONB)  # GeoJSON Feature, EPSG:4326
+    checks: Mapped[list] = mapped_column(JSONB)
+    accepted: Mapped[bool] = mapped_column(Boolean)
+    area_ha: Mapped[float] = mapped_column(Numeric(14, 2))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Plot(Base):
+    """Раздел 12, `POST /api/plots`. Участок, созданный мастером загрузки
+    границы — отдельно от `projects`, потому что фиксирует сам факт и
+    обстоятельства загрузки (кто откуда взял границу, к какому проекту
+    привязал), а не расчётные данные. `boundary_source` обязателен (FR-21)."""
+
+    __tablename__ = "plots"
+
+    plot_id: Mapped[str] = mapped_column(String(32), primary_key=True)  # "PLOT-0001"
+    name: Mapped[str] = mapped_column(String(255))
+    boundary_source: Mapped[str] = mapped_column(String(512))
+    link_project_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("projects.project_id", ondelete="SET NULL")
+    )
+    upload_token: Mapped[str] = mapped_column(String(32), ForeignKey("geometry_uploads.upload_token"))
+    project_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("projects.project_id", ondelete="SET NULL")
+    )
+    calc_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("calculations.calc_id", ondelete="SET NULL")
+    )
+    status: Mapped[PlotStatus] = mapped_column(_enum(PlotStatus))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WatchlistEntry(Base):
+    """Раздел 12, `GET/POST /api/watchlist`. Подписки и уведомления не
+    реализуются в прототипе (контракт) — только список и добавление/удаление."""
+
+    __tablename__ = "watchlist"
+
+    project_id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("projects.project_id", ondelete="CASCADE"), primary_key=True
+    )
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    new_events_count: Mapped[int] = mapped_column(Integer, default=0)
+    recent_loss_ha: Mapped[float | None] = mapped_column(Numeric(12, 2))
+    status: Mapped[WatchStatus] = mapped_column(_enum(WatchStatus), default=WatchStatus.quiet)
+
+    project: Mapped["Project"] = relationship()
