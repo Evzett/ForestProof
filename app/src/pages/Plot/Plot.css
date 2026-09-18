@@ -672,3 +672,33 @@
   font-weight: 500;
   color: var(--c-ink);
 }
+
+/* ---------- Снимки до и после ---------- */
+.shots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.shots figure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.shots img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--r-img-md);
+  background: #eceee8;
+  image-rendering: pixelated;
+}
+
+.shots figcaption {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--c-muted-alt);
+}

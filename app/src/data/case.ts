@@ -96,9 +96,27 @@ export type Stability = {
   limitation: string;
 };
 
+export type SentinelScene = { file: string; date: string; usable_pct: number };
+
+export type SentinelPair = {
+  before: SentinelScene;
+  after: SentinelScene;
+  dnbr: {
+    file: string;
+    span: number;
+    median: number | null;
+    share_above_threshold_pct: number | null;
+  };
+  composite: string;
+  size: [number, number];
+  scenes_total: number;
+  source: string;
+};
+
 export type Area = {
   aoi_id: string;
   maps: AreaMaps | null;
+  sentinel: SentinelPair | null;
   stability: Stability;
   name: string;
   region: string;

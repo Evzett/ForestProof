@@ -33,6 +33,31 @@
           160
         ]
       },
+      "sentinel": {
+        "before": {
+          "file": "RU_TVER_01_s2_before.png",
+          "date": "2019-07-02",
+          "usable_pct": 100.0
+        },
+        "after": {
+          "file": "RU_TVER_01_s2_after.png",
+          "date": "2024-07-08",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_TVER_01_s2_dnbr.png",
+          "span": 0.779,
+          "median": -0.6118,
+          "share_above_threshold_pct": 0.0
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          198,
+          224
+        ],
+        "scenes_total": 12,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
+      },
       "stability": {
         "level": "low",
         "score": 2,
@@ -1006,6 +1031,31 @@
           256,
           160
         ]
+      },
+      "sentinel": {
+        "before": {
+          "file": "RU_VOLOGDA_02_s2_before.png",
+          "date": "2019-08-28",
+          "usable_pct": 100.0
+        },
+        "after": {
+          "file": "RU_VOLOGDA_02_s2_after.png",
+          "date": "2024-08-16",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_VOLOGDA_02_s2_dnbr.png",
+          "span": 0.277,
+          "median": 0.0263,
+          "share_above_threshold_pct": 2.2
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          188,
+          228
+        ],
+        "scenes_total": 12,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
       },
       "stability": {
         "level": "medium",
@@ -2066,6 +2116,31 @@
           256,
           160
         ]
+      },
+      "sentinel": {
+        "before": {
+          "file": "RU_MORDOVIA_03_s2_before.png",
+          "date": "2020-08-18",
+          "usable_pct": 99.0
+        },
+        "after": {
+          "file": "RU_MORDOVIA_03_s2_after.png",
+          "date": "2022-08-23",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_MORDOVIA_03_s2_dnbr.png",
+          "span": 1.417,
+          "median": 0.4818,
+          "share_above_threshold_pct": 67.2
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          212,
+          229
+        ],
+        "scenes_total": 13,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
       },
       "stability": {
         "level": "high",
@@ -3144,6 +3219,31 @@
           256,
           160
         ]
+      },
+      "sentinel": {
+        "before": {
+          "file": "RU_MORDOVIA_04_s2_before.png",
+          "date": "2020-08-18",
+          "usable_pct": 99.5
+        },
+        "after": {
+          "file": "RU_MORDOVIA_04_s2_after.png",
+          "date": "2022-08-23",
+          "usable_pct": 100.0
+        },
+        "dnbr": {
+          "file": "RU_MORDOVIA_04_s2_dnbr.png",
+          "span": 1.201,
+          "median": 0.588,
+          "share_above_threshold_pct": 85.4
+        },
+        "composite": "SWIR2 · NIR · Red (B12, B8A, B04)",
+        "size": [
+          212,
+          229
+        ],
+        "scenes_total": 13,
+        "source": "Copernicus Sentinel-2 L2A через Element 84 Earth Search"
       },
       "stability": {
         "level": "high",

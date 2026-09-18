@@ -466,6 +466,72 @@ function ChangesTab({
         )}
       </Card>
 
+      {area.sentinel && (
+        <Card
+          title="Снимки до и после"
+          note={`${area.sentinel.composite} · Sentinel-2 L2A`}
+          className="plot-block"
+        >
+          <div className="shots">
+            <figure>
+              <img src={`/maps/${area.sentinel.before.file}`} alt="Снимок до события" />
+              <figcaption>
+                до · {area.sentinel.before.date} · пригодных пикселей{" "}
+                {formatDecimal(area.sentinel.before.usable_pct, 0)} %
+              </figcaption>
+            </figure>
+            <figure>
+              <img src={`/maps/${area.sentinel.after.file}`} alt="Снимок после события" />
+              <figcaption>
+                после · {area.sentinel.after.date} · пригодных пикселей{" "}
+                {formatDecimal(area.sentinel.after.usable_pct, 0)} %
+              </figcaption>
+            </figure>
+            <figure>
+              <img src={`/maps/${area.sentinel.dnbr.file}`} alt="Карта изменения NBR" />
+              <figcaption>изменение NBR между этими двумя датами</figcaption>
+            </figure>
+          </div>
+
+          <dl className="kv">
+            <div>
+              <dt>медиана dNBR по участку</dt>
+              <dd className="tabular">
+                {area.sentinel.dnbr.median === null
+                  ? "—"
+                  : formatDecimal(area.sentinel.dnbr.median, 2)}
+              </dd>
+            </div>
+            <div>
+              <dt>доля площади с dNBR выше 0,27</dt>
+              <dd className="tabular">
+                {area.sentinel.dnbr.share_above_threshold_pct === null
+                  ? "—"
+                  : `${formatDecimal(area.sentinel.dnbr.share_above_threshold_pct, 1)} %`}
+              </dd>
+            </div>
+            <div>
+              <dt>сцен в наборе по участку</dt>
+              <dd className="tabular">{area.sentinel.scenes_total}</dd>
+            </div>
+          </dl>
+
+          <p className="ov-note">
+            Композит SWIR2 · NIR · Red выбран не для красоты: в натуральных цветах гарь сливается
+            с тенью и вспаханным полем, а здесь выгоревшая площадь уходит в пурпур, живая
+            растительность остаётся зелёной. Пара снимков подобрана по близости месяца — снимок
+            другого сезона показал бы фенологию, а не потерю.
+          </p>
+          <div className="disclaimer">
+            Порог 0,27 взят из практики оценки гарей и служит ориентиром, а не классификацией.
+            Проверка на контрольном участке в Тверской области: там доля выше порога 0,0 % при
+            той же обработке — значит показатель реагирует на нарушение, а не на разницу съёмок.
+            Само по себе падение NBR причину не устанавливает: сплошная рубка даёт похожую
+            картину.
+          </div>
+        </Card>
+      )}
+
       <Card title="События с внешним подтверждением" className="plot-block">
         {events.length === 0 ? (
           <p className="ov-note" style={{ marginTop: 0 }}>
