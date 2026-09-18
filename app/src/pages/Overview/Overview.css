@@ -32,7 +32,8 @@
   grid-column: 1;
   grid-row: 2;
   display: grid;
-  grid-template-columns: 1fr;
+  /* Ширины из макета: справка 670, вторая карточка 410. */
+  grid-template-columns: 670fr 410fr;
   gap: 30px;
   margin-right: calc(-1 * var(--ov-notch));
 }
@@ -60,9 +61,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  /* Подпись, число и сноска — три разные вещи, а не абзац: без воздуха
+     между ними плитка читалась одним слипшимся блоком. */
+  gap: 14px;
   justify-content: center;
-  min-height: clamp(140px, 8.2vw, 158px);
+  min-height: clamp(132px, 7.8vw, 152px);
   padding: 20px 28px 22px;
   border-radius: 40px;
   background: var(--c-surface);
@@ -601,12 +604,12 @@
 
 .ov-summary__value {
   display: flex;
-  min-width: 132px;
+  min-width: 104px;
   align-items: baseline;
   justify-content: flex-end;
   gap: 5px;
   flex: 0 0 auto;
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--c-ink);
@@ -620,6 +623,6 @@
 
 .ov-summary__why {
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--c-ink-black);
 }

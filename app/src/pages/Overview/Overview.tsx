@@ -11,7 +11,7 @@ import {
   formatNumber,
 } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
-import { AREAS, EVENTS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
+import { AREAS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
 import { useScenario } from "../../data/scenario";
 import { YearLossChart } from "../../components/YearLossChart";
 import "./Overview.css";
@@ -67,26 +67,19 @@ function buildSummary(startYear: number, endYear: number): SummaryLine[] {
   return [
     {
       value: `${losing.length} из ${rows.length}`,
-      text: `участков показывают потерю углерода из учитываемого пула за ${startYear}—${endYear}`,
+      text: `участков теряют углерод из учитываемого пула за ${startYear}—${endYear}`,
     },
     {
       value: formatNumber(Math.round(worst.period.e_tco2e)),
       unit: "т CO₂-экв.",
-      text: `наибольшая потеря — ${worst.area.name}, то есть ${formatDecimal(
-        worst.period.e_per_ha_year,
-        2
-      )} т CO₂-экв./га/год`,
+      text: `наибольшая потеря — ${worst.area.name}`,
     },
     {
       value: withUnits.length === 0 ? "ни один" : `${withUnits.length} из ${rows.length}`,
       text:
         withUnits.length === 0
-          ? "участок не даёт потенциальных единиц: результат либо не превышает базовую линию, либо не отличим от неё в пределах неопределённости"
+          ? "участок не даёт потенциальных единиц: результат не превышает базовую линию либо не отличим от неё"
           : "участков дают потенциальные единицы",
-    },
-    {
-      value: `${EVENTS.length} из ${rows.length}`,
-      text: "участков имеют подтверждение причины изменения покрова внешним продуктом; на остальных статус причины остаётся неустановленным",
     },
   ];
 }
