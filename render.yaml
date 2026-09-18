@@ -1,0 +1,28 @@
+# Render Blueprint — пустой деплой ForestProof API.
+# Инструкция по подключению: api/README.md, раздел "Деплой на Render".
+#
+# Blueprint создаёт сразу два ресурса: веб-сервис на Docker и Postgres.
+# Render сам подставит DATABASE_URL веб-сервису из connectionString базы —
+# менять его руками не нужно.
+
+databases:
+  - name: forestproof-db
+    plan: free
+    databaseName: forestproof
+    user: forestproof
+
+services:
+  - type: web
+    name: forestproof-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: forestproof-db
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
