@@ -61,14 +61,89 @@ const TITLES = [
   "Участок добавлен",
 ];
 
-type Method = "file" | "draw" | "coords";
+type Method = "file" | "draw" | "coords" | "table";
 type Point = { x: number; y: number };
 
 const METHODS: [Method, string, string][] = [
   ["file", "Загрузить файл границы", "GeoJSON или Shapefile, система координат EPSG:4326"],
   ["draw", "Обвести полигон на карте", "если файла нет — контур рисуется кликами поверх снимка"],
   ["coords", "Ввести координаты", "список вершин в десятичных градусах, по одной паре в строке"],
+  ["table", "Загрузить таблицу", "CSV со столбцами name, lat, lon, order — контуры из ведомости"],
 ];
+
+/* Разбор ведомости с вершинами.
+
+   Нужен не для красоты: у лесохозяйственных организаций контуры чаще
+   лежат в таблице, чем в GeoJSON. Столбец name разделяет несколько
+   участков в одном файле, order задаёт порядок обхода вершин.
+
+   Разбор идёт здесь, на клиенте: на сервер уходит уже готовая геометрия,
+   а не файл целиком. */
+type TableContour = { name: string; points: { lat: number; lon: number }[] };
+
+function parseContourTable(text: string): { contours: TableContour[]; error: string } {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return { contours: [], error: "В таблице нет строк с данными" };
+
+  const sep = [";", "\t", ","].find((s) => lines[0].includes(s)) ?? ",";
+  const header = lines[0].split(sep).map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ""));
+  const col = (...names: string[]) => header.findIndex((h) => names.includes(h));
+
+  const iLat = col("lat", "latitude", "широта");
+  const iLon = col("lon", "lng", "longitude", "долгота");
+  if (iLat < 0 || iLon < 0) {
+    return { contours: [], error: "Не найдены столбцы lat и lon. Ожидается заголовок: name, lat, lon, order" };
+  }
+  const iName = col("name", "название", "участок");
+  const iOrder = col("order", "порядок", "n");
+
+  const rows: { name: string; lat: number; lon: number; order: number }[] = [];
+  const bad: number[] = [];
+  lines.slice(1).forEach((line, idx) => {
+    const cells = line.split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+    const lat = Number(cells[iLat]?.replace(",", "."));
+    const lon = Number(cells[iLon]?.replace(",", "."));
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      bad.push(idx + 2);
+      return;
+    }
+    rows.push({
+      name: (iName >= 0 ? cells[iName] : "") || "участок",
+      lat,
+      lon,
+      order: iOrder >= 0 ? Number(cells[iOrder]) || idx : idx,
+    });
+  });
+
+  if (rows.length === 0) {
+    return { contours: [], error: "Ни одна строка не разобралась как пара широта/долгота" };
+  }
+
+  const byName = new Map<string, { lat: number; lon: number; order: number }[]>();
+  for (const r of rows) {
+    if (!byName.has(r.name)) byName.set(r.name, []);
+    byName.get(r.name)!.push(r);
+  }
+
+  const contours: TableContour[] = [];
+  for (const [name, pts] of byName) {
+    if (pts.length < 3) continue;
+    contours.push({
+      name,
+      points: [...pts].sort((a, b) => a.order - b.order).map(({ lat, lon }) => ({ lat, lon })),
+    });
+  }
+
+  if (contours.length === 0) {
+    return { contours: [], error: "В каждом контуре нужно хотя бы три вершины" };
+  }
+  return {
+    contours,
+    // Плохие строки не молчим: пользователь должен знать, что часть
+    // ведомости не разобралась, а не гадать, почему площадь меньше.
+    error: bad.length > 0 ? `Пропущено строк: ${bad.length} (${bad.slice(0, 5).join(", ")}…)` : "",
+  };
+}
 
 /* Площадь простого полигона по формуле шнурования.
    Для демонстрации достаточно плоского приближения: на широте 60°
@@ -131,6 +206,16 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
   const [coordText, setCoordText] = useState("");
   const parsed = parseCoords(coordText);
 
+  /* --- способ 4: таблица-ведомость --- */
+  const tableInput = useRef<HTMLInputElement>(null);
+  const [table, setTable] = useState<{ file: string; contours: TableContour[] } | null>(null);
+  const [tableIndex, setTableIndex] = useState(0);
+  const [tableError, setTableError] = useState("");
+
+  /* Выбранный контур из ведомости. Объявлен здесь, а не рядом с разбором:
+     от него зависят geometryReady и оценка площади ниже. */
+  const tableContour = table?.contours[tableIndex] ?? null;
+
   /* Геометрия, которая уйдёт на расчёт. Раньше мастер разбирал файл ради
      числа вершин и выбрасывал сам полигон — считать было нечего. */
   const [geometry, setGeometry] = useState<GeoJsonPolygon | null>(null);
@@ -180,28 +265,60 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
       ? file !== null
       : method === "draw"
         ? points.length >= 3
-        : parsed.points.length >= 3;
+        : method === "table"
+          ? tableContour !== null
+          : parsed.points.length >= 3;
 
   const vertexCount =
     method === "file"
       ? file?.vertices
       : method === "draw"
         ? points.length
-        : parsed.points.length;
+        : method === "table"
+          ? (tableContour?.points.length ?? null)
+          : parsed.points.length;
 
+  /* Оценка площади на клиенте — только чтобы пользователь понял масштаб
+     до расчёта. Настоящую площадь считает сервер по доле пересечения
+     каждого пикселя с контуром, и она будет отличаться. */
   const drawnAreaHa =
-    method === "coords" && parsed.points.length >= 3 ? polygonAreaHa(parsed.points) : null;
+    method === "coords" && parsed.points.length >= 3
+      ? polygonAreaHa(parsed.points)
+      : method === "table" && tableContour
+        ? polygonAreaHa(tableContour.points)
+        : null;
 
   /* Источник границы обязателен (FR-21): все числа считаются по этому контуру,
      и если он обведён по лесничеству, допущение обязаны назвать мы. */
   const canSubmit = source.trim().length > 0;
 
-  /* Геометрия для отправки: файл даёт её напрямую, координаты собираются
-     в полигон. Обводка на карте живёт в процентах экрана, а не в градусах,
-     поэтому географией не является и на расчёт не уходит. */
+  const pickTable = async (f: File) => {
+    setTableError("");
+    if (/\.xlsx?$/i.test(f.name)) {
+      // XLSX — бинарный формат, разбор которого требует библиотеки.
+      // Честнее сказать это сразу, чем принять файл и не посчитать.
+      setTableError("XLSX пока не разбирается. Сохраните лист как CSV и загрузите его.");
+      setTable(null);
+      return;
+    }
+    const { contours, error } = parseContourTable(await f.text());
+    if (contours.length === 0) {
+      setTableError(error || "Таблица не разобралась");
+      setTable(null);
+      return;
+    }
+    setTableError(error);
+    setTable({ file: f.name, contours });
+    setTableIndex(0);
+  };
+
+  /* Геометрия для отправки: файл и таблица дают её напрямую, координаты
+     собираются в полигон. Обводка на карте живёт в процентах экрана, а не
+     в градусах, поэтому географией не является и на расчёт не уходит. */
   const requestGeometry = (): GeoJsonPolygon | null => {
     if (method === "file") return geometry;
     if (method === "coords" && parsed.points.length >= 3) return polygonFromPoints(parsed.points);
+    if (method === "table" && tableContour) return polygonFromPoints(tableContour.points);
     return null;
   };
 
@@ -388,9 +505,73 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                 </div>
               )}
 
+              {method === "table" && (
+                <div className="wz__pane">
+                  <input
+                    ref={tableInput}
+                    type="file"
+                    accept=".csv,.tsv,.txt,.xlsx,.xls"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void pickTable(f);
+                    }}
+                  />
+                  <button
+                    className="btn btn--outline"
+                    type="button"
+                    onClick={() => tableInput.current?.click()}
+                  >
+                    <span>{table ? "Выбрать другую таблицу" : "Выбрать файл ведомости"}</span>
+                  </button>
+
+                  {table && (
+                    <>
+                      <div className="wz__file">
+                        <b>{table.file}</b>
+                        <span>
+                          · контуров: {table.contours.length}
+                          {tableContour && ` · вершин: ${tableContour.points.length}`}
+                        </span>
+                      </div>
+                      {table.contours.length > 1 && (
+                        <div className="wz__modes">
+                          {table.contours.map((c, i) => (
+                            <button
+                              key={c.name + i}
+                              type="button"
+                              className={`wz__mode ${i === tableIndex ? "is-on" : ""}`}
+                              onClick={() => setTableIndex(i)}
+                            >
+                              {c.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div className="wz__draw-foot">
+                        <span>
+                          {tableContour?.points.length ?? 0} вершин
+                          {drawnAreaHa !== null &&
+                            ` · примерно ${formatArea(Math.round(drawnAreaHa))} га`}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {tableError && <p className="wz__err">{tableError}</p>}
+
+                  <p className="wz__note">
+                    Ожидаются столбцы <b>name</b>, <b>lat</b>, <b>lon</b>, <b>order</b>. Несколько
+                    участков в одном файле разделяются столбцом name, порядок обхода вершин задаёт
+                    order. Разбор идёт здесь, в браузере: на сервер уходит готовая геометрия, а не
+                    файл целиком.
+                  </p>
+                </div>
+              )}
+
               <p className="wz__note">
-                Проекты из реестра загружать не нужно — все 132 уже в каталоге. Здесь добавляется
-                только граница участка: реестр геометрию проектов не публикует.
+                Контур можно задать четырьмя способами. Участки набора загружать не нужно — они уже
+                посчитаны и открываются из каталога.
               </p>
             </>
           )}

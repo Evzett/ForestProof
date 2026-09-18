@@ -118,7 +118,11 @@ export default function Areas() {
             {full ? "больше четырёх колонок не читается" : "сравнение доступно для 2–4 участков"}
           </span>
           <span className="selbar__spacer" />
-          <button className="btn btn--lime" type="button" onClick={() => navigate("/app/compare")}>
+          <button
+            className="btn btn--lime"
+            type="button"
+            onClick={() => navigate(`/app/compare?ids=${picked.join(",")}`)}
+          >
             <span>Сравнить</span>
             <span className="btn__arrow">→</span>
           </button>
