@@ -14,6 +14,7 @@ import { PageHead } from "../../components/AppShell";
 import { AREAS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
 import { useScenario } from "../../data/scenario";
 import { YearLossChart } from "../../components/YearLossChart";
+import { composeSummary } from "../../data/aiSummary";
 import "./Overview.css";
 
 /* Обзор — состояние набора и результатов по всем участкам сразу.
@@ -84,6 +85,47 @@ function buildSummary(startYear: number, endYear: number): SummaryLine[] {
   ];
 }
 
+/* Те же числа, что и в шаблонной справке, но в виде фактов для модели.
+   Собираются здесь, а не на сервере: сервер ничего не пересчитывает, он
+   только формулирует, и всё, что он произнесёт, должно быть отсюда. */
+function summaryFacts(startYear: number, endYear: number) {
+  const rows = AREAS.map((a) => ({
+    area: a,
+    period:
+      a.periods.find((x) => x.year_start === startYear && x.year_end === endYear) ??
+      a.period_2019_2024,
+  }));
+  const losing = rows.filter((r) => r.period.e_tco2e > 0);
+  const withUnits = rows.filter((r) => (r.period.units ?? 0) > 0);
+  const worst = [...rows].sort((a, b) => b.period.e_tco2e - a.period.e_tco2e)[0];
+  const loss = AREAS.reduce(
+    (sum, a) =>
+      sum +
+      a.cover_loss
+        .filter((l) => l.year > 2019 && l.year <= 2024)
+        .reduce((x, l) => x + l.area_ha, 0),
+    0
+  );
+
+  return {
+    период: `${startYear}—${endYear}`,
+    "участков в наборе": AREAS.length,
+    "теряют углерод из учитываемого пула": losing.length,
+    "наибольшая потеря": {
+      участок: worst.area.name,
+      "т CO2-экв": Math.round(worst.period.e_tco2e),
+      "т CO2-экв на га в год": Number(worst.period.e_per_ha_year.toFixed(2)),
+    },
+    "дают потенциальные единицы": withUnits.length,
+    "почему единиц нет":
+      withUnits.length === 0
+        ? "результат не превышает базовую линию либо не отличим от неё в пределах неопределённости"
+        : null,
+    "потери древесного покрова 2020—2024, га": Math.round(loss),
+    "статус расчёта": "расчёт по условиям кейса, а не сертифицированные единицы",
+  };
+}
+
 export default function Overview() {
   const { priceKey, price, label, setPriceKey } = useScenario();
   const [range, setRange] = useState("2019-2024");
@@ -104,21 +146,32 @@ export default function Overview() {
 
   const [summary, setSummary] = useState(() => ({ lines: buildSummary(2019, 2024), at: "—" }));
   const [rebuilding, setRebuilding] = useState(false);
+  /* Текст модели держится отдельно от шаблонных строк: если модель
+     недоступна или её ответ отбракован, строки остаются на экране, а не
+     сменяются пустотой. */
+  const [ai, setAi] = useState<{ text: string; model: string } | null>(null);
+  const [aiNote, setAiNote] = useState<string | null>(null);
 
-  const regenerate = () => {
+  const regenerate = async () => {
     if (rebuilding) return;
     setRebuilding(true);
-    window.setTimeout(() => {
-      const now = new Date();
-      setSummary({
-        lines: buildSummary(startYear, endYear),
-        at: `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
-      });
-      setRebuilding(false);
-    }, 450);
+    setAiNote(null);
+
+    const now = new Date();
+    const at = `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+    setSummary({ lines: buildSummary(startYear, endYear), at });
+
+    const result = await composeSummary(summaryFacts(startYear, endYear));
+    if (result.ok) {
+      setAi({ text: result.text, model: result.model });
+    } else {
+      setAi(null);
+      setAiNote(result.reason);
+    }
+    setRebuilding(false);
   };
 
   const totalArea = AREAS.reduce((s, a) => s + a.area_ha, 0);
@@ -193,7 +246,9 @@ export default function Overview() {
           <Card className="ov-summary">
             <div className="ov-summary__head">
               <h2 className="card__title">Краткая справка по набору</h2>
-              <span className="lvl lvl--outline">собрано шаблоном</span>
+              <span className="lvl lvl--outline">
+                {ai ? "изложено моделью" : "собрано шаблоном"}
+              </span>
               <span className="ov-summary__spacer" />
               <CircleBtn
                 glyph="⟳"
@@ -202,6 +257,9 @@ export default function Overview() {
                 label="Пересобрать справку"
               />
             </div>
+            {ai && (
+              <p className="ov-summary__ai">{ai.text}</p>
+            )}
             <ul className="ov-summary__list">
               {summary.lines.map((line) => (
                 <li key={line.text}>
@@ -214,7 +272,11 @@ export default function Overview() {
               ))}
             </ul>
             <p className="ov-note">
-              собрано из посчитанного · без языковой модели · обновлено {summary.at}
+              {ai
+                ? `текст изложен моделью ${ai.model}; числа посчитаны сервисом и сверены с ответом`
+                : "собрано шаблоном из посчитанного, без языковой модели"}{" "}
+              · обновлено {summary.at}
+              {aiNote && ` · модель не подключилась: ${aiNote}`}
             </p>
           </Card>
 

@@ -114,15 +114,8 @@ export default function Welcome() {
 
       {/* ---------- Закрывающий блок ---------- */}
       <section className="closing">
-        {/* Без lazy и с явными пропорциями: у абсолютно спозиционированной
-            картинки до загрузки нулевая высота, и она уезжает за границу блока. */}
-          <img
-            className="closing__art"
-            src="/images/closing-forest.png"
-            width={1360}
-            height={768}
-            alt=""
-          />
+        <span className="closing__art" aria-hidden="true" />
+
         <div className="closing__content">
           <h2 className="section-title section-title--light">С чего начать</h2>
           <p className="closing__text">

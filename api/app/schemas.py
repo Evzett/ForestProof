@@ -50,3 +50,10 @@ class CalcRequest(BaseModel):
     aoi_id: str | None = None
     year_start: int = Field(ge=2019, le=2024)
     year_end: int = Field(ge=2019, le=2024)
+
+
+class SummaryRequest(BaseModel):
+    """Факты для изложения. Считает их фронт из уже готового расчёта —
+    сервер ничего не пересчитывает и ничего не добавляет."""
+
+    facts: dict
