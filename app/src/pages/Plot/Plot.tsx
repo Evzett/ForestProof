@@ -533,21 +533,30 @@ function ChangesTab({
           не было вовсе, и страница молчала о том, как выглядит место. */}
       {(!area.sentinel || area.sentinel.observations.length === 0) && area.scene_preview && (
         <Card
-          title="Снимок участка"
-          note={`Sentinel-2 L2A · ${area.scene_preview.date}`}
+          title={
+            (area.scene_preview.shots?.length ?? 0) > 1 ? "Снимки до и после" : "Снимок участка"
+          }
+          note={`Sentinel-2 L2A · ${area.scene_preview.shots?.length ?? 1} наблюдения`}
           className="plot-block"
         >
           <div className="shots">
-            <figure>
-              <img src={`/maps/${area.scene_preview.image}`} alt={`Снимок участка ${area.name}`} />
-              <figcaption>
-                <b>{area.scene_preview.date}</b>
-                <span>
-                  сцена {area.scene_preview.scene_id} · годных пикселей внутри контура{" "}
-                  {formatDecimal(area.scene_preview.usable_fraction * 100, 0)} %
-                </span>
-              </figcaption>
-            </figure>
+            {(
+              area.scene_preview.shots ?? [
+                { ...area.scene_preview, role: "after" as const, year: 0 },
+              ]
+            ).map((shot) => (
+              <figure key={shot.image}>
+                <img src={`/maps/${shot.image}`} alt={`Снимок участка ${area.name}`} />
+                <figcaption>
+                  <b>{shot.date}</b>
+                  <span>
+                    {shot.role === "before" ? "начало периода" : "конец периода"} · сцена{" "}
+                    {shot.scene_id} · годных пикселей внутри контура{" "}
+                    {formatDecimal(shot.usable_fraction * 100, 0)} %
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
           <p className="ov-note">
             Сцена найдена нашим поиском по контуру, а не вложена в набор: выбрана по доле
@@ -623,10 +632,54 @@ function ChangesTab({
 
       <Card title="События с внешним подтверждением" className="plot-block">
         {events.length === 0 ? (
-          <p className="ov-note" style={{ marginTop: 0 }}>
-            Событий, подтверждённых внешними продуктами, на участке нет. Изменения покрова есть,
-            но их причина не установлена — статус так и остаётся.
-          </p>
+          <>
+            {/* «Событий нет» без продолжения читается как «ничего не
+                происходило». На участке со сплошной вырубкой это неправда:
+                покров терялся, и это видно и в данных, и на снимке. Нечем
+                подтвердить ПРИЧИНУ — внешний продукт у нас один, гари
+                MODIS, и вырубку он не видит. */}
+            {inPeriod.length > 0 ? (
+              <>
+                <p className="ov-note" style={{ marginTop: 0 }}>
+                  Внешним продуктом на участке не подтверждено ни одно событие. Это не значит,
+                  что ничего не происходило: потери древесного покрова за {period.year_start}—
+                  {period.year_end} есть и учтены в расчёте. Подтвердить нечем их причину —
+                  продукт гарей MODIS видит только горение, а вырубку и усыхание не различает.
+                </p>
+                <dl className="kv">
+                  {inPeriod.map((l) => (
+                    <div key={l.year}>
+                      <dt>потеря покрова в {l.year} году</dt>
+                      <dd className="tabular">
+                        {formatDecimal(l.area_ha, 1)} га ·{" "}
+                        {formatDecimal((l.area_ha / area.area_ha) * 100, 2)} % площади
+                      </dd>
+                    </div>
+                  ))}
+                  <div>
+                    <dt>всего за период</dt>
+                    <dd className="tabular">
+                      {formatDecimal(
+                        inPeriod.reduce((sum, l) => sum + l.area_ha, 0),
+                        1
+                      )}{" "}
+                      га
+                    </dd>
+                  </div>
+                </dl>
+                <div className="disclaimer">
+                  Источник потерь — Hansen Global Forest Change: он фиксирует год, в котором
+                  покров исчез, но не причину. Причина остаётся неустановленной, и в отчёте она
+                  так и записана.
+                </div>
+              </>
+            ) : (
+              <p className="ov-note" style={{ marginTop: 0 }}>
+                За {period.year_start}—{period.year_end} на участке не зафиксировано ни потерь
+                древесного покрова, ни событий, подтверждённых внешними продуктами.
+              </p>
+            )}
+          </>
         ) : (
           events.map((e) => (
             <div key={e.event_id} className="event">

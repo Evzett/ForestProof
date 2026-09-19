@@ -162,6 +162,53 @@ def _quality(data_dir: Path, row: dict, bbox, epsg: int) -> tuple[float, np.ndar
     return fraction, inside, valid
 
 
+# Во что переводится 98-й процентиль яркости. Не в единицу: тогда
+# светлые участки — вырубки, поля, песок — сливаются в белое пятно,
+# а лес выцветает. Значение подобрано по снимкам набора так, чтобы
+# хвойный лес читался тёмно-зелёным, каким он и выглядит.
+TARGET_WHITE = 0.45
+
+
+def stretch_rgb(bands, mask=None):
+    """Три канала к диапазону 0…1 ОДНИМ общим преобразованием.
+
+    Ключевая деталь, из-за которой функция общая. Если растягивать
+    каждый канал по своим процентилям, соотношение между ними
+    меняется — и лес получается фиолетовым: синего в нём меньше всех,
+    и растянутый до того же предела он вылезает вперёд. Именно так
+    выглядели снимки, пока растяжек было две.
+
+    Общий множитель на три канала меняет только яркость, не трогая
+    цвет: зелёное остаётся зелёным. Это по-прежнему обработка для
+    показа, но она не переписывает то, что снял прибор. Ни одно число
+    расчёта из картинок не берётся.
+
+    `mask` — пиксели, по которым считать процентили: за контуром и в
+    облаках лежат значения, к участку отношения не имеющие, и по ним
+    нельзя подбирать яркость.
+    """
+    stack = np.dstack([np.asarray(b, dtype=float) for b in bands])
+    if mask is None:
+        values = stack[stack > 0]
+    else:
+        values = stack[np.dstack([mask] * stack.shape[2]) & np.isfinite(stack) & (stack > 0)]
+    if values.size == 0:
+        return np.zeros_like(stack)
+
+    # Множитель, а не растяжка от нижней границы. Вычитание низа — это
+    # то, что делает лес кислотно-зелёным: отражение хвойного леса
+    # лежит в узкой тёмной полосе (примерно 0,013…0,054), зелёный канал
+    # в ней вдвое выше красного и синего, и после сдвига нуля эта
+    # разница раздувается втрое.
+    #
+    # Чистый множитель сохраняет отношение каналов ровно таким, каким
+    # его снял прибор: меняется яркость, цвет остаётся. Так же устроен
+    # обычный true color у поставщиков снимков.
+    high = float(np.percentile(values, 98))
+    gain = TARGET_WHITE / max(high, 1e-6)
+    return np.clip(stack * gain, 0, 1)
+
+
 def _render_scene(data_dir: Path, row: dict, bbox, epsg: int, output: Path) -> dict:
     reflectance_path, scl_path = _paths(data_dir, row)
     raster = _read_reflectance(reflectance_path, row.get("processing_baseline", ""))
@@ -169,14 +216,15 @@ def _render_scene(data_dir: Path, row: dict, bbox, epsg: int, output: Path) -> d
     inside = _polygon_mask(raster, bbox, epsg)
     valid = inside & np.isin(scl, list(VALID_SCL))
 
-    # B04/B03/B02. Stretch each scene only for display; quantitative comparison
-    # below uses the original reflectance values.
-    rgb = np.moveaxis(raster.data[[2, 1, 0]].astype(float), 0, -1)
-    for channel in range(3):
-        values = rgb[:, :, channel][valid & np.isfinite(rgb[:, :, channel])]
-        low, high = np.percentile(values, [2, 98]) if values.size else (0.0, 1.0)
-        rgb[:, :, channel] = np.clip((rgb[:, :, channel] - low) / max(high - low, 1e-6), 0, 1)
-    rgb = np.power(rgb, 1 / 1.15)
+    # B04/B03/B02. Растяжка только для показа; все количественные
+    # сравнения ниже идут по исходным значениям отражения.
+    rgb = stretch_rgb(
+        [raster.data[2], raster.data[1], raster.data[0]],
+        mask=valid,
+    )
+    # Отражение леса лежит в тёмной части диапазона: без гаммы снимок
+    # выходит почти чёрным.
+    rgb = np.power(rgb, 1 / 1.6)
     rgb = (rgb * 255).astype(np.uint8)
     rgb[inside & ~valid] = [214, 216, 211]
     rgba = np.dstack([rgb, inside.astype(np.uint8) * 255])

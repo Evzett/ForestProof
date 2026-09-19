@@ -144,6 +144,16 @@ export type Area = {
     usable_fraction: number;
     cloud_percent: number | null;
     source: string;
+    /* Пара снимков: начало периода и конец. Обложка берёт поздний,
+       страница участка показывает оба. */
+    shots?: {
+      role: "before" | "after";
+      year: number;
+      image: string;
+      date: string;
+      scene_id: string;
+      usable_fraction: number;
+    }[];
   } | null;
   stability: Stability;
   name: string;
