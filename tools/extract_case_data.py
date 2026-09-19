@@ -48,7 +48,13 @@ from forestproof_core.scenario_economics import (  # noqa: E402
     calculate_scenario_value,
 )
 from forestproof_core.summary_generator import generate_summary  # noqa: E402
-from tools.fetch import _tile_name_cci, _tile_name_gfc, cci_url, gfc_url  # noqa: E402
+from tools.fetch import (  # noqa: E402
+    GFC_VERSION,
+    _tile_name_cci,
+    _tile_name_gfc,
+    cci_url,
+    gfc_url,
+)
 from tools.geotiff import read_geotiff
 from tools.sentinel_evidence import build_event_evidence, build_period_evidence
 
@@ -71,8 +77,11 @@ TREECOVER_THRESHOLD = 30
 # Но версия продукта гарей отличается, поэтому источник каждого слоя
 # пишется в выгрузку: на экране должно быть видно, откуда взято.
 
-CCI_CACHE = Path("data/cache/cci-biomass")
-GFC_CACHE = Path("data/cache/hansen-gfc")
+# Кэш скачанных тайлов лежит рядом с самими данными, а не по пути
+# относительно текущего каталога. Разница видна сразу: локально скрипт
+# запускают из корня репозитория, а в контейнере данные примонтированы в
+# /repo/data — при относительном пути кэш оказывался в двух разных
+# местах, и один и тот же тайл скачивался дважды.
 GFC_TILE_VERSION = "Hansen GFC v1.12 (тайл)"
 GFC_LOCAL_VERSION = "Hansen GFC v1.13 (вложен в набор)"
 
@@ -155,8 +164,9 @@ def open_cci(data_dir: Path, aoi: str, year: int, box) -> YearRaster:
     tile = _tile_name_cci(lon, lat)
     agb_url = cci_url(tile, year, "AGB")
     sd_url = cci_url(tile, year, "AGB_SD")
-    agb_path = CCI_CACHE / agb_url.rsplit("/", 1)[-1]
-    sd_path = CCI_CACHE / sd_url.rsplit("/", 1)[-1]
+    cache = data_dir / "cache" / "cci-biomass"
+    agb_path = cache / agb_url.rsplit("/", 1)[-1]
+    sd_path = cache / sd_url.rsplit("/", 1)[-1]
 
     # Порядок источников: вырезка в наборе → тайл в кэше → сам продукт в
     # облаке. Последний шаг и есть смысл сервиса: контур можно задать где
@@ -202,8 +212,9 @@ def open_gfc(data_dir: Path, aoi: str, box) -> CoverRaster:
 
     lon, lat = _centre(box)
     tile = _tile_name_gfc(lon, lat)
-    loss_path = GFC_CACHE / f"Hansen_GFC-2024-v1.12_lossyear_{tile}.tif"
-    cover_path = GFC_CACHE / f"Hansen_GFC-2024-v1.12_treecover2000_{tile}.tif"
+    cache = data_dir / "cache" / "hansen-gfc"
+    loss_path = cache / f"Hansen_GFC-{GFC_VERSION}_lossyear_{tile}.tif"
+    cover_path = cache / f"Hansen_GFC-{GFC_VERSION}_treecover2000_{tile}.tif"
 
     if loss_path.exists() and cover_path.exists():
         loss_source, cover_source = str(loss_path), str(cover_path)

@@ -58,8 +58,18 @@ def run(job_id: str) -> None:
 
         _set(db, job, status=models.JobStatus.running, step=0)
 
+        # Каждый пройденный шаг сразу пишется в базу: мастер опрашивает
+        # состояние и показывает ровно то, что уже сделано. Отдельная
+        # сессия не нужна — эта живёт всю задачу.
+        def mark(done: int) -> None:
+            current = db.get(models.CalcJob, job_id)
+            if current is not None:
+                _set(db, current, step=done)
+
         try:
-            result = case_service.calculate(job.geometry, job.year_start, job.year_end)
+            result = case_service.calculate(
+                job.geometry, job.year_start, job.year_end, progress=mark
+            )
         except case_service.CalculationError as error:
             _set(
                 db,

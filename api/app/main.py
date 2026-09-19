@@ -18,11 +18,12 @@ from app.routers import (
 
 app = FastAPI(title="ForestProof API", version="0.1.0")
 
-# На хакатоне фронт и API живут на разных хостах/портах — открываем CORS
-# полностью; сузить при появлении реального домена фронта.
+# Список источников задаётся окружением (CORS_ORIGINS). Звёздочка,
+# стоявшая здесь «на время хакатона», означала, что любой сайт может
+# послать запрос к API от имени открытой у человека вкладки.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

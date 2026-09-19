@@ -10,18 +10,51 @@ import { useNavigate } from "react-router-dom";
 import {
   ApiError,
   geometryFromGeoJson,
+  getCalcJob,
   polygonFromPoints,
-  postCalc,
   saveContour,
+  startCalcJob,
   type CalcResult,
   type GeoJsonPolygon,
   type SavedContour,
 } from "../api";
-import { CALC_STEPS } from "../data/mock";
 import { formatArea, formatNumber } from "./ui";
 import "./Wizard.css";
 import { SAMPLE_CONTOURS, type SampleContour } from "../data/sampleContours";
 import DrawMap, { type LatLon } from "./DrawMap";
+
+/* Ждёт окончания фоновой задачи, сообщая о каждом шаге.
+
+   Опрос, а не сокет: сокет ради одного экрана — это ещё один канал,
+   который надо поднимать, переподключать и чинить. Раз в две секунды
+   более чем достаточно для расчёта, идущего минуты.
+
+   Предел на число опросов стоит намеренно: задача, висящая полчаса, —
+   это сломанная задача, и честнее сказать об этом, чем крутить точки
+   бесконечно. Сама задача при этом не пропадает: она в базе, и её
+   можно найти по номеру. */
+async function waitForJob(
+  jobId: string,
+  onStep: (state: { steps: string[]; step: number }) => void
+): Promise<CalcResult> {
+  const EVERY_MS = 2000;
+  const LIMIT = 900; // полчаса
+
+  for (let i = 0; i < LIMIT; i++) {
+    const state = await getCalcJob(jobId);
+    onStep({ steps: state.steps, step: state.step });
+
+    if (state.status === "done" && state.result) return state.result;
+    if (state.status === "failed") {
+      throw new ApiError(state.error ?? "Расчёт не удался.", 500);
+    }
+    await new Promise((resolve) => setTimeout(resolve, EVERY_MS));
+  }
+  throw new ApiError(
+    `Расчёт идёт дольше получаса. Задача ${jobId} не пропала — она записана и продолжает считаться.`,
+    504
+  );
+}
 
 /* Мастер добавления участка. Требования FR-18 — FR-24.
 
@@ -56,6 +89,19 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     </WizardCtx.Provider>
   );
 }
+
+/* Шаги до того, как сервер назвал свои. Показывается доли секунды —
+   между нажатием и ответом на запрос постановки задачи. */
+const DEFAULT_STEPS = ["Проверяем контур и период"];
+
+/* Пары лет, по которым есть данные. Те же, что на экране участка: один
+   набор, один список периодов. */
+const PERIODS: [number, number][] = [
+  [2019, 2024],
+  [2019, 2021],
+  [2021, 2024],
+  [2023, 2024],
+];
 
 const TITLES = [
   "Добавить участок",
@@ -241,7 +287,22 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
   const [saveError, setSaveError] = useState("");
   const [calc, setCalc] = useState<CalcResult | null>(null);
   const [calcError, setCalcError] = useState("");
+  /* Период расчёта. Раньше на сервер всегда уходило 2019—2024, какой бы
+     период ни был выбран: выбор на экране был, а в запросе его не было.
+     Держим его здесь и отправляем именно его. */
+  const [yearStart, setYearStart] = useState(2019);
+  const [yearEnd, setYearEnd] = useState(2024);
+
   const [calcPending, setCalcPending] = useState(false);
+  /* Фоновая задача: номер, шаги и на каком мы сейчас.
+
+     Расчёт по контуру вне набора читает данные из открытых источников и
+     занимает минуты. Держать всё это время открытое окно нельзя — на
+     защите белый экран на три минуты хуже, чем отсутствие функции.
+     Задача живёт в базе, окно можно закрыть, а по номеру её найдут
+     снова. Шаги приходят с сервера, а не крутятся здесь по таймеру:
+     показывать движение там, где ничего не происходит, — это врать. */
+  const [job, setJob] = useState<{ id: string; steps: string[]; step: number } | null>(null);
 
   const navigate = useNavigate();
 
@@ -424,19 +485,23 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
 
     const geom = requestGeometry();
     if (!geom) {
-      setCalcError(
-        method === "draw"
-          ? "Обводка на карте задаёт контур в координатах экрана, а не в градусах. " +
-              "Для расчёта загрузите файл границы или введите координаты вершин."
-          : "Граница не задана в пригодном для расчёта виде."
-      );
+      setCalcError("Граница не задана в пригодном для расчёта виде.");
       return;
     }
 
     setCalcPending(true);
+    setJob(null);
     try {
-      // Период по умолчанию — весь доступный диапазон кейса.
-      const result = await postCalc({ geometry: geom, year_start: 2019, year_end: 2024 });
+      const started = await startCalcJob({
+        geometry: geom,
+        year_start: yearStart,
+        year_end: yearEnd,
+      });
+      setJob({ id: started.job_id, steps: started.steps, step: 0 });
+
+      const result = await waitForJob(started.job_id, (state) =>
+        setJob({ id: started.job_id, steps: state.steps, step: state.step })
+      );
       setCalc(result);
 
       /* Контур сохраняется сразу после расчёта. Раньше загруженный файл
@@ -464,7 +529,7 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     } catch (err) {
       // Причина от сервиса показывается как есть: «контур вне набора»,
       // «площадь превышает предел». Выдумывать числа вместо неё нельзя.
-      setCalcError(err instanceof ApiError ? err.message : "Не удалось посчитать участок");
+      setCalcError(err instanceof ApiError ? err.message : String(err) || "Не удалось посчитать участок");
     } finally {
       setCalcPending(false);
     }
@@ -720,6 +785,29 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
               </label>
 
               <label className="wz__field">
+                <span>период расчёта</span>
+                <select
+                  className="wz__select"
+                  value={`${yearStart}-${yearEnd}`}
+                  onChange={(e) => {
+                    const [from, to] = e.target.value.split("-").map(Number);
+                    setYearStart(from);
+                    setYearEnd(to);
+                  }}
+                >
+                  {PERIODS.map(([from, to]) => (
+                    <option key={`${from}-${to}`} value={`${from}-${to}`}>
+                      {from}—{to}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="wz__note">
+                Период уходит на сервер тем, который выбран здесь. Границы диапазона заданы
+                набором: биомасса есть с 2019 по 2024, и расчёт вне этих лет отклоняется.
+              </p>
+
+              <label className="wz__field">
                 <span>
                   источник границы <em>обязательно</em>
                 </span>
@@ -767,31 +855,58 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
           {step === 3 && (
             <>
               <ul className="wz__checks">
-                {CALC_STEPS.map((s, i) => {
-                  const done = calc !== null || (!calcPending && !calcError);
+                {(job?.steps ?? DEFAULT_STEPS).map((label, i) => {
+                  /* Шаг отмечается пройденным, когда сервер сказал, что
+                     он пройден, — а не когда истёк наш таймер. */
                   const state = calcError
-                    ? "wait"
+                    ? i < (job?.step ?? 0)
+                      ? "ok"
+                      : "wait"
                     : calc !== null
                       ? "ok"
-                      : calcPending && i === 0
-                        ? "run"
-                        : "wait";
+                      : job !== null && i < job.step
+                        ? "ok"
+                        : job !== null && i === job.step
+                          ? "run"
+                          : calcPending && i === 0 && job === null
+                            ? "run"
+                            : "wait";
                   return (
-                    <li key={s.label}>
+                    <li key={label}>
                       <span className={`wz__dot wz__dot--${state}`}>
                         {state === "ok" ? "✓" : state === "run" ? "⟳" : ""}
                       </span>
                       <b style={state === "wait" ? { color: "var(--c-muted-alt)" } : undefined}>
-                        {s.label}
+                        {label}
                       </b>
-                      <span className="wz__val">{done && calc !== null ? "готово" : ""}</span>
+                      <span className="wz__val">{state === "ok" ? "готово" : ""}</span>
                     </li>
                   );
                 })}
               </ul>
               <div className="wz__track">
-                <span style={{ width: calc !== null ? "100%" : calcPending ? "60%" : "0%" }} />
+                <span
+                  style={{
+                    // Полоса идёт по пройденным шагам, а не по таймеру:
+                    // движение на экране должно означать движение расчёта.
+                    width:
+                      calc !== null
+                        ? "100%"
+                        : job !== null
+                          ? `${Math.round((job.step / Math.max(job.steps.length, 1)) * 100)}%`
+                          : calcPending
+                            ? "6%"
+                            : "0%",
+                  }}
+                />
               </div>
+              {job !== null && calc === null && !calcError && (
+                <p className="wz__note">
+                  Задача {job.id} записана. Окно можно закрыть — расчёт продолжится, и результат
+                  найдётся в журнале запусков по этому номеру.
+                </p>
+              )}
+
               {calcError ? (
                 <p className="wz__note" style={{ color: "#9c3f66" }}>
                   {calcError}

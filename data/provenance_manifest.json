@@ -1,0 +1,598 @@
+{
+  "schema_version": "1.0",
+  "scope": "published demo results; hashes identify inputs and outputs but do not replace scientific validation",
+  "generated_from": "ESA CCI Biomass v7.0, Hansen GFC v1.13, MODIS MCD64A1 061",
+  "published_payload": {
+    "path": "app/src/data/case-data.json",
+    "size_bytes": 8030801,
+    "sha256": "0ce6ac59e78ccdcf941a7b9156641d3eb20cea5423a89dfb3c9d0787214f23b4"
+  },
+  "calculation_code": [
+    {
+      "path": "forestproof_core/case_calculation.py",
+      "size_bytes": 21576,
+      "sha256": "52756be327db063aea238a6701148ae0b5e4603badc3d79a213a0a9e395e7fa8"
+    },
+    {
+      "path": "tools/extract_case_data.py",
+      "size_bytes": 35677,
+      "sha256": "1f01f9b7eef25cf3b960e6b81e32e699793be2dfe8bd3b5a0e7a2ccaf67a703b"
+    },
+    {
+      "path": "tools/geotiff.py",
+      "size_bytes": 18240,
+      "sha256": "ab62443e9993307f1b5462f89f2d102028f5575b19cde478f722efebfe868772"
+    }
+  ],
+  "methodology": [
+    {
+      "path": "data/methodology/parameters.csv",
+      "size_bytes": 2997,
+      "sha256": "d6db08dcc9a372204d2d32a030b7b2e31eb3cd7b40a85e60d5494d1f279d267b"
+    },
+    {
+      "path": "data/methodology/baseline.csv",
+      "size_bytes": 26098,
+      "sha256": "5552a6542ea508eaf5690f2846420b18aab498abe09f6c14f337753ea7b69fa2"
+    },
+    {
+      "path": "data/sources.csv",
+      "size_bytes": 6605,
+      "sha256": "87b69d65cbb9d9ab0525ef498d54cc30e2328dbfe0578848a6548b46556ada25"
+    }
+  ],
+  "areas": [
+    {
+      "aoi_id": "RU_TVER_01",
+      "origin": "provided_case_area",
+      "geometry_sha256": "e413e4dced17ad0685b839ee2a779bf2d43f0adf8fc3c38a29a54354522193dd",
+      "baseline_rows_sha256": "69136b7e4f9bac44f143a9032bbc17b14370046c8458d75e083a571be60a91d3",
+      "published_result_sha256": "d65e60aed97e5c44acc86e13c7e0f01b9bb91b2d3dfedd0f2a02f37513f1e708",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_TVER_01_stock.png",
+          "size_bytes": 6784,
+          "sha256": "e6b825d1c4a66682ea64a6a91641dc28dae567d236dadfce3cb6f11312e498d3"
+        },
+        {
+          "path": "app/public/maps/RU_TVER_01_change.png",
+          "size_bytes": 11308,
+          "sha256": "744d7ddd29bdc0a4a95181d4349e556dd88f0a281a6c2543453190f4514cf53c"
+        },
+        {
+          "path": "app/public/maps/RU_TVER_01_loss.png",
+          "size_bytes": 370,
+          "sha256": "871833202a3b9438aa665b669dc887a56bc47081a4710fd064a12b263e777faa"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.13 (вложен в набор)",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_TVER_01 --verify",
+        "required_cache": "case archive or current versioned open-source cache"
+      }
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_02",
+      "origin": "provided_case_area",
+      "geometry_sha256": "1fd6c09d532b3061c4d5511829cb7482692d0f30447381b180f8d7d63aa21a80",
+      "baseline_rows_sha256": "21f41b091da6356e69d6cd74db5bb8f7c265ddaaa0cd261231e721cd20f0707a",
+      "published_result_sha256": "150d5970d1fae5cf1b6dab8a2a45f6f3692e5dcdb533735235ec18105989dfa8",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_VOLOGDA_02_stock.png",
+          "size_bytes": 6916,
+          "sha256": "9550378d1339162683481e0122f469f32fd643a5b3cf92d8ea209f6392865454"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_02_change.png",
+          "size_bytes": 10636,
+          "sha256": "553774ac46afa4bcf115952742a9c6c369da64bfa23a598305c42a214fb19ec8"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_02_loss.png",
+          "size_bytes": 4343,
+          "sha256": "631f43a866b1c6f3fd6058d834e9c136c283b8f961ac1c191eb878a17b5a451f"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.13 (вложен в набор)",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_VOLOGDA_02 --verify",
+        "required_cache": "case archive or current versioned open-source cache"
+      }
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_03",
+      "origin": "provided_case_area",
+      "geometry_sha256": "e04f7013dc855b8c514e9b240cf3628a55616a7f58938f4eac8af5e21d656d2d",
+      "baseline_rows_sha256": "fef068e183b534c8806b057878b9516cbd5ab16fd1beffa4aab2936131d97dc7",
+      "published_result_sha256": "0930593b7ac36a11559be022a905c9c54d45f0725e136395d76a633454750482",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_MORDOVIA_03_stock.png",
+          "size_bytes": 5621,
+          "sha256": "2f1699a482801094e499fb6d988416c0134ca48b06fbe262b3989e3e3bf09636"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_03_change.png",
+          "size_bytes": 8118,
+          "sha256": "7877c718d4622ead43595591ddeed48c7a9421fa3410541d24b0b3c1094482da"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_03_loss.png",
+          "size_bytes": 8475,
+          "sha256": "bcd5b334f84fa90b76860230ef786531af00574a67756dc34d722326d82acbe8"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.13 (вложен в набор)",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_MORDOVIA_03 --verify",
+        "required_cache": "case archive or current versioned open-source cache"
+      }
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_04",
+      "origin": "provided_case_area",
+      "geometry_sha256": "fdaffb92157add6241e629c76c9467026dc7e88b3ef8c9fa3f9ba363a7cab449",
+      "baseline_rows_sha256": "7bc1f7ad2430b647d9b5728ea341fc4f629850693de3a526afaae265e43ffcd3",
+      "published_result_sha256": "853c9db23be8fca2b7c31691a59fa7fceaf557db81899b879ceb76f470f0b9ba",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_MORDOVIA_04_stock.png",
+          "size_bytes": 2348,
+          "sha256": "26b9c83b738445e076438fd76afbb0e309324bd00f9312e8c040f6aaf3a219ba"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_04_change.png",
+          "size_bytes": 7669,
+          "sha256": "92f54ff27afb51e79bec9793f5d901d865dec5f68537be382cc303199e5c2df6"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_04_loss.png",
+          "size_bytes": 4794,
+          "sha256": "987e607e669636d330f36426bfaf672f209a3875dbc0dfc9db19d2dea687cfa2"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.13 (вложен в набор)",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_MORDOVIA_04 --verify",
+        "required_cache": "case archive or current versioned open-source cache"
+      }
+    },
+    {
+      "aoi_id": "RU_TVER_05",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "f6be1c656dc187c6ff45f8c2709f7ad0edb2fb6e463b10c853e11e6153b83399",
+      "baseline_rows_sha256": "c9cd440575b642ca820f0859fb6881157c34c9622374c58cff7160f67d5f4132",
+      "published_result_sha256": "870c5067d9873215dc1477344397fafd17a292980839f4512944740225af75f0",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_TVER_05_stock.png",
+          "size_bytes": 7505,
+          "sha256": "bdce4038228e41043be4a9b5043a7c834470c27542e3aaf4ef558f260989cc1e"
+        },
+        {
+          "path": "app/public/maps/RU_TVER_05_change.png",
+          "size_bytes": 11983,
+          "sha256": "947c22ed740252643a94d15b5a8b8a2b3dccf59df789a2d671f8dc2d44a750b4"
+        },
+        {
+          "path": "app/public/maps/RU_TVER_05_loss.png",
+          "size_bytes": 750,
+          "sha256": "6a76ec85e3c45c8cd7b7df55c2b4bbf1dc1b0d1fcc3b9ea4b48df74b25d45a7a"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_030E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_TVER_05 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    },
+    {
+      "aoi_id": "RU_TVER_06",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "9a3f71df9f082348afb6a81ddabcd8bc4375b2db8bcda01430d0541fccdbe945",
+      "baseline_rows_sha256": "266d6e0475e9f1c9ca2b72f69144f2ddc43ec6301ca2b4fc1c514090806d0f5b",
+      "published_result_sha256": "cc26d7c35ce2f803648603c2ee02a2a9f0e50c7125ba0e8d78c79af171ca56c8",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_TVER_06_stock.png",
+          "size_bytes": 6713,
+          "sha256": "486ca238fd38724ed7c562340559631e3c7afd9cbb972670e3bdec6775315563"
+        },
+        {
+          "path": "app/public/maps/RU_TVER_06_change.png",
+          "size_bytes": 10365,
+          "sha256": "a45bbabc7982464b99b1b63cf0c0cfd9796e15168c28ba9e48cce3b0f412970e"
+        },
+        {
+          "path": "app/public/maps/RU_TVER_06_loss.png",
+          "size_bytes": 935,
+          "sha256": "f025e4fc7e5ff25f1bc3eb01482d4b2d00c65864405e88d8c8656bef2d7c13b1"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_030E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_TVER_06 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_07",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "082bc8b016b6c4933e986cd2f7aff20071deccc5d2284f945e54c38a3d6c7388",
+      "baseline_rows_sha256": "d094656588310ecda5a9c6e4b135a4e571a9f9d939470e5ff1c90b445a5ca57d",
+      "published_result_sha256": "5ae6635fcf4e7dead9df99b781065af6955b13d5df15e2891335c174137e9d27",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_VOLOGDA_07_stock.png",
+          "size_bytes": 7558,
+          "sha256": "784dbf8b6b3fb4f3ecd17307941874d1339f8963c43958495858500594b0fd94"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_07_change.png",
+          "size_bytes": 11489,
+          "sha256": "24aebf17a4ce596a96547e08da3b6a2718bbe1b58cac59f81f70be5e9903bab7"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_07_loss.png",
+          "size_bytes": 2740,
+          "sha256": "0cbce3729d47fa48d895d979f087d5758ddf0f0becfcd0d1a892f5b62409e2bb"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_040E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_VOLOGDA_07 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_08",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "27f5a41c6f67f55c49fa377dd274c36d6d1583b091b76f5e223a9f2d4adf6029",
+      "baseline_rows_sha256": "49df5d7a3736c3302bf1f0c38e637858d3c6c091a1c7aa725765900d26ccf869",
+      "published_result_sha256": "1e8ecdaea656976e4ea57389d2bcc57255733c13ce64f33f12368bacc798f8a9",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_VOLOGDA_08_stock.png",
+          "size_bytes": 7165,
+          "sha256": "3444ddd168911e72a81e119ca152902c981fe5c98d4c00ff00680e03584a72f2"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_08_change.png",
+          "size_bytes": 11356,
+          "sha256": "73cc533c7f930895c5076ad2b0dd5ad86188ba990d83716d2062dd1520b73d42"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_08_loss.png",
+          "size_bytes": 1952,
+          "sha256": "e70df61dd00d594c886a64f2c5785f30b054edf8721bdf8e273537737dec0417"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_040E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_VOLOGDA_08 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    },
+    {
+      "aoi_id": "RU_VOLOGDA_09",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "c570c35b298b3c339717b2f5f673ed639c7776c647dff97231dbfa6a126d328c",
+      "baseline_rows_sha256": "6d86c1ffbd81f3810b30b138b960bae526aefefc94457004fadeed30a319f4c7",
+      "published_result_sha256": "78476908e110a195a551faaba88d6513da2bb22148bbea8ab299604a648f2ea9",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_VOLOGDA_09_stock.png",
+          "size_bytes": 6823,
+          "sha256": "a87a1a45aab62542a78d866bfd0e7ebd7e3a6e4966c12b5eb43ec3ba9600ade5"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_09_change.png",
+          "size_bytes": 10822,
+          "sha256": "70253a5744bc0e5ce0193c897d008f36c2afcdcab29bcca5e1d864f321a0169a"
+        },
+        {
+          "path": "app/public/maps/RU_VOLOGDA_09_loss.png",
+          "size_bytes": 1697,
+          "sha256": "9f29eff173bbc55aef8f6f1ea52ea72b4b2ed04706a1bb6d79202a4bf73285a6"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_040E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_VOLOGDA_09 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_10",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "93f2d1881acac04eb4b77b208597f63969964a401291556e208adeab2174e568",
+      "baseline_rows_sha256": "5da799fc21e2ae2e07fd7307adb9a52919777e1ba56bf49e8f14e12c8704252f",
+      "published_result_sha256": "d2cb7a4e3e95c1a8f08857eb66ae67c543871cef007f15ed7663caa11a55affc",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_MORDOVIA_10_stock.png",
+          "size_bytes": 3754,
+          "sha256": "115334569a92a26e1a0d9f0f2f66eeb3471fbaf87bdf5a742aac64e31f4ced25"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_10_change.png",
+          "size_bytes": 5568,
+          "sha256": "e38bcc071f90cc58864ee7e5fc03e4b2a022795926e929ba78b15c05381236d0"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_10_loss.png",
+          "size_bytes": 2111,
+          "sha256": "b10f657617ce10c815333d5d2d6ffaa7eba8639223bf50c11566bbf4e05dabf7"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_040E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_MORDOVIA_10 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_11",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "6c87881d32ad820f946840c7400090f3ed7c43eb3e526f72e886d08852c0a6d4",
+      "baseline_rows_sha256": "43d0beb48bd3598c4a1702e2e52a596384e51eb481cb35dee080e123e2decd3f",
+      "published_result_sha256": "3d3107854662b96024634a7898092d40679d73f7a2fdaff2fe6f6dbcaa05f24d",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_MORDOVIA_11_stock.png",
+          "size_bytes": 7016,
+          "sha256": "c0933f8f5a12c5f62c37c745363531cbd03cdf62bd9a4761ee5e9072222dcddd"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_11_change.png",
+          "size_bytes": 10643,
+          "sha256": "cbb2c0ec0dd596ce639778e124ecc6e8776d7ff2324fbf80a000e7fc310ab958"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_11_loss.png",
+          "size_bytes": 1939,
+          "sha256": "575e1faf0ed9475ca05d6eb841f0c7d690f6769377214695b84b0c9a3d0a7d06"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_040E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_MORDOVIA_11 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_12",
+      "origin": "team_derived_area_from_open_tiles",
+      "geometry_sha256": "aba848050bfb1a4fd0b54c07f17e08beab98f7acc6a676ab3817632b28991f35",
+      "baseline_rows_sha256": "b44ff97646500c987676c91fb1f83c3e67175e8283ac104806c95cfb8cbbe350",
+      "published_result_sha256": "dc986d1f36f690e56e040f10492f7edf6218fee3afddd36f08440a1b71522d0f",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024
+      ],
+      "maps": [
+        {
+          "path": "app/public/maps/RU_MORDOVIA_12_stock.png",
+          "size_bytes": 7001,
+          "sha256": "db73b73ae56bd2c00d7a3e24c65ee55ec91047a02ba914287c150cf0f299b230"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_12_change.png",
+          "size_bytes": 10569,
+          "sha256": "9766287fcd1687d719f1bc60b34b1af601213b2abd9b0ce0ef018f73a19ecaba"
+        },
+        {
+          "path": "app/public/maps/RU_MORDOVIA_12_loss.png",
+          "size_bytes": 1775,
+          "sha256": "e119fa4bc67fb9cea9207ab5c203eeb52b64f2e97505b29cba5d6fdb7b9bda01"
+        }
+      ],
+      "source_products": [
+        "ESA CCI Biomass v7.0",
+        "Hansen GFC v1.12 (тайл) 60N_040E",
+        "MODIS MCD64A1 v6.1 where available",
+        "Sentinel-2 L2A where available"
+      ],
+      "reproduction": {
+        "command": "python tools/extract_case_data.py --data data --out app/src/data/case-data.json --maps app/public/maps --only RU_MORDOVIA_12 --verify",
+        "required_cache": "archived Hansen GFC 2024 v1.12 cache used for this published result; regeneration with current v1.13 must create a new result version"
+      }
+    }
+  ]
+}

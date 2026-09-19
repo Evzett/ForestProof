@@ -43,9 +43,9 @@ def calculate(
     сервере (KAN-78). Наблюдателю остаётся просмотр участков набора: они
     посчитаны заранее и открываются вообще без обращения к API.
     """
-    if body.geometry is None and body.aoi_id is None:
-        raise HTTPException(status_code=422, detail="нужен geometry или aoi_id")
-
+    # Проверка «ровно один источник контура» и порядок лет — в схеме
+    # запроса (CalcRequest): отказ приходит до входа в обработчик и
+    # одинаков для всех точек, где расчёт запускается.
     geometry = body.geometry
     # Контур прислали или это участок набора по идентификатору — от этого
     # зависит, искать ли под него свои снимки.
@@ -143,9 +143,9 @@ def start_calc_job(
     секунды, и гонять его через задачу незачем. Фон нужен контуру вне
     набора — там данные едут из открытых источников минутами.
     """
-    if body.geometry is None and body.aoi_id is None:
-        raise HTTPException(status_code=422, detail="нужен geometry или aoi_id")
-
+    # Проверка «ровно один источник контура» и порядок лет — в схеме
+    # запроса (CalcRequest): отказ приходит до входа в обработчик и
+    # одинаков для всех точек, где расчёт запускается.
     geometry = body.geometry
     if geometry is None:
         geometry = case_service.load_case_set().geometries.get(body.aoi_id)

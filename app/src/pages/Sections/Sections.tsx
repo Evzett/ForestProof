@@ -1,12 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../components/ui";
+import {
+  Card,
+  Checkbox,
+  FilterToggle,
+  formatDecimal,
+  formatNumber,
+  plural,
+} from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
 import { AREAS, ASSUMPTIONS, DATASETS, EVENTS, PARAMETERS, YEARS } from "../../data/case";
 import type { Area, Period } from "../../data/case";
 import { useAiSummary } from "../../data/aiSummary";
 import "./Sections.css";
-import { postCalc, type CalcResult } from "../../api";
+import { getCalculations, postCalc, type CalcResult, type JournalEntry } from "../../api";
+import { useSession } from "../../data/session";
 
 /* Журнал расчётов и наблюдение.
    Методика вынесена в отдельный модуль — см. Methodology.tsx. */
@@ -73,6 +81,114 @@ function downloadCalc(entry: Entry) {
   link.download = `${entry.calc_id}.json`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+/* Журнал запусков сервиса: кто и когда считал.
+
+   Отдельной карточкой, а не колонкой в таблице выше, и это не лень.
+   Таблица выше — участки набора: они посчитаны заранее, автора у них
+   нет, и приписать его задним числом значило бы подписать чужой
+   работой. Здесь — то, что запускали люди, и у каждой строки есть имя.
+
+   Журнал открыт всем: в нём номера, версии методики и хеши входа, а не
+   содержимое чужих участков. Скрывать его значило бы отнять у
+   проверяющего возможность увидеть, что расчёт вообще был. */
+function ServiceJournal() {
+  const { session } = useSession();
+  const [mine, setMine] = useState(false);
+  const [rows, setRows] = useState<JournalEntry[] | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getCalculations(mine)
+      .then((r) => !cancelled && setRows(r.calculations))
+      .catch((err) => {
+        if (cancelled) return;
+        setRows([]);
+        // Недоступный сервис — штатное состояние демо: участки набора
+        // открываются и без него. Говорим об этом, а не молчим.
+        setError(err instanceof Error ? err.message : "Журнал сервиса недоступен.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mine]);
+
+  if (rows !== null && rows.length === 0 && !mine && !error) return null;
+
+  return (
+    <Card
+      title="Журнал запусков"
+      note={rows ? `${rows.length} ${plural(rows.length, ["запись", "записи", "записей"])}` : "…"}
+      className="mb20"
+    >
+      <div className="selbar" style={{ marginBottom: 14 }}>
+        <span className="selbar__hint">
+          Расчёты, запущенные людьми: загруженные контуры и пересчёты по запросу.
+        </span>
+        <span className="selbar__spacer" />
+        <FilterToggle on={!mine} onClick={() => setMine(false)}>
+          все
+        </FilterToggle>
+        <FilterToggle on={mine} onClick={() => setMine(true)}>
+          мои
+        </FilterToggle>
+      </div>
+
+      {error && <p className="ov-note">{error}</p>}
+
+      {rows && rows.length === 0 && !error && (
+        <p className="ov-note">
+          {mine
+            ? session.authenticated
+              ? "За вами запусков расчёта пока нет."
+              : "Своих запусков нет: вы смотрите сервис без входа."
+            : "Запусков пока не было."}
+        </p>
+      )}
+
+      {rows && rows.length > 0 && (
+        <div className="tbl__scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>расчёт</th>
+                <th>кто запустил</th>
+                <th>когда</th>
+                <th>методика / алгоритм</th>
+                <th>хеш входных данных</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.calc_id}>
+                  <td>
+                    <b>{row.calc_id}</b>
+                  </td>
+                  <td>
+                    {/* Расчёты старше ролей автора не имеют, и выдумывать
+                        его нельзя: так и пишем. */}
+                    {row.author ?? row.created_by ?? (
+                      <span style={{ color: "var(--c-muted-alt)" }}>автор не записан</span>
+                    )}
+                    {row.mine && <span className="calc-mine">вы</span>}
+                  </td>
+                  <td style={{ color: "var(--c-muted-alt)" }}>
+                    {new Date(row.calculated_at).toLocaleString("ru-RU")}
+                  </td>
+                  <td style={{ color: "var(--c-muted-alt)" }}>
+                    {row.methodology_version} / {row.algorithm_version}
+                  </td>
+                  <td style={{ color: "var(--c-muted-alt)", fontSize: 11 }}>{row.input_hash}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  );
 }
 
 export function Calculations() {
@@ -224,6 +340,8 @@ export function Calculations() {
           можно было перепроверить независимо, не доверяя нашему интерфейсу.
         </p>
       </Card>
+
+      <ServiceJournal />
 
       <Card title="Зачем журнал">
         <div className="calc-why">

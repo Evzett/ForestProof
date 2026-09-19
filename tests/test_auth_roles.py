@@ -26,7 +26,9 @@ from app import auth, models  # noqa: E402
 
 
 def user(role: models.Role) -> models.User:
-    return models.User(login="кто-то", display_name="Кто-то", password_hash="", role=role)
+    return models.User(
+        login="кто-то", display_name="Кто-то", password_hash="", role=role, blocked=False
+    )
 
 
 # --- пароли ---------------------------------------------------------------
@@ -94,30 +96,63 @@ def test_viewer_is_the_default_without_login():
 
 def test_viewer_cannot_calculate():
     with pytest.raises(HTTPException) as exc:
-        auth.require_analyst(user(models.Role.viewer))
+        auth.require_operator(user(models.Role.viewer))
     assert exc.value.status_code == 403
 
 
 def test_anonymous_cannot_calculate():
     with pytest.raises(HTTPException) as exc:
-        auth.require_analyst(None)
+        auth.require_operator(None)
     assert exc.value.status_code == 401
 
 
-def test_analyst_can_calculate_but_not_administer():
-    assert auth.require_analyst(user(models.Role.analyst)) is not None
+def test_investor_looks_but_does_not_touch():
+    """Инвестор смотрит и оценивает, но не правит данные, по которым сам
+    принимает решение. Это и есть смысл отдельной роли."""
     with pytest.raises(HTTPException) as exc:
-        auth.require_admin(user(models.Role.analyst))
+        auth.require_operator(user(models.Role.investor))
+    assert exc.value.status_code == 403
+    assert auth.at_least(user(models.Role.investor), models.Role.investor)
+
+
+def test_operator_can_calculate_but_not_administer():
+    assert auth.require_operator(user(models.Role.operator)) is not None
+    with pytest.raises(HTTPException) as exc:
+        auth.require_admin(user(models.Role.operator))
     assert exc.value.status_code == 403
 
 
 def test_admin_can_do_both():
-    assert auth.require_analyst(user(models.Role.admin)) is not None
+    assert auth.require_operator(user(models.Role.admin)) is not None
     assert auth.require_admin(user(models.Role.admin)) is not None
+
+
+def test_blocked_account_is_refused_whatever_its_role():
+    """Блокировка сильнее роли. Заблокированного администратора не
+    пускают — иначе блокировка не значила бы ничего."""
+    blocked = user(models.Role.admin)
+    blocked.blocked = True
+    with pytest.raises(HTTPException) as exc:
+        auth.require_admin(blocked)
+    assert exc.value.status_code == 403
 
 
 def test_roles_are_ordered_by_privilege():
     """Порядок ролей задан явно: добавление новой роли мимо него сразу
     развалит сравнение прав, а не тихо разрешит лишнее."""
-    assert auth._ORDER[models.Role.viewer] < auth._ORDER[models.Role.analyst]
-    assert auth._ORDER[models.Role.analyst] < auth._ORDER[models.Role.admin]
+    assert auth._ORDER[models.Role.viewer] < auth._ORDER[models.Role.investor]
+    assert auth._ORDER[models.Role.investor] < auth._ORDER[models.Role.operator]
+    assert auth._ORDER[models.Role.operator] < auth._ORDER[models.Role.admin]
+
+
+def test_viewer_is_not_assignable():
+    """`viewer` — вид сервиса до входа, а не назначение. В списке ролей,
+    которые администратор может выдать, его быть не должно: иначе в
+    панели появилось бы «понизить до гостя» — действие, которого в
+    сервисе не существует. Для этого есть блокировка."""
+    assert models.Role.viewer not in auth.ASSIGNABLE
+    assert set(auth.ASSIGNABLE) == {
+        models.Role.investor,
+        models.Role.operator,
+        models.Role.admin,
+    }

@@ -39,7 +39,17 @@ USER_AGENT = "ForestProof/1.0 (KosmoHackathon 2026; carbon stock verification)"
 TIMEOUT = 120
 
 CCI_BASE = "https://dap.ceda.ac.uk/neodc/esacci/biomass/data/agb/maps/v7.0/geotiff"
-GFC_BASE = "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2024-v1.12"
+# Версия Hansen GFC вынесена в константу и подставляется и в адрес, и в
+# имя файла. Раньше «2024-v1.12» было написано в двух местах руками, и
+# при обновлении одно из них осталось бы старым — а имя файла и папка
+# обязаны сходиться, иначе загрузка молча даёт 404.
+#
+# Набор кейса собран на v1.12, новые загрузки идут по v1.13. Это
+# записано в происхождении каждого файла: пересчёт на новой версии
+# публикуется как новый результат, а не подменяет старые числа задним
+# числом.
+GFC_VERSION = "2025-v1.13"
+GFC_BASE = f"https://storage.googleapis.com/earthenginepartners-hansen/GFC-{GFC_VERSION}"
 
 
 @dataclass(frozen=True)
@@ -108,7 +118,7 @@ def cci_url(tile: str, year: int, variable: str = "AGB") -> str:
 
 
 def gfc_url(tile: str, layer: str) -> str:
-    return f"{GFC_BASE}/Hansen_GFC-2024-v1.12_{layer}_{tile}.tif"
+    return f"{GFC_BASE}/Hansen_GFC-{GFC_VERSION}_{layer}_{tile}.tif"
 
 
 def _download(url: str, target: Path) -> int:

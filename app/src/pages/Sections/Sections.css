@@ -509,3 +509,13 @@
 .mon-row--on td:first-child {
   font-weight: 500;
 }
+
+/* Отметка «вы» рядом с автором расчёта: свою строку видно без чтения. */
+.calc-mine {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(167, 187, 47, 0.25);
+  font-size: 10px;
+  color: var(--c-ink);
+}

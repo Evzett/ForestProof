@@ -20,6 +20,7 @@ import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -52,6 +53,11 @@ from forestproof_core.case_calculation import CaseCalculationConfig  # noqa: E40
 from tools.extract_case_data import build_aoi, read_year  # noqa: E402
 
 DATA_DIR = Path(os.environ.get("FORESTPROOF_DATA_DIR") or REPO_ROOT / "data")
+
+# Проверяемый результат по участкам набора, собранный
+# `tools/extract_case_data.py`. Тот же файл читает фронт — это один
+# артефакт, а не вторая копия чисел.
+PUBLISHED_RESULTS_PATH = REPO_ROOT / "app" / "src" / "data" / "case-data.json"
 
 # Картинки расчётов по загруженным контурам. Лежат внутри api/data —
 # оттуда их отдаёт статика (/data), и отдельной раздачи не нужно.
@@ -201,6 +207,72 @@ def geometry_bbox(geometry: dict) -> tuple[float, float, float, float]:
     if not all(-180 <= lon <= 180 for lon in lons) or not all(-90 <= lat <= 90 for lat in lats):
         raise CalculationError("координаты вне диапазона WGS 84: ожидаются градусы широты и долготы")
     return min(lons), min(lats), max(lons), max(lats)
+
+
+@lru_cache(maxsize=1)
+def load_published_results() -> dict[str, dict]:
+    """Сохранённый проверяемый результат по участкам набора.
+
+    Он собран `tools/extract_case_data.py` из тех же растров и тем же
+    кодом, что считает всё остальное; его происхождение записано в
+    `data/provenance_manifest.json`. Поэтому это не «заглушка на случай
+    отсутствия данных», а именно результат — просто посчитанный заранее.
+
+    Пользуется им только неизменённый участок набора. Контур
+    пользователя всегда идёт через растры и никогда не приближается
+    этим файлом: приблизить чужой участок чужими числами — ровно то, чего
+    сервис не делает.
+    """
+    if not PUBLISHED_RESULTS_PATH.exists():
+        return {}
+    payload = json.loads(PUBLISHED_RESULTS_PATH.read_text(encoding="utf-8"))
+    return {area["aoi_id"]: area for area in payload.get("areas", [])}
+
+
+def published_area_result(aoi_id: str, year_start: int, year_end: int) -> dict:
+    """Готовый результат по участку набора — без чтения тяжёлых растров.
+
+    Нужен там, где растров организатора на машине нет: демо по каталогу
+    должно открываться и в таком случае. Признак `result_cache.used`
+    отдаётся наружу, чтобы на экране было видно, откуда взялись числа.
+    """
+    validate_request(load_case_set().geometries.get(aoi_id, {}), year_start, year_end)
+    area = load_published_results().get(aoi_id)
+    if area is None:
+        raise CalculationError(
+            f"для участка {aoi_id} нет сохранённого проверяемого результата", status=404
+        )
+    period = next(
+        (
+            item
+            for item in area.get("periods", [])
+            if item.get("year_start") == year_start and item.get("year_end") == year_end
+        ),
+        None,
+    )
+    if period is None:
+        raise CalculationError(
+            f"период {year_start}–{year_end} отсутствует в сохранённом результате"
+        )
+    return {
+        "aoi_id": aoi_id,
+        "parent_area_name": area.get("name"),
+        "geometry_source": "каталог участков, сохранённый воспроизводимый результат",
+        "area_ha": area.get("area_ha"),
+        "series": area.get("series"),
+        "cover_loss": area.get("cover_loss"),
+        "stability": area.get("stability"),
+        "stability_model": stability_forecast(aoi_id),
+        "period": period,
+        "baseline_id": area.get("baseline_id"),
+        "baseline_note": "Общая базовая линия из data/methodology/baseline.csv",
+        "status": "расчёт по условиям кейса, а не сертифицированные единицы",
+        "result_cache": {
+            "used": True,
+            "reason": "точный результат для неизменённого участка каталога",
+            "manifest": "data/provenance_manifest.json",
+        },
+    }
 
 
 def covering_area(geometry: dict) -> dict | None:
@@ -372,9 +444,21 @@ def _maps_dir(geometry: dict, year_start: int, year_end: int) -> Path:
 
 
 def calculate(
-    geometry: dict, year_start: int, year_end: int, *, own_geometry: bool = True
+    geometry: dict,
+    year_start: int,
+    year_end: int,
+    *,
+    own_geometry: bool = True,
+    progress: Callable[[int], None] | None = None,
 ) -> dict:
     """Полный расчёт по контуру. Форма результата — как у участка набора.
+
+    `progress` вызывается номером пройденного шага — от единицы. Шаги те
+    же, что видит пользователь в мастере (`jobs.STEPS`), и отмечаются
+    там, где работа действительно закончена. Без этого полоса прогресса
+    стояла бы на нуле все две-пять минут расчёта, а потом прыгала в
+    сотню: на экране не было бы ничего неверного, но и ничего верного
+    тоже — а обещание «шаги настоящие» превращалось бы в слова.
 
     `own_geometry` — контур прислал пользователь. Тогда под него ищутся
     свои снимки и гари: у участка набора они сняты по его собственной
@@ -388,8 +472,11 @@ def calculate(
     истории. Это и есть заявленная работа сервиса: проверить чужой
     участок, а не показать свой набор.
     """
+    step = progress or (lambda _n: None)
+
     meta = validate_request(geometry, year_start, year_end)
     case = load_case_set()
+    step(1)  # контур и период проверены
 
     derived_baseline = meta is None
     if derived_baseline:
@@ -427,6 +514,11 @@ def calculate(
     # Папка задаётся хешем входа: одинаковый контур за тот же период даёт
     # те же картинки, и второй раз они не перерисовываются.
     maps_dir = _maps_dir(geometry, year_start, year_end)
+    # Чтение биомассы и потерь покрова идёт внутри `build_aoi` одним
+    # проходом: разделить их отметками, не разделив сам вызов, нельзя.
+    # Поэтому оба шага закрываются по его возвращении — честнее, чем
+    # отметить второй заранее.
+    step(2)
 
     area = build_aoi(
         DATA_DIR,
@@ -437,6 +529,9 @@ def calculate(
         case.config,
         geometry,
     )
+
+    step(3)  # биомасса, потери покрова и базовая линия посчитаны
+    step(4)  # карты и рельеф построены тем же вызовом
 
     measured = area.get("area_ha")
     if measured is not None and measured > MAX_AREA_HA:
@@ -471,6 +566,7 @@ def calculate(
     evidence = None
     if own_geometry:
         evidence = _external_evidence(geometry, year_start, year_end, maps_dir)
+    step(5)  # снимки и гари собраны
     # Возвращается ПОЛНЫЙ участок, а не выжимка из него.
     #
     # Раньше отсюда уходило полтора десятка отобранных полей, и загруженный

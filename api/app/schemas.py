@@ -6,7 +6,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ScenarioRequest(BaseModel):
@@ -42,14 +42,32 @@ class CalcRequest(BaseModel):
     """`POST /api/calc` — расчёт по контуру и периоду (документ 06, раздел 6.1).
 
     Контур задаётся либо геометрией GeoJSON, либо идентификатором участка
-    набора. Диапазон лет проверяется в case_service, а не здесь: там же
-    лежит и причина отказа, которую увидит пользователь.
+    набора — ровно одним из двух. Раньше проверка жила в обработчике и
+    ловила только пустой запрос: запрос с обоими полями принимался, и
+    геометрия молча побеждала идентификатор. Человек при этом считал,
+    что считает участок набора.
+
+    Порядок лет тоже проверяется здесь. Перевёрнутый период раньше
+    доходил до расчёта и падал где-то внутри, где причина уже не
+    складывается во внятный ответ.
     """
 
     geometry: dict | None = None
     aoi_id: str | None = None
     year_start: int = Field(ge=2019, le=2024)
     year_end: int = Field(ge=2019, le=2024)
+
+    @model_validator(mode="after")
+    def _one_source_and_forward_period(self) -> "CalcRequest":
+        if (self.geometry is None) == (self.aoi_id is None):
+            raise ValueError(
+                "нужен ровно один источник контура: geometry или aoi_id"
+            )
+        if self.year_end <= self.year_start:
+            raise ValueError(
+                f"конец периода ({self.year_end}) должен быть позже начала ({self.year_start})"
+            )
+        return self
 
 
 class SummaryRequest(BaseModel):

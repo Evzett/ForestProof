@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg2://forestproof:forestproof@db:5432/forestproof"
     environment: str = "development"
     data_dir: str = "data"
+    # Кому разрешено обращаться к API из браузера. Раньше здесь стояла
+    # звёздочка «на время хакатона»: любой сайт мог послать запрос от
+    # имени открытой у человека вкладки. Список задаётся окружением, а в
+    # разработке по умолчанию — наш же фронт.
+    cors_origins: str = "http://localhost:5173,http://localhost"
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     # Языковая модель для краткой справки. Пустой ключ — штатное
     # состояние: сервис обязан работать без неё, показывая шаблонную
