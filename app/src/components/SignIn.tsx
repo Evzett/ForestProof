@@ -10,6 +10,7 @@
    общий `Card`. Собственных цветов здесь нет. */
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "../data/session";
 import "./SignIn.css";
 
@@ -95,7 +96,12 @@ export function SignInDialog({
     }
   };
 
-  return (
+  /* Окно рисуется в корне документа, а не там, где стоит кнопка.
+     Иначе оно остаётся внутри боковой панели и карточек каталога: у них
+     свои слои, и никакой z-index не поднимает потомка выше соседа его
+     родителя. Из-за этого окно входа уезжало под карточки на каждом
+     каталоге. Портал выносит его из всех этих слоёв разом. */
+  return createPortal(
     <div className="signin" role="dialog" aria-modal="true" aria-label="Вход">
       <div className="signin__back" onClick={onClose} />
       <form className="signin__card" onSubmit={submit}>
@@ -154,6 +160,7 @@ export function SignInDialog({
           только хешем — восстановить его нельзя, можно назначить новый.
         </p>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }

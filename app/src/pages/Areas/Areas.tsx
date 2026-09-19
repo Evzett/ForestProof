@@ -85,7 +85,10 @@ export default function Areas() {
   const [sign, setSign] = useState("all");
   const [onlyEvents, setOnlyEvents] = useState(false);
   const [origin, setOrigin] = useState("all");
-  const [picked, setPicked] = useState<string[]>([AREAS[0].aoi_id, AREAS[2].aoi_id]);
+  /* Ничего не отмечено заранее: выбор для сравнения делает человек.
+     Две галочки по умолчанию выглядели как уже принятое за него
+     решение, и первым действием их приходилось снимать. */
+  const [picked, setPicked] = useState<string[]>([]);
   const navigate = useNavigate();
 
   /* Свои контуры живут на сервере: предпосчитать их нельзя, и без API их

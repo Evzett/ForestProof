@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "./components/AppShell";
+import ScrollToTop from "./components/ScrollToTop";
 import Welcome from "./pages/Welcome/Welcome";
 import Overview from "./pages/Overview/Overview";
 import Areas from "./pages/Areas/Areas";
@@ -22,6 +23,7 @@ import { ContourCard } from "./pages/Contours/Contours";
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/app" element={<AppShell />}>
