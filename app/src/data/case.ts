@@ -132,6 +132,22 @@ export type SentinelEvidence = {
 export type Area = {
   aoi_id: string;
   summary?: CalculationSummary;
+  /* Откуда брать картинки этого участка. У набора они лежат в сборке
+     фронта, у загруженного контура — отдаются сервисом со своего адреса.
+     У участков набора поле пустое: их обслуживает путь по умолчанию. */
+  maps_base?: string | null;
+  /* Чем задан участок. У набора — вырезками из продукта, у контура
+     пользователя — геометрией, которую он прислал. */
+  geometry?: unknown;
+  geometry_source?: string;
+  baseline_kind?: string;
+  baseline_note?: string;
+  data_sources?: string[];
+  evidence?: {
+    scenes: { image: string; date: string; role?: string; year?: number }[];
+    events: Record<string, unknown>[];
+    notes: string[];
+  } | null;
   maps: AreaMaps | null;
   terrain: Terrain | null;
   sentinel: SentinelEvidence | null;
@@ -476,3 +492,15 @@ export const ROLE_HINT: Record<string, string> = {
   "ранние потери покрова и последующий пожар":
     "основная потеря случилась задолго до периода анализа, пожар 2021 года пришёлся уже на восстановившийся лес",
 };
+
+/* Адрес картинки участка.
+
+   У участков набора карты и снимки лежат в сборке фронта (`public/maps`),
+   у загруженного контура их отдаёт сервис со своего адреса. Разница ровно
+   в приставке, и держать это знание в каждом месте, где рисуется
+   картинка, — верный способ однажды показать пустоту и не понять почему. */
+export function mapAsset(area: Pick<Area, "maps_base">, file: string): string {
+  if (!area.maps_base) return `/maps/${file}`;
+  const origin = (import.meta.env.VITE_API_BASE ?? "").replace(/\/+$/, "");
+  return `${origin}${area.maps_base}/${file}`;
+}

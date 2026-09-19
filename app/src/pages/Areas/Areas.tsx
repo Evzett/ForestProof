@@ -11,7 +11,7 @@ import {
   plural,
 } from "../../components/ui";
 import { AddPlotButton, PageHead } from "../../components/AppShell";
-import { AREAS, EVENTS, ROLE_HINT, formatBbox } from "../../data/case";
+import { AREAS, EVENTS, ROLE_HINT, formatBbox, mapAsset } from "../../data/case";
 import type { Area } from "../../data/case";
 import { ApiError, getContours, type SavedContour } from "../../api";
 import "./Areas.css";
@@ -265,16 +265,33 @@ export default function Areas() {
             участок, а не искать его среди двенадцати чужих. */}
         {mineRows.map((c) => (
           <Card key={c.contour_id} className="area area--mine">
-            <div className="area__map area__map--plain">
+            {/* Обложка такая же, как у участка набора, и тем же
+                переключателем: снимок или карта изменений. Обе картинки
+                посчитаны по этому контуру, а не взяты у соседа. */}
+            <div className={`area__map ${!c.scene && !c.maps ? "area__map--plain" : ""}`.trim()}>
+              {cover === "scene" && c.scene ? (
+                <>
+                  <img src={mapAsset(c, c.scene.image)} alt={`Снимок контура ${c.name}`} />
+                  <span className="area__date">снимок {c.scene.date}</span>
+                </>
+              ) : c.maps ? (
+                <>
+                  <img src={mapAsset(c, c.maps.change)} alt="" />
+                  <span className="area__date">
+                    {cover === "scene" ? "годного снимка нет" : "изменение запаса"}
+                  </span>
+                </>
+              ) : (
+                <span className="area__plain-note">
+                  картинки этого расчёта не сохранились — расчёт делался до того, как их стали
+                  строить. Пересчитайте контур, чтобы они появились
+                </span>
+              )}
               <span className="area__role">ваш контур</span>
-              <span className="area__plain-note">
-                карта изменений строится для участков набора заранее; по своему контуру
-                показываются числа расчёта
-              </span>
             </div>
 
             <h3 className="area__name">
-              <Link to={`/app/contours/${c.contour_id}`}>{c.name}</Link>
+              <Link to={`/app/area/${c.contour_id}`}>{c.name}</Link>
             </h3>
             <p className="area__meta">
               {c.contour_id} · {formatDecimal(c.area_ha, 1)} га · {c.year_start}—{c.year_end}
@@ -319,7 +336,7 @@ export default function Areas() {
               задана и дополнительность не устанавливает.
             </p>
 
-            <Link to={`/app/contours/${c.contour_id}`} className="row-action area__open">
+            <Link to={`/app/area/${c.contour_id}`} className="row-action area__open">
               открыть расчёт →
             </Link>
           </Card>
@@ -339,14 +356,14 @@ export default function Areas() {
                   if (scene) {
                     return (
                       <>
-                        <img src={`/maps/${scene.image}`} alt={`Снимок участка ${a.name}`} />
+                        <img src={mapAsset(a, scene.image)} alt={`Снимок участка ${a.name}`} />
                         <span className="area__date">снимок {scene.date}</span>
                       </>
                     );
                   }
                   return a.maps ? (
                     <>
-                      <img src={`/maps/${a.maps.change}`} alt="" />
+                      <img src={mapAsset(a, a.maps.change)} alt="" />
                       <span className="area__date">
                         {cover === "scene" ? "годного снимка нет" : "изменение запаса"}
                       </span>

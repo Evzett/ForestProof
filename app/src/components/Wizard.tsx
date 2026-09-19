@@ -284,7 +284,7 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
      непроверенной. Примеры лежат внутри участков с данными, поэтому
      расчёт по ним доходит до результата, а не до сообщения о том, что
      растров на эту территорию нет. */
-  const useSample = (sample: SampleContour) => {
+  const applySample = (sample: SampleContour) => {
     setFileError("");
     setGeometry(sample.geometry as GeoJsonPolygon);
     setFile({
@@ -563,7 +563,7 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                           key={sample.id}
                           className="filter"
                           type="button"
-                          onClick={() => useSample(sample)}
+                          onClick={() => applySample(sample)}
                           title={`${sample.parent} · ${sample.note}`}
                         >
                           {sample.title}
@@ -994,7 +994,7 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                 title={saved === null ? "Контур не сохранён — открывать нечего" : undefined}
                 onClick={() => {
                   onClose();
-                  if (saved) navigate(`/app/contours/${saved.contour_id}`);
+                  if (saved) navigate(`/app/area/${saved.contour_id}`);
                 }}
               >
                 <span>Открыть контур</span>

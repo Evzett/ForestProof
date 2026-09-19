@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
-import { AREAS, EVENTS } from "../../data/case";
+import { AREAS, EVENTS, mapAsset } from "../../data/case";
 import CarbonTerrain from "../../components/CarbonTerrain";
 import CompareChart from "../../components/CompareChart";
 import { useAiSummary } from "../../data/aiSummary";
@@ -283,7 +283,7 @@ export default function Compare() {
                 compact
               />
             ) : (
-              a.maps && <img className="cmp-card__img" src={`/maps/${a.maps.change}`} alt="" />
+              a.maps && <img className="cmp-card__img" src={mapAsset(a, a.maps.change)} alt="" />
             )}
             <div
               className="cmp-card__body"

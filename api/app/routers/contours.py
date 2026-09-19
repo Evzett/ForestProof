@@ -24,8 +24,32 @@ router = APIRouter(prefix="/api", tags=["contours"])
 
 
 def _view(row: models.SavedContour) -> dict:
-    period = row.calculation.result.get("period", {}) if row.calculation else {}
+    result = row.calculation.result if row.calculation else {}
+    period = result.get("period", {})
+
+    # Картинки отдаются так же, как у участков набора: имя файла плюс
+    # приставка `maps_base`, которую подставляет фронт. Склеивать адреса
+    # здесь значило бы завести второй способ: у карточки был бы готовый
+    # адрес, у страницы участка — имя файла, и одна из них однажды
+    # показала бы пустоту. Способ один.
+    scenes = (result.get("evidence") or {}).get("scenes") or []
+    # Снимок на конец периода отвечает на вопрос «что это за место
+    # сейчас», поэтому он и идёт на обложку.
+    latest = max(scenes, key=lambda s: s.get("date", ""), default=None)
+
     return {
+        "maps": result.get("maps"),
+        "maps_base": result.get("maps_base"),
+        "scene": (
+            {"image": latest["image"], "date": latest.get("date")}
+            if latest and latest.get("image")
+            else None
+        ),
+        "scenes_count": len(scenes),
+        "events_count": len((result.get("evidence") or {}).get("events") or []),
+        "evidence_notes": (result.get("evidence") or {}).get("notes") or [],
+        "data_sources": result.get("data_sources") or [],
+        "baseline_kind": result.get("baseline_kind"),
         "contour_id": row.contour_id,
         "name": row.name,
         "source_name": row.source_name,
@@ -90,10 +114,40 @@ def contour_stats(db: Session = Depends(get_db)) -> dict:
 
 @router.get("/contours/{contour_id}")
 def get_contour(contour_id: str, db: Session = Depends(get_db)) -> dict:
+    """Контур целиком — в той же форме, что участок набора.
+
+    Экран участка один на оба случая, поэтому и отдаётся ему одно и то
+    же: ряды по годам, все пары лет, базовая линия, карты, рельеф,
+    устойчивость. Сверху подставляются имя и происхождение, которые ввёл
+    человек, — они его, а не расчёта.
+    """
     row = db.get(models.SavedContour, contour_id)
     if row is None:
         raise HTTPException(status_code=404, detail="контур не найден")
-    return {**_view(row), "result": row.calculation.result if row.calculation else None}
+
+    result = dict(row.calculation.result) if row.calculation else {}
+
+    # Внутреннее имя расчёта наружу не показывается. Пока контур не
+    # сохранён, у него нет идентификатора, и расчёт пользуется служебным
+    # «AOI-REQUEST»; в справке он читается как чужой номер. После
+    # сохранения номер есть — его и подставляем.
+    summary = result.get("summary")
+    if isinstance(summary, dict) and isinstance(summary.get("text"), str):
+        result["summary"] = {
+            **summary,
+            "text": summary["text"].replace("AOI-REQUEST", row.contour_id),
+        }
+
+    return {
+        **result,
+        **_view(row),
+        "aoi_id": row.contour_id,
+        "name": row.name,
+        "region": "контур пользователя",
+        "role": "контур пользователя",
+        "status": "расчёт по запросу",
+        "area_ha_declared": float(row.area_ha),
+    }
 
 
 @router.post("/contours")

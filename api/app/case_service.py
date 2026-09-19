@@ -359,10 +359,13 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
         west, south, east, north = geometry_bbox(geometry)
         meta = {
             "aoi_id": aoi_id,
-            "name": None,
-            "region": None,
+            # Имя и регион заполняет тот, кто сохраняет контур: на этом шаге
+            # мы знаем только координаты. Пустые строки, а не None — экран
+            # ждёт текст, и падать на отсутствующем поле ему не за что.
+            "name": f"Контур {west:.3f}, {south:.3f}",
+            "region": "задан пользователем",
             "selection_role": "контур пользователя",
-            "project_status": "запрос",
+            "project_status": "расчёт по запросу",
             "baseline_id": DERIVED_BASELINE_ID,
             "bbox_west": west,
             "bbox_south": south,
@@ -418,26 +421,27 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
     evidence = None
     if derived_baseline:
         evidence = _external_evidence(geometry, year_start, year_end, maps_dir)
-
+    # Возвращается ПОЛНЫЙ участок, а не выжимка из него.
+    #
+    # Раньше отсюда уходило полтора десятка отобранных полей, и загруженный
+    # контур открывался урезанной карточкой «что посчитано и граница» —
+    # рядом с участком набора, у которого семь вкладок, он выглядел
+    # объектом другого сорта. При этом build_aoi считает ровно ту же
+    # структуру, что лежит в case-data.json: ряды по годам, все пары лет,
+    # базовую линию по годам, карты, рельеф, устойчивость и справку.
+    # Отбирать из неё что-то — значит терять без причины.
+    #
+    # Поэтому экран участка один на оба случая: он получает знакомую
+    # форму и не знает, пришла она из набора или из расчёта по запросу.
     return {
-        "aoi_id": meta["aoi_id"],
-        "parent_area_name": meta.get("name"),
+        **area,
+        # Чем этот участок отличается от участка набора — тем и подписан.
+        "geometry": geometry,
         "geometry_source": "запрос пользователя",
-        "area_ha": measured,
-        "series": area.get("series"),
-        "cover_loss": area.get("cover_loss"),
-        # Карты и рельеф — те же, что у участков набора, и строятся тем же
-        # кодом. `maps_base` говорит фронту, откуда их брать: у набора они
-        # лежат в сборке, у контура отдаются статикой сервиса.
-        "maps": area.get("maps"),
-        "terrain": area.get("terrain"),
+        "parent_area_name": meta.get("name"),
         "maps_base": f"{MAPS_URL}/{maps_dir.name}",
-        "sentinel": area.get("sentinel"),
-        "evidence": evidence.as_dict() if evidence is not None else None,
-        "stability": area.get("stability"),
-        "stability_model": None if derived_baseline else stability_forecast(meta["aoi_id"]),
         "period": periods[0],
-        "baseline_id": meta.get("baseline_id"),
+        "stability_model": None if derived_baseline else stability_forecast(meta["aoi_id"]),
         "baseline_kind": (
             "выведена нами по формуле кейса" if derived_baseline else "задана условиями кейса"
         ),
@@ -449,6 +453,10 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
             else "Базовая линия взята у участка набора, внутри которого лежит контур: "
             "удельная траектория родительского участка и фактическая площадь запроса"
         ),
+        # Снимки и события, найденные во внешних каталогах. У участка
+        # набора они приходят с данными, у загруженного контура — отсюда.
+        "evidence": evidence.as_dict() if evidence is not None else None,
+        "events": (evidence.events if evidence is not None else []),
         "data_sources": sources,
         "status": "расчёт по условиям кейса, а не сертифицированные единицы",
     }

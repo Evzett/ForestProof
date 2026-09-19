@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   Card,
@@ -13,6 +13,7 @@ import CarbonTerrain from "../../components/CarbonTerrain";
 import CalculationSummary from "../../components/CalculationSummary";
 import SeriesChart from "../../components/SeriesChart";
 import {
+  AREAS,
   ASSUMPTIONS,
   DATASETS,
   FEATURE_LABEL,
@@ -20,16 +21,17 @@ import {
   PARAMETERS,
   PRICE_SCENARIOS,
   YEARS,
-  areaById,
   eventsFor,
   modelFor,
   periodFor,
+  mapAsset,
   SCREENING_HORIZON_LABEL,
 } from "../../data/case";
+import { ApiError, getContour } from "../../api";
 import { useScenario } from "../../data/scenario";
 import { summaryForPeriod } from "../../data/summary";
 import { COVERAGE, recompute } from "../../data/units";
-import type { Area, Period } from "../../data/case";
+import type { Area, CaseEvent, Period } from "../../data/case";
 import type { ReportBlock } from "../../reportPdf";
 import { YearLossChart } from "../../components/YearLossChart";
 import "./Plot.css";
@@ -64,8 +66,43 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function Plot() {
   const { id } = useParams();
-  const area = areaById(id);
-  const events = eventsFor(area.aoi_id);
+
+  /* Экран участка один на два случая.
+
+     Участки набора посчитаны заранее и лежат в сборке — они открываются
+     мгновенно и без сети. Загруженный контур посчитан сервисом и живёт
+     на нём; его приходится спросить. Но форма у них одна и та же: сервис
+     отдаёт ровно ту структуру, которую собирает `build_aoi` для набора.
+
+     Поэтому ниже — один компонент на оба. Заводить для своего контура
+     отдельную страницу значило бы показать человеку, что его участок
+     чем-то хуже: у набора семь вкладок с картами, рядами и отчётом, а у
+     него — две строки. */
+  const fromCase = AREAS.find((a) => a.aoi_id === id);
+  const [loaded, setLoaded] = useState<Area | null>(null);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    if (fromCase || !id) return;
+    let cancelled = false;
+    getContour(id)
+      .then((value) => !cancelled && setLoaded(value as unknown as Area))
+      .catch((err) =>
+        !cancelled &&
+        setLoadError(
+          err instanceof ApiError ? err.message : "Участок недоступен: сервис не ответил."
+        )
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [id, fromCase]);
+
+  const area = fromCase ?? loaded;
+  const events = useMemo(
+    () => (area ? (fromCase ? eventsFor(area.aoi_id) : caseEventsFrom(area)) : []),
+    [area, fromCase]
+  );
 
   const [tab, setTab] = useState<(typeof TABS)[number]>("Запас");
 
@@ -80,6 +117,17 @@ export default function Plot() {
   };
   const [start, setStart] = useState(() => yearFromLink("start", "2019"));
   const [end, setEnd] = useState(() => yearFromLink("end", "2024"));
+
+  if (area === null) {
+    return (
+      <Card title={loadError ? "Участок не открыт" : "Загружаем участок"}>
+        <p className="ov-note" style={{ marginTop: 0 }}>
+          {loadError ||
+            "Участок посчитан сервисом по вашему контуру — спрашиваем у него ряды, карты и отчёт."}
+        </p>
+      </Card>
+    );
+  }
 
   /* Конечный год должен быть больше начального — условие постановки.
      Вместо ошибки подтягиваем конец за началом: пользователь не обязан
@@ -546,7 +594,7 @@ function ChangesTab({
               ]
             ).map((shot) => (
               <figure key={shot.image}>
-                <img src={`/maps/${shot.image}`} alt={`Снимок участка ${area.name}`} />
+                <img src={mapAsset(area, shot.image)} alt={`Снимок участка ${area.name}`} />
                 <figcaption>
                   <b>{shot.date}</b>
                   <span>
@@ -576,7 +624,7 @@ function ChangesTab({
           <div className="shots">
             {area.sentinel.observations.map((o) => (
               <figure key={o.role}>
-                <img src={`/maps/${o.image}`} alt={`Снимок: ${ROLE_LABEL[o.role]}`} />
+                <img src={mapAsset(area, o.image)} alt={`Снимок: ${ROLE_LABEL[o.role]}`} />
                 <figcaption>
                   <b>{ROLE_LABEL[o.role]}</b> · {o.date}
                   <br />
@@ -1931,4 +1979,39 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
       </Card>
     </>
   );
+}
+
+/* События загруженного контура в той же форме, что события набора.
+
+   У участков кейса подтверждения приходят вместе с данными и лежат в
+   `events.csv`. У своего контура их ищет сервис в продукте гарей MODIS,
+   и структура у находки другая — но вкладка «Изменения» должна показать
+   их одинаково, иначе у своего участка блок событий останется пустым при
+   том, что событие найдено.
+
+   Происхождение при этом не подменяется: `source_kind` говорит, что это
+   наш поиск, а не данные набора. */
+function caseEventsFrom(area: Area): CaseEvent[] {
+  const found = area.evidence?.events ?? [];
+  return found.map((raw, index) => {
+    const e = raw as Record<string, unknown>;
+    return {
+      event_id: `FOUND-${index + 1}`,
+      aoi_id: area.aoi_id,
+      evidence_type: String(e.evidence_type ?? "признак горения по продукту"),
+      cause_supported: String(e.cause_supported ?? "признак горения по продукту MODIS"),
+      date_min: String(e.date_min ?? ""),
+      date_max: String(e.date_max ?? ""),
+      burned_pixels: Number(e.burned_pixels ?? 0),
+      all_pixels: Number(e.all_pixels ?? 0),
+      uncertainty_days: [0, 0] as [number, number],
+      source_id: String(e.source_id ?? "MODIS_MCD64A1_061"),
+      context_url: "",
+      source_kind: "найдено нашим поиском по продукту гарей",
+      limitations: String(
+        e.limitations ??
+          "Продукт отмечает факт горения, а не его причину и не объём потерь."
+      ),
+    };
+  });
 }

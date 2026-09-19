@@ -236,6 +236,21 @@ export type SavedContour = {
   e_tco2e: number | null;
   units: number | null;
   reason: string | null;
+  /* Картинки приходят именем файла плюс приставкой `maps_base` — так же,
+     как у участков набора. Склеивает их `mapAsset` из data/case. */
+  maps: {
+    stock: string;
+    change: string;
+    loss: string;
+    change_span_tc_ha: number | null;
+  } | null;
+  maps_base: string | null;
+  scene: { image: string; date: string } | null;
+  scenes_count: number;
+  events_count: number;
+  evidence_notes: string[];
+  data_sources: string[];
+  baseline_kind: string | null;
 };
 
 export type ContourStats = {

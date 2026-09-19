@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Area } from "../data/case";
-import { PARAMETERS, formatBbox } from "../data/case";
+import { PARAMETERS, formatBbox, mapAsset } from "../data/case";
 import "./ChangeMap.css";
 
 /* Карта участка по тем же пикселям, по которым считаются числа.
@@ -50,7 +50,7 @@ export default function ChangeMap({ area }: { area: Area }) {
 
       <div className="cmap__canvas">
         <img
-          src={`/maps/${maps[layer]}`}
+          src={mapAsset(area, maps[layer])}
           alt={`${active.label}: ${area.name}`}
           width={size[0]}
           height={size[1]}

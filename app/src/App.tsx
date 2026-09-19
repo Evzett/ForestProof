@@ -9,7 +9,7 @@ import ClaimProjects from "./pages/ClaimProjects/ClaimProjects";
 import Plot from "./pages/Plot/Plot";
 import Research from "./pages/Research/Research";
 import { Calculations, Methodology, Monitoring } from "./pages/Sections/Sections";
-import { ContourCard } from "./pages/Contours/Contours";
+import ContourRedirect from "./pages/Contours/ContourRedirect";
 
 /* Роутинг по структуре из docs/05-frontend-user-flow.md.
 
@@ -38,7 +38,10 @@ export default function App() {
               ведёт туда же — ссылки из Jira и переписки не должны
               ломаться. */}
           <Route path="contours" element={<Navigate to="/app/areas" replace />} />
-          <Route path="contours/:id" element={<ContourCard />} />
+          {/* Загруженный контур открывается ТОЙ ЖЕ страницей участка:
+              он и есть участок, посчитанный тем же кодом. Старый адрес
+              переадресуется — ссылки не должны ломаться. */}
+          <Route path="contours/:id" element={<ContourRedirect />} />
           <Route path="calculations" element={<Calculations />} />
           <Route path="monitoring" element={<Monitoring />} />
           <Route path="research" element={<Research />} />
