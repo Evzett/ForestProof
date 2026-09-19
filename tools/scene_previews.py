@@ -5,10 +5,15 @@
 оставалась карта изменений — пиксельная сетка, по которой непонятно,
 что это за место.
 
-Как. Сцена уже выбрана инструментом KAN-59 — по доле годных пикселей
-внутри контура, а не по облачности всего тайла. Здесь у неё читаются
-каналы B04, B03, B02 прямо из облака, окном по контуру: канал весит
-около 150 МБ, окно участка — доли процента.
+Как. На каждый год периода сцена выбирается так же, как в KAN-59 —
+по доле годных пикселей внутри контура, а не по облачности всего
+тайла. У выбранной читаются каналы B04, B03, B02 прямо из облака,
+окном по контуру: канал весит около 150 МБ, окно участка — доли
+процента.
+
+Снимков два: начало периода и конец. Один отвечает на вопрос «что это
+за место», пара — на вопрос «что с ним стало», ради которого сюда и
+приходят.
 
 Растяжка контраста. Каналы растягиваются по 2-му и 98-му процентилю
 и проходят гамму — иначе снимок выходит тёмным и синеватым, каким его
@@ -18,7 +23,7 @@
 
 Запуск:
     python tools/scene_previews.py
-    python tools/scene_previews.py --aoi RU_TVER_05 --year 2024
+    python tools/scene_previews.py --aoi RU_TVER_05 --years 2019 2024
 """
 
 from __future__ import annotations
@@ -36,7 +41,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from geotiff import read_geotiff  # noqa: E402
-from sentinel_evidence import _utm_forward, utm_zone  # noqa: E402
+from sentinel_evidence import _utm_forward, stretch_rgb, utm_zone  # noqa: E402
 from sentinel_search import rank, search  # noqa: E402
 
 # Ширина превью. Окно участка — около 400 пикселей по стороне, и
@@ -58,28 +63,10 @@ def window_utm(bbox, zone: int) -> tuple[float, float, float, float]:
     return min(xs), min(ys), max(xs), max(ys)
 
 
+# Растяжка — общая с отрисовкой снимков набора: две разные растяжки
+# давали два разных цвета для одного и того же леса.
 def stretch(bands: list[np.ndarray]) -> np.ndarray:
-    """Три канала к диапазону 0…1 ОДНИМ общим преобразованием.
-
-    Ключевая деталь. Если растягивать каждый канал по своим
-    процентилям, соотношение между ними меняется — и лес получается
-    фиолетовым: в нём синего меньше всех, и растянутый до того же
-    предела он вылезает вперёд. Именно так выглядят снимки, вложенные
-    в набор.
-
-    Общий множитель на все три канала меняет только яркость, не трогая
-    цвет: зелёное остаётся зелёным. Это по-прежнему обработка для
-    показа, но она не переписывает то, что снял прибор.
-
-    Нули — край окна и отсутствие данных, в процентили они не идут:
-    иначе снимок уползает в тень.
-    """
-    stack = np.dstack([b.astype(float) for b in bands])
-    values = stack[stack > 0]
-    if values.size == 0:
-        return np.zeros_like(stack)
-    low, high = np.percentile(values, [2, 98])
-    return np.clip((stack - low) / max(high - low, 1e-6), 0, 1)
+    return stretch_rgb(bands)
 
 
 def render(scene: dict, bbox, target: Path) -> dict | None:
@@ -98,7 +85,7 @@ def render(scene: dict, bbox, target: Path) -> dict | None:
     rgb = stretch([b[: shape[0], : shape[1]] for b in bands])
     # Гамма: отражение леса лежит в тёмной части диапазона, и без неё
     # снимок выходит почти чёрным.
-    rgb = np.power(rgb, 1 / 1.7)
+    rgb = np.power(rgb, 1 / 1.6)
 
     image = Image.fromarray((rgb * 255).astype(np.uint8), "RGB")
     if image.width > WIDTH:
@@ -121,7 +108,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--areas", type=Path, default=Path("data/areas.csv"))
     parser.add_argument("--aoi", action="append")
-    parser.add_argument("--year", type=int, default=2024)
+    parser.add_argument("--years", type=int, nargs=2, default=[2019, 2024],
+                        help="начало и конец периода: снимок собирается на оба года")
     parser.add_argument("--season", default="06-01:09-15")
     parser.add_argument("--out", type=Path, default=OUT_DIR)
     parser.add_argument("--index", type=Path, default=INDEX)
@@ -130,7 +118,6 @@ def main() -> None:
     args = parser.parse_args()
 
     season_start, season_end = args.season.split(":")
-    start, end = f"{args.year}-{season_start}", f"{args.year}-{season_end}"
 
     with open(args.areas, encoding="utf-8-sig") as handle:
         areas = list(csv.DictReader(handle))
@@ -145,7 +132,7 @@ def main() -> None:
 
     for meta in areas:
         aoi = meta["aoi_id"]
-        target = args.out / f"{aoi}_scene.png"
+        target = args.out / f"{aoi}_scene_after.png"
 
         # Участки кейса уже имеют вложенные снимки — своё поверх набора
         # не кладём: там снимок пришёл с данными, и подменять его нашим
@@ -163,35 +150,48 @@ def main() -> None:
             float(meta["bbox_east"]),
             float(meta["bbox_north"]),
         )
-        try:
-            candidates = search(bbox, start, end, limit=args.limit)
-        except (urllib.error.URLError, TimeoutError) as error:
-            print(f"{aoi:<18} каталог недоступен: {error}")
-            continue
-        if not candidates:
-            print(f"{aoi:<18} сцен за {start}—{end} не нашлось")
+
+        shots = []
+        for year, role in zip(args.years, ("before", "after")):
+            start, end = f"{year}-{season_start}", f"{year}-{season_end}"
+            shot_path = args.out / f"{aoi}_scene_{role}.png"
+            try:
+                candidates = search(bbox, start, end, limit=args.limit)
+            except (urllib.error.URLError, TimeoutError) as error:
+                print(f"{aoi:<18} {year}: каталог недоступен: {error}")
+                continue
+            if not candidates:
+                print(f"{aoi:<18} {year}: сцен за сезон не нашлось")
+                continue
+
+            ranked = rank(candidates, bbox, cache)
+            if not ranked:
+                print(f"{aoi:<18} {year}: ни одну маску SCL прочитать не удалось")
+                continue
+
+            try:
+                info = render(ranked[0], bbox, shot_path)
+            except (urllib.error.URLError, OSError, ValueError, IndexError) as error:
+                print(f"{aoi:<18} {year}: снимок не собрался: {type(error).__name__}")
+                continue
+            if info is None:
+                print(f"{aoi:<18} {year}: у сцены нет каналов RGB")
+                continue
+
+            info["role"] = role
+            info["year"] = year
+            shots.append(info)
+            print(
+                f"{aoi:<18} {role:<7} {info['scene_id']:<28} {info['date']}  "
+                f"годных внутри контура {info['usable_fraction']:.0%}"
+            )
+
+        if not shots:
             continue
 
-        ranked = rank(candidates, bbox, cache)
-        if not ranked:
-            print(f"{aoi:<18} ни одну маску SCL прочитать не удалось")
-            continue
-
-        best = ranked[0]
-        try:
-            info = render(best, bbox, target)
-        except (urllib.error.URLError, OSError, ValueError, IndexError) as error:
-            print(f"{aoi:<18} снимок не собрался: {type(error).__name__}: {error}")
-            continue
-        if info is None:
-            print(f"{aoi:<18} у сцены нет каналов RGB")
-            continue
-
-        index[aoi] = info
-        print(
-            f"{aoi:<18} {info['scene_id']:<28} {info['date']}  "
-            f"годных внутри контура {info['usable_fraction']:.0%}"
-        )
+        # Обложка карточки — поздний снимок: на нём участок таким, какой
+        # он сейчас. Ранний нужен, чтобы было с чем сравнить.
+        index[aoi] = {**shots[-1], "shots": shots}
 
     args.index.parent.mkdir(parents=True, exist_ok=True)
     args.index.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")

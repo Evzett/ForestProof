@@ -164,7 +164,12 @@ def main() -> None:
 
     print(f"\nучастков: {len(out_areas)} ({len(case_ids)} из кейса + {len(KEEP_ADDED)} добавлено)")
     print(f"строк базовой линии: {len(out_baseline)}")
-    print("\nдальше: python tools/extract_case_data.py --data data "
+    # Порядок важен: превью собираются по каталогу участков, а сборка
+    # данных их подхватывает. Пропустить первый шаг — значит получить
+    # новый участок без снимка; это ловит тест, а не человек на защите.
+    print("\nдальше:")
+    print("  1. python tools/scene_previews.py                     # снимки для новых участков")
+    print("  2. python tools/extract_case_data.py --data data "
           "--out app/src/data/case-data.json --maps app/public/maps")
 
 

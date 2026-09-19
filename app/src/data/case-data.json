@@ -195307,12 +195307,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_TVER_05_scene.png",
+        "image": "RU_TVER_05_scene_after.png",
         "date": "2024-09-08",
         "scene_id": "S2B_36VVH_20240908_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 0.024867,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_TVER_05_scene_before.png",
+            "date": "2019-09-05",
+            "scene_id": "S2B_36VVH_20190905_0_L2A",
+            "usable_fraction": 0.9655,
+            "cloud_percent": 1.725241,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_TVER_05_scene_after.png",
+            "date": "2024-09-08",
+            "scene_id": "S2B_36VVH_20240908_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 0.024867,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     },
     {
@@ -235639,12 +235663,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_TVER_06_scene.png",
+        "image": "RU_TVER_06_scene_after.png",
         "date": "2024-09-11",
         "scene_id": "S2B_36VVH_20240911_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 32.500547,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_TVER_06_scene_before.png",
+            "date": "2019-09-05",
+            "scene_id": "S2B_36VVH_20190905_0_L2A",
+            "usable_fraction": 0.9369,
+            "cloud_percent": 1.725241,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_TVER_06_scene_after.png",
+            "date": "2024-09-11",
+            "scene_id": "S2B_36VVH_20240911_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 32.500547,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     },
     {
@@ -276812,12 +276860,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_VOLOGDA_07_scene.png",
+        "image": "RU_VOLOGDA_07_scene_after.png",
         "date": "2024-09-12",
         "scene_id": "S2B_37VEF_20240912_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 25.545678,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_VOLOGDA_07_scene_before.png",
+            "date": "2019-09-04",
+            "scene_id": "S2A_37VEF_20190904_1_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 17.528479,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_VOLOGDA_07_scene_after.png",
+            "date": "2024-09-12",
+            "scene_id": "S2B_37VEF_20240912_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 25.545678,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     },
     {
@@ -318750,12 +318822,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_VOLOGDA_08_scene.png",
+        "image": "RU_VOLOGDA_08_scene_after.png",
         "date": "2024-09-12",
         "scene_id": "S2B_37VEF_20240912_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 25.545678,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_VOLOGDA_08_scene_before.png",
+            "date": "2019-09-04",
+            "scene_id": "S2A_37VEF_20190904_1_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 17.528479,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_VOLOGDA_08_scene_after.png",
+            "date": "2024-09-12",
+            "scene_id": "S2B_37VEF_20240912_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 25.545678,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     },
     {
@@ -359887,12 +359983,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_VOLOGDA_09_scene.png",
+        "image": "RU_VOLOGDA_09_scene_after.png",
         "date": "2024-09-10",
         "scene_id": "S2A_37VEF_20240910_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 13.590027,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_VOLOGDA_09_scene_before.png",
+            "date": "2019-09-12",
+            "scene_id": "S2B_37VFG_20190912_0_L2A",
+            "usable_fraction": 0.9839,
+            "cloud_percent": 40.57159,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_VOLOGDA_09_scene_after.png",
+            "date": "2024-09-10",
+            "scene_id": "S2A_37VEF_20240910_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 13.590027,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     },
     {
@@ -401021,12 +401141,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_MORDOVIA_10_scene.png",
+        "image": "RU_MORDOVIA_10_scene_after.png",
         "date": "2024-09-14",
         "scene_id": "S2A_38ULF_20240914_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 5.658789,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_MORDOVIA_10_scene_before.png",
+            "date": "2019-09-03",
+            "scene_id": "S2B_38ULF_20190903_1_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 0.769005,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_MORDOVIA_10_scene_after.png",
+            "date": "2024-09-14",
+            "scene_id": "S2A_38ULF_20240914_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 5.658789,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     },
     {
@@ -442177,12 +442321,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_MORDOVIA_11_scene.png",
+        "image": "RU_MORDOVIA_11_scene_after.png",
         "date": "2024-09-14",
         "scene_id": "S2A_38ULF_20240914_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 5.658789,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_MORDOVIA_11_scene_before.png",
+            "date": "2019-09-03",
+            "scene_id": "S2B_38ULF_20190903_1_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 0.769005,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_MORDOVIA_11_scene_after.png",
+            "date": "2024-09-14",
+            "scene_id": "S2A_38ULF_20240914_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 5.658789,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     },
     {
@@ -483337,12 +483505,36 @@
         ]
       },
       "scene_preview": {
-        "image": "RU_MORDOVIA_12_scene.png",
+        "image": "RU_MORDOVIA_12_scene_after.png",
         "date": "2024-09-06",
         "scene_id": "S2B_38ULF_20240906_0_L2A",
         "usable_fraction": 1.0,
         "cloud_percent": 1.13633,
-        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+        "role": "after",
+        "year": 2024,
+        "shots": [
+          {
+            "image": "RU_MORDOVIA_12_scene_before.png",
+            "date": "2019-09-03",
+            "scene_id": "S2B_38ULF_20190903_1_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 0.769005,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "before",
+            "year": 2019
+          },
+          {
+            "image": "RU_MORDOVIA_12_scene_after.png",
+            "date": "2024-09-06",
+            "scene_id": "S2B_38ULF_20240906_0_L2A",
+            "usable_fraction": 1.0,
+            "cloud_percent": 1.13633,
+            "source": "Sentinel-2 L2A, окно прочитано из облака по контуру",
+            "role": "after",
+            "year": 2024
+          }
+        ]
       }
     }
   ],
