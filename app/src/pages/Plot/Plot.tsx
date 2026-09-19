@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Card,
   FilterSelect,
@@ -27,7 +27,7 @@ import {
   mapAsset,
   SCREENING_HORIZON_LABEL,
 } from "../../data/case";
-import { ApiError, getContour } from "../../api";
+import { ApiError, getContour, deleteContour } from "../../api";
 import { useScenario } from "../../data/scenario";
 import { summaryForPeriod } from "../../data/summary";
 import { COVERAGE, recompute } from "../../data/units";
@@ -66,6 +66,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function Plot() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   /* Экран участка один на два случая.
 
@@ -154,13 +155,46 @@ export default function Plot() {
         <Link to="/app/areas" className="plot-head__back" aria-label="Назад к участкам">
           ←
         </Link>
-        <div>
+        <div style={{ flex: 1 }}>
           <h1 className="page-head__title">{area.name}</h1>
           <p className="page-head__sub">
             {formatDecimal(area.area_ha, 1)} га · {area.region} · {area.role} ·{" "}
             {area.status}
           </p>
         </div>
+        {!fromCase && (
+          <button
+            type="button"
+            className="btn btn--danger btn--sm"
+            style={{
+              background: "transparent",
+              color: "#c0392b",
+              border: "1px solid rgba(192, 57, 43, 0.4)",
+              padding: "6px 14px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: 500,
+              fontSize: "13px",
+              alignSelf: "center",
+            }}
+            onClick={async () => {
+              if (
+                window.confirm(
+                  `Вы действительно хотите удалить контур «${area.name}»? Это действие нельзя отменить.`
+                )
+              ) {
+                try {
+                  await deleteContour(area.aoi_id);
+                  navigate("/app/areas");
+                } catch (err) {
+                  alert(err instanceof Error ? err.message : "Не удалось удалить контур.");
+                }
+              }
+            }}
+          >
+            Удалить контур
+          </button>
+        )}
       </header>
 
       <div className="period">
@@ -1371,7 +1405,7 @@ function StabilityTab({ area }: { area: Area }) {
           <div className="disclaimer">{s.limitation}</div>
         </Card>
 
-        <ModelForecastCard aoiId={area.aoi_id} rulesLevel={s.level} />
+        <ModelForecastCard aoiId={area.aoi_id} area={area} rulesLevel={s.level} />
       </div>
 
       <Card title="Сработавшие признаки" note="каждый порог виден и оспорим" className="plot-block">
@@ -1415,7 +1449,7 @@ function StabilityTab({ area }: { area: Area }) {
         </p>
       </Card>
 
-      <ModelEvidence aoiId={area.aoi_id} />
+      <ModelEvidence aoiId={area.aoi_id} area={area} />
 
       <div className="plot-row plot-row--even">
         <Card title="Чего скрининг не делает" tone="soft" className="plot-block">
@@ -1451,8 +1485,16 @@ function StabilityTab({ area }: { area: Area }) {
    выдавать регуляризованный компромисс за оценку. */
 /* Прогноз модели. Стоит рядом с пороговыми правилами, потому что это
    два ответа на один вопрос, и сравнивать их глазами — смысл экрана. */
-function ModelForecastCard({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: string }) {
-  const prediction = modelFor(aoiId);
+function ModelForecastCard({
+  aoiId,
+  area,
+  rulesLevel,
+}: {
+  aoiId: string;
+  area?: Area;
+  rulesLevel: string;
+}) {
+  const prediction = modelFor(aoiId, area);
   const forecast = prediction?.forecast;
 
   if (!forecast) {
@@ -1508,8 +1550,8 @@ function ModelForecastCard({ aoiId, rulesLevel }: { aoiId: string; rulesLevel: s
 
 /* Всё, чем прогноз подкреплён: проверка на известном пятилетии, качество
    на отложенной выборке, вклад признаков и почему нет утечки. */
-function ModelEvidence({ aoiId }: { aoiId: string }) {
-  const prediction = modelFor(aoiId);
+function ModelEvidence({ aoiId, area }: { aoiId: string; area?: Area }) {
+  const prediction = modelFor(aoiId, area);
   const ranked = Object.entries(MODEL.weights).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
   const quality = MODEL.quality;
   const singleAuc = Math.max(quality.best_single_auc, 1 - quality.best_single_auc);

@@ -13,7 +13,7 @@ import {
 import { AddPlotButton, PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS, ROLE_HINT, formatBbox, mapAsset } from "../../data/case";
 import type { Area } from "../../data/case";
-import { ApiError, getContours, type SavedContour } from "../../api";
+import { ApiError, getContours, deleteContour, type SavedContour } from "../../api";
 import "./Areas.css";
 
 /* Каталог участков. В наборе кейса это исследовательские участки,
@@ -113,6 +113,21 @@ export default function Areas() {
       cancelled = true;
     };
   }, []);
+
+  const handleDeleteContour = async (contourId: string, name: string) => {
+    if (
+      window.confirm(
+        `Вы действительно хотите удалить контур «${name}»? Это действие нельзя отменить.`
+      )
+    ) {
+      try {
+        await deleteContour(contourId);
+        setMine((prev) => prev.filter((c) => c.contour_id !== contourId));
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Не удалось удалить контур.");
+      }
+    }
+  };
 
   const regions = useMemo(
     () => [
@@ -336,9 +351,19 @@ export default function Areas() {
               задана и дополнительность не устанавливает.
             </p>
 
-            <Link to={`/app/area/${c.contour_id}`} className="row-action area__open">
-              открыть расчёт →
-            </Link>
+            <div className="area__actions">
+              <Link to={`/app/area/${c.contour_id}`} className="row-action area__open">
+                открыть расчёт →
+              </Link>
+              <button
+                type="button"
+                className="area__delete-btn"
+                onClick={() => handleDeleteContour(c.contour_id, c.name)}
+                title="Удалить этот загруженный контур"
+              >
+                Удалить
+              </button>
+            </div>
           </Card>
         ))}
 

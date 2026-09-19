@@ -19,6 +19,7 @@ import { Card, formatArea, formatNumber, plural } from "../../components/ui";
 import { useSession } from "../../data/session";
 import {
   changePassword,
+  deleteContour,
   getCalculations,
   getContours,
   getPalette,
@@ -127,6 +128,21 @@ export default function Profile() {
       );
     } catch {
       /* отказ придёт с сервера и уже показан там, где это важно */
+    }
+  };
+
+  const handleDeleteContour = async (contour: SavedContour) => {
+    if (
+      window.confirm(
+        `Вы действительно хотите удалить контур «${contour.name}»? Это действие нельзя отменить.`
+      )
+    ) {
+      try {
+        await deleteContour(contour.contour_id);
+        setContours((list) => list.filter((c) => c.contour_id !== contour.contour_id));
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Не удалось удалить контур.");
+      }
     }
   };
 
@@ -241,6 +257,7 @@ export default function Profile() {
                   <th>период</th>
                   <th>единицы</th>
                   <th>видно</th>
+                  <th>действие</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,6 +283,16 @@ export default function Profile() {
                         onClick={() => togglePublish(c)}
                       >
                         {c.published ? "всем" : "только мне"}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="pf-del"
+                        onClick={() => handleDeleteContour(c)}
+                        title="Удалить этот контур"
+                      >
+                        удалить
                       </button>
                     </td>
                   </tr>

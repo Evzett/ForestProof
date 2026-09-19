@@ -225,3 +225,29 @@
   line-height: 1.35;
   color: var(--c-muted);
 }
+
+.area__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.area__delete-btn {
+  padding: 10px 16px;
+  border: 1px solid #fecaca;
+  border-radius: var(--r-pill, 9999px);
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.area__delete-btn:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #991b1b;
+}

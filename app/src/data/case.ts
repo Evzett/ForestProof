@@ -421,6 +421,15 @@ export type StabilityModel = {
   features: string[];
   l2: number;
   weights: Record<string, number>;
+  bias: number;
+  standardisation: {
+    mean: number[];
+    scale: number[];
+  };
+  thresholds?: {
+    medium: number;
+    high: number;
+  };
   predictions: ModelPrediction[];
   sample: {
     size: number;
@@ -464,8 +473,107 @@ export const SCREENING_HORIZON: [number, number] = (() => {
 
 export const SCREENING_HORIZON_LABEL = `${SCREENING_HORIZON[0]}—${SCREENING_HORIZON[1]}`;
 
-export function modelFor(aoiId: string): ModelPrediction | undefined {
-  return MODEL.predictions.find((p) => p.aoi_id === aoiId);
+/** Вычисляет прогноз обученной модели для любого произвольного или загруженного контура. */
+export function computeContourModelPrediction(
+  area: Area | Record<string, unknown>
+): ModelPrediction {
+  const aoiId = (area as Area).aoi_id ?? "custom";
+  const areaHa = Number((area as Area).area_ha) || 1000;
+  const coverLoss = (area as Area).cover_loss ?? [];
+
+  const losses = new Map<number, number>();
+  if (Array.isArray(coverLoss)) {
+    for (const item of coverLoss) {
+      if (typeof item?.year === "number" && typeof item?.area_ha === "number") {
+        losses.set(item.year, item.area_ha);
+      }
+    }
+  }
+
+  // Окно прогноза [2006, 2024]
+  const lossPctList: number[] = [];
+  for (let y = 2006; y <= 2024; y++) {
+    const ha = losses.get(y) ?? 0;
+    lossPctList.push((ha / areaHa) * 100);
+  }
+  const totalLossPct = lossPctList.reduce((a, b) => a + b, 0);
+  const yearsWithLoss = lossPctList.filter((p) => p > 0.1).length;
+  const recentLossPct = lossPctList.slice(-3).reduce((a, b) => a + b, 0);
+  const peakLossPct = Math.max(0, ...lossPctList);
+  const meanTreecover = 70.0;
+  const forestShare = Math.max(0.2, Math.min(1.0, 1.0 - totalLossPct / 100));
+
+  const mean = MODEL.standardisation.mean;
+  const scale = MODEL.standardisation.scale;
+  const weights = [
+    MODEL.weights["loss_share_2001_2019_pct"] ?? 0,
+    MODEL.weights["loss_years_2001_2019"] ?? 0,
+    MODEL.weights["recent_loss_2017_2019_pct"] ?? 0,
+    MODEL.weights["peak_year_loss_pct"] ?? 0,
+    MODEL.weights["mean_treecover_pct"] ?? 0,
+    MODEL.weights["forest_share"] ?? 0,
+  ];
+
+  const features = [totalLossPct, yearsWithLoss, recentLossPct, peakLossPct, meanTreecover, forestShare];
+  let logit = MODEL.bias;
+  for (let i = 0; i < 6; i++) {
+    const z = (features[i] - mean[i]) / (scale[i] || 1);
+    logit += z * weights[i];
+  }
+  const prob = 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, logit))));
+  const category: "low" | "medium" | "high" = prob >= 0.65 ? "high" : prob >= 0.35 ? "medium" : "low";
+
+  // Окно проверки на известном пятилетии [2001, 2019]
+  const histList: number[] = [];
+  for (let y = 2001; y <= 2019; y++) {
+    const ha = losses.get(y) ?? 0;
+    histList.push((ha / areaHa) * 100);
+  }
+  const histTotal = histList.reduce((a, b) => a + b, 0);
+  const histYears = histList.filter((p) => p > 0.1).length;
+  const histRecent = histList.slice(-3).reduce((a, b) => a + b, 0);
+  const histPeak = Math.max(0, ...histList);
+  const histFeat = [histTotal, histYears, histRecent, histPeak, meanTreecover, forestShare];
+  let histLogit = MODEL.bias;
+  for (let i = 0; i < 6; i++) {
+    const z = (histFeat[i] - mean[i]) / (scale[i] || 1);
+    histLogit += z * weights[i];
+  }
+  const histProb = 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, histLogit))));
+  const histCat: "low" | "medium" | "high" = histProb >= 0.65 ? "high" : histProb >= 0.35 ? "medium" : "low";
+
+  const actualLoss2020_2024 = [2020, 2021, 2022, 2023, 2024]
+    .map((y) => losses.get(y) ?? 0)
+    .reduce((a, b) => a + b, 0);
+  const actualLossPct = (actualLoss2020_2024 / areaHa) * 100;
+
+  return {
+    aoi_id: aoiId,
+    available: true,
+    probability: histProb,
+    category: histCat,
+    label: actualLossPct >= 1.0 ? 1 : 0,
+    future_loss_pct: actualLossPct,
+    forecast: {
+      probability: prob,
+      category,
+      feature_window: [2006, 2024],
+      horizon: [SCREENING_HORIZON[0], SCREENING_HORIZON[1]],
+      recent_loss_pct: recentLossPct,
+    },
+  };
+}
+
+export function modelFor(
+  aoiId: string,
+  area?: Area | Record<string, unknown> | null
+): ModelPrediction | undefined {
+  const found = MODEL.predictions.find((p) => p.aoi_id === aoiId);
+  if (found && found.forecast) return found;
+  if (area) {
+    return computeContourModelPrediction(area);
+  }
+  return found;
 }
 
 /* Подписи признаков — те же, что в tools/stability_features.py */

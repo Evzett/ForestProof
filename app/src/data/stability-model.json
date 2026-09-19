@@ -191,8 +191,24 @@
     },
     {
       "aoi_id": "RU_MORDOVIA_10",
-      "available": false,
-      "reason": "участок не проходит порог леса: сомкнутость крон ниже 30 % более чем на 70 % площади"
+      "available": true,
+      "probability": 0.033215626234022015,
+      "category": "low",
+      "label": 0,
+      "future_loss_pct": 0.0,
+      "forecast": {
+        "probability": 0.044992595313755004,
+        "category": "low",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 0.2179
+      }
     },
     {
       "aoi_id": "RU_MORDOVIA_11",
