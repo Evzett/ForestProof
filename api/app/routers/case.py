@@ -10,7 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app import auth, case_service, models
+import secrets
+
+from app import auth, case_service, jobs, models
 from app.database import get_db
 from app.hashing import compute_input_hash
 from app.ids import next_calc_id
@@ -122,3 +124,66 @@ def calculate(
         )
 
     return result
+
+
+@router.post("/calc/jobs")
+def start_calc_job(
+    body: CalcRequest,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.require_analyst),
+) -> dict:
+    """Ставит расчёт в фон и сразу возвращает номер задачи.
+
+    Синхронный `POST /api/calc` остаётся: по участку набора расчёт идёт
+    секунды, и гонять его через задачу незачем. Фон нужен контуру вне
+    набора — там данные едут из открытых источников минутами.
+    """
+    if body.geometry is None and body.aoi_id is None:
+        raise HTTPException(status_code=422, detail="нужен geometry или aoi_id")
+
+    geometry = body.geometry
+    if geometry is None:
+        geometry = case_service.load_case_set().geometries.get(body.aoi_id)
+        if geometry is None:
+            raise HTTPException(status_code=404, detail=f"участок {body.aoi_id} не найден")
+
+    # Запрос проверяется сразу: отказ по годам или по геометрии должен
+    # прийти немедленно, а не через две минуты ожидания.
+    try:
+        case_service.validate_request(geometry, body.year_start, body.year_end)
+    except case_service.CalculationError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.reason) from exc
+
+    job = models.CalcJob(
+        job_id=f"JOB-{secrets.token_hex(6)}",
+        geometry=geometry,
+        year_start=body.year_start,
+        year_end=body.year_end,
+        status=models.JobStatus.queued,
+        created_by=user.login,
+    )
+    db.add(job)
+    db.commit()
+
+    jobs.start(job.job_id)
+    return {"job_id": job.job_id, "status": job.status.value, "steps": jobs.STEPS}
+
+
+@router.get("/calc/jobs/{job_id}")
+def calc_job_status(job_id: str, db: Session = Depends(get_db)) -> dict:
+    """Состояние задачи. Открыто всем: по номеру задачи ничего чужого не
+    видно, а спрашивать своё состояние должно быть можно без входа —
+    вкладку могли перезагрузить."""
+    job = db.get(models.CalcJob, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="задача не найдена")
+    return {
+        "job_id": job.job_id,
+        "status": job.status.value,
+        "step": job.step,
+        "steps": jobs.STEPS,
+        "error": job.error,
+        "calc_id": job.calc_id,
+        "created_by": job.created_by,
+        "result": job.result if job.status is models.JobStatus.done else None,
+    }

@@ -17,10 +17,21 @@
 
 from __future__ import annotations
 
-import urllib.request
+import http.client
+import ssl
+import threading
+import time
+import urllib.parse
 
 BLOCK = 256 * 1024
 TIMEOUT = 120
+
+# Сколько раз повторять запрос блока при обрыве соединения и сколько
+# ждать между попытками. Пауза растёт: обрыв обычно означает, что по
+# пути кто-то ограничивает частоту рукопожатий, и повтор через секунду
+# упирается в то же самое.
+ATTEMPTS = 4
+BACKOFF = 2.0
 
 
 class RangeReader:
@@ -39,6 +50,35 @@ class RangeReader:
         self._size: int | None = None
         self.requests = 0
         self.bytes_read = 0
+        self._parts = urllib.parse.urlsplit(url)
+        self._conn: http.client.HTTPSConnection | None = None
+        # Читатель общий: годы растра читаются параллельно, а одно
+        # HTTP-соединение двумя потоками сразу — это перемешанные ответы
+        # и порванный TLS. Запрос за блоком выполняется по одному.
+        self._lock = threading.Lock()
+
+    def _connection(self) -> http.client.HTTPSConnection:
+        """Одно соединение на весь растр.
+
+        Так было не сразу: каждый блок открывался отдельным запросом
+        urlopen, то есть отдельным рукопожатием TLS. После трёх-четырёх
+        подряд соединение начинало рваться с DECRYPTION_FAILED_OR_BAD_
+        RECORD_MAC, и снимок не собирался вовсе. Одно постоянное
+        соединение убирает и обрывы, и задержку на рукопожатие.
+        """
+        if self._conn is None:
+            self._conn = http.client.HTTPSConnection(
+                self._parts.netloc, timeout=self.timeout
+            )
+        return self._conn
+
+    def _drop(self) -> None:
+        if self._conn is not None:
+            try:
+                self._conn.close()
+            except OSError:
+                pass
+            self._conn = None
 
     def __len__(self) -> int:
         if self._size is None:
@@ -49,20 +89,43 @@ class RangeReader:
         cached = self._blocks.get(index)
         if cached is not None:
             return cached
+        with self._lock:
+            # Пока ждали замок, блок мог приехать в соседнем потоке.
+            cached = self._blocks.get(index)
+            if cached is not None:
+                return cached
+            return self._fetch_locked(index)
 
+    def _fetch_locked(self, index: int) -> bytes:
         start = index * self.block
         end = start + self.block - 1
-        request = urllib.request.Request(
-            self.url,
-            headers={"Range": f"bytes={start}-{end}", "User-Agent": "ForestProof/1.0"},
-        )
-        with urllib.request.urlopen(request, timeout=self.timeout) as response:
-            data = response.read()
-            # Общий размер приходит в заголовке диапазона: «bytes 0-1023/148132472».
-            if self._size is None:
-                header = response.headers.get("Content-Range", "")
-                if "/" in header:
-                    self._size = int(header.rsplit("/", 1)[1])
+        path = self._parts.path + (f"?{self._parts.query}" if self._parts.query else "")
+        headers = {
+            "Range": f"bytes={start}-{end}",
+            "User-Agent": "ForestProof/1.0",
+        }
+
+        # Соединение переиспользуется, но не вечно: сервер вправе его
+        # закрыть. Обрыв — это переподключиться и повторить, а не потерять
+        # снимок целиком.
+        for attempt in range(1, ATTEMPTS + 1):
+            try:
+                conn = self._connection()
+                conn.request("GET", path, headers=headers)
+                response = conn.getresponse()
+                data = response.read()
+                if response.status not in (200, 206):
+                    raise OSError(f"{response.status} {response.reason}")
+                if self._size is None:
+                    header = response.getheader("Content-Range", "")
+                    if "/" in header:
+                        self._size = int(header.rsplit("/", 1)[1])
+                break
+            except (http.client.HTTPException, ssl.SSLError, TimeoutError, OSError):
+                self._drop()
+                if attempt == ATTEMPTS:
+                    raise
+                time.sleep(BACKOFF * attempt)
 
         self.requests += 1
         self.bytes_read += len(data)
@@ -93,9 +156,10 @@ class RangeReader:
         return joined[offset : offset + (stop - start)]
 
     def close(self) -> None:
-        # Блоки намеренно не выбрасываются: читатель живёт в общем кэше
-        # (см. reader_for), и один и тот же тайл открывается за расчёт
-        # два десятка раз — по разу на год и канал.
+        # Ни блоки, ни соединение не выбрасываются: читатель живёт в общем
+        # кэше (см. reader_for), и один и тот же растр открывается за
+        # расчёт много раз. Закрывать соединение на каждом открытии значит
+        # возвращать рукопожатие на каждый блок — то, от чего уходили.
         pass
 
 

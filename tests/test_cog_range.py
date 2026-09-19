@@ -26,29 +26,46 @@ DATA = bytes(range(256)) * 40  # 10 240 байт, каждый со своим �
 class _FakeResponse:
     def __init__(self, payload: bytes, total: int) -> None:
         self._payload = payload
-        self.headers = {"Content-Range": f"bytes 0-{len(payload) - 1}/{total}"}
+        self.status = 206
+        self.reason = "Partial Content"
+        self._headers = {"Content-Range": f"bytes 0-{len(payload) - 1}/{total}"}
 
     def read(self) -> bytes:
         return self._payload
 
-    def __enter__(self):
-        return self
+    def getheader(self, name: str, default: str = "") -> str:
+        return self._headers.get(name, default)
 
-    def __exit__(self, *exc) -> None:
-        return None
+
+class _FakeConnection:
+    """Подменяет постоянное соединение читателя.
+
+    Читатель держит одно соединение на весь растр и ходит по нему
+    запросами с заголовком Range — подменять нужно именно соединение,
+    а не urlopen: через urlopen он больше не ходит.
+    """
+
+    def __init__(self, host: str, timeout: float | None = None) -> None:
+        self.host = host
+        self._next: _FakeResponse | None = None
+        self.closed = False
+
+    def request(self, method: str, path: str, headers: dict) -> None:
+        start, end = headers["Range"].removeprefix("bytes=").split("-")
+        chunk = DATA[int(start) : int(end) + 1]
+        self._next = _FakeResponse(chunk, len(DATA))
+
+    def getresponse(self) -> _FakeResponse:
+        return self._next
+
+    def close(self) -> None:
+        self.closed = True
 
 
 @pytest.fixture
 def reader(monkeypatch) -> RangeReader:
     """Читатель поверх DATA, считающий обращения к «сети»."""
-
-    def fake_urlopen(request, timeout=None):
-        header = request.headers["Range"]
-        start, end = header.removeprefix("bytes=").split("-")
-        chunk = DATA[int(start) : int(end) + 1]
-        return _FakeResponse(chunk, len(DATA))
-
-    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setattr("cog.http.client.HTTPSConnection", _FakeConnection)
     return RangeReader("https://example.invalid/band.tif", block=1024)
 
 

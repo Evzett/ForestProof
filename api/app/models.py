@@ -434,3 +434,36 @@ class WatchlistEntry(Base):
     status: Mapped[WatchStatus] = mapped_column(_enum(WatchStatus), default=WatchStatus.quiet)
 
     project: Mapped["Project"] = relationship()
+
+
+class JobStatus(str, enum.Enum):
+    queued = "queued"
+    running = "running"
+    done = "done"
+    failed = "failed"
+
+
+class CalcJob(Base):
+    """Фоновый расчёт по контуру. KAN-78.
+
+    Состояние живёт в базе, а не в памяти процесса: окно мастера можно
+    закрыть, вкладку перезагрузить, а задача останется и найдётся по
+    номеру. В памяти она пережила бы только текущую вкладку.
+    """
+
+    __tablename__ = "calc_jobs"
+
+    job_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    geometry: Mapped[dict] = mapped_column(JSONB)
+    year_start: Mapped[int] = mapped_column(Integer)
+    year_end: Mapped[int] = mapped_column(Integer)
+    status: Mapped[JobStatus] = mapped_column(_enum(JobStatus), default=JobStatus.queued)
+    step: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(String(1024))
+    result: Mapped[dict | None] = mapped_column(JSONB)
+    calc_id: Mapped[str | None] = mapped_column(String(32))
+    created_by: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("users.login", ondelete="SET NULL"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

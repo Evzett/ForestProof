@@ -14,6 +14,7 @@ build_aoi` — тот же код, которым посчитан набор и
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import os
 import sys
@@ -51,6 +52,11 @@ from forestproof_core.case_calculation import CaseCalculationConfig  # noqa: E40
 from tools.extract_case_data import build_aoi, read_year  # noqa: E402
 
 DATA_DIR = Path(os.environ.get("FORESTPROOF_DATA_DIR") or REPO_ROOT / "data")
+
+# Картинки расчётов по загруженным контурам. Лежат внутри api/data —
+# оттуда их отдаёт статика (/data), и отдельной раздачи не нужно.
+MAPS_ROOT = Path(__file__).resolve().parent.parent / "data" / "contours"
+MAPS_URL = "/data/contours"
 
 # Границы запроса из постановки: период 2019–2024, площадь до 20 км².
 YEAR_MIN, YEAR_MAX = 2019, 2024
@@ -296,6 +302,41 @@ def _derive_baseline(geometry: dict, aoi_id: str, config) -> tuple[list[dict], f
     return rows, rate
 
 
+def _external_evidence(geometry: dict, year_start: int, year_end: int, maps_dir: Path):
+    """Снимки и гари по контуру из открытых каталогов.
+
+    Отказ источника не роняет расчёт: числа по биомассе уже посчитаны, и
+    терять их из-за недоступного каталога снимков нельзя. Причина
+    возвращается оговоркой и показывается на экране — «не удалось
+    подтвердить» и «подтверждений нет» это разные утверждения.
+    """
+    from tools.contour_evidence import Evidence, collect
+
+    bbox = geometry_bbox(geometry)
+    try:
+        return collect(bbox, (year_start, year_end), maps_dir, "contour")
+    except Exception as error:  # noqa: BLE001 — любой отказ источника терпим
+        return Evidence(notes=[f"внешние источники недоступны: {type(error).__name__}"])
+
+
+def _maps_dir(geometry: dict, year_start: int, year_end: int) -> Path:
+    """Папка для картинок этого расчёта.
+
+    Имя выводится из самого запроса, а не из случайного номера: один и
+    тот же контур за тот же период попадает в ту же папку, картинки
+    переиспользуются, и мусор не копится с каждым нажатием.
+    """
+    seed = json.dumps(
+        {"geometry": geometry, "years": [year_start, year_end]},
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
+    target = MAPS_ROOT / digest
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
 def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
     """Полный расчёт по контуру. Форма результата — как у участка набора.
 
@@ -332,12 +373,22 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
     else:
         baseline_rows = case.baseline
 
+    # Карты рисуются и для загруженного контура. Раньше сюда уходил None
+    # с пометкой «карты не рендерим на каждый запрос», и из-за одной этой
+    # строки у своего участка пустовали сразу три блока: карта изменений,
+    # рельеф и снимок. Данные для них были, их просто некому было строить,
+    # и загруженный контур выглядел второсортным рядом с участком набора.
+    #
+    # Папка задаётся хешем входа: одинаковый контур за тот же период даёт
+    # те же картинки, и второй раз они не перерисовываются.
+    maps_dir = _maps_dir(geometry, year_start, year_end)
+
     area = build_aoi(
         DATA_DIR,
         meta,
         baseline_rows,
         case.events,
-        None,  # карты не рендерим на каждый запрос: это отдельный шаг
+        maps_dir,
         case.config,
         geometry,
     )
@@ -361,6 +412,13 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
     # вложенной вырезки, из тайла в кэше или прямо из облака.
     sources = sorted({row["source"] for row in area.get("series", []) if row.get("source")})
 
+    # Снимки и гари для чужого контура собираются отдельно: build_aoi
+    # берёт их из набора, а у загруженного контура в наборе ничего нет.
+    # Ищутся они в тех же открытых каталогах, что и всё остальное.
+    evidence = None
+    if derived_baseline:
+        evidence = _external_evidence(geometry, year_start, year_end, maps_dir)
+
     return {
         "aoi_id": meta["aoi_id"],
         "parent_area_name": meta.get("name"),
@@ -368,6 +426,14 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
         "area_ha": measured,
         "series": area.get("series"),
         "cover_loss": area.get("cover_loss"),
+        # Карты и рельеф — те же, что у участков набора, и строятся тем же
+        # кодом. `maps_base` говорит фронту, откуда их брать: у набора они
+        # лежат в сборке, у контура отдаются статикой сервиса.
+        "maps": area.get("maps"),
+        "terrain": area.get("terrain"),
+        "maps_base": f"{MAPS_URL}/{maps_dir.name}",
+        "sentinel": area.get("sentinel"),
+        "evidence": evidence.as_dict() if evidence is not None else None,
         "stability": area.get("stability"),
         "stability_model": None if derived_baseline else stability_forecast(meta["aoi_id"]),
         "period": periods[0],

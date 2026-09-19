@@ -35,7 +35,9 @@ import argparse
 import csv
 import json
 import math
+import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -111,16 +113,31 @@ def search(
     return out
 
 
-def _download(url: str, target: Path) -> Path:
-    """Скачивание с провенансом рядом. Повторно не качает."""
+def _download(url: str, target: Path, *, attempts: int = 3) -> Path:
+    """Скачивание с провенансом рядом. Повторно не качает.
+
+    Попыток несколько: облако изредка рвёт TLS на середине
+    (DECRYPTION_FAILED_OR_BAD_RECORD_MAC), и терять из-за этого сцену
+    незачем — при следующей попытке она скачивается без вопросов.
+    """
     if target.exists():
         return target
     target.parent.mkdir(parents=True, exist_ok=True)
     part = target.with_suffix(target.suffix + ".part")
     request = urllib.request.Request(url, headers={"User-Agent": "ForestProof/1.0"})
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response, open(part, "wb") as handle:
-        while chunk := response.read(1 << 20):
-            handle.write(chunk)
+
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=TIMEOUT) as response, open(part, "wb") as handle:
+                while chunk := response.read(1 << 20):
+                    handle.write(chunk)
+            break
+        except (urllib.error.URLError, ssl.SSLError, TimeoutError, OSError):
+            part.unlink(missing_ok=True)
+            if attempt == attempts:
+                raise
+            time.sleep(attempt)
+
     part.replace(target)
     target.with_suffix(target.suffix + ".json").write_text(
         json.dumps({"url": url, "bytes": target.stat().st_size}, ensure_ascii=False, indent=2),
