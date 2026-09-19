@@ -313,13 +313,22 @@ def test_real_case_methodology_and_rasters():
         features = json.load(handle)["features"]
     assert config.co2_per_carbon == pytest.approx(44 / 12)
     assert config.unc_stop_ratio == 1.0
+    checked = []
     for feature in features:
         props = feature["properties"]
         aoi = props["aoi_id"]
         stocks = baseline_stock_by_year(baseline, aoi, props["baseline_id"])
         assert sorted(stocks) == list(range(2019, 2030))
-        start = extract_case_data.read_year(REAL_DATA, aoi, 2019, feature["geometry"], config)
-        end = extract_case_data.read_year(REAL_DATA, aoi, 2024, feature["geometry"], config)
+        # Участки кейса приходят с вложенными растрами, добавленные нами —
+        # окном из тайла в кэше. Тайлы весят гигабайты и в Git не хранятся,
+        # поэтому на свежем клоне такой участок пропускается, а не роняет
+        # прогон: проверять нечего, но и ломаться не из-за чего.
+        try:
+            start = extract_case_data.read_year(REAL_DATA, aoi, 2019, feature["geometry"], config)
+            end = extract_case_data.read_year(REAL_DATA, aoi, 2024, feature["geometry"], config)
+        except FileNotFoundError:
+            continue
+        checked.append(aoi)
         assert start["area_ha"] == pytest.approx(float(props["area_ha"]), rel=2e-5)
         assert start["area_ha"] == pytest.approx(end["area_ha"], rel=1e-9)
         assert start["c_t_ha"] == pytest.approx(stocks[2019], abs=1e-5)
@@ -330,6 +339,10 @@ def test_real_case_methodology_and_rasters():
         assert result["e_base_tco2e"] == pytest.approx(expected_base)
         assert result["h_tco2e"] >= 0
         assert result["available"] is True
+
+    # Четыре участка кейса вложены в репозиторий, поэтому проверены всегда.
+    # Если и они пропали, тест молча перестал бы что-либо проверять.
+    assert {"RU_TVER_01", "RU_VOLOGDA_02", "RU_MORDOVIA_03", "RU_MORDOVIA_04"} <= set(checked)
 
 
 def test_baseline_rejects_missing_or_conflicting_periods():

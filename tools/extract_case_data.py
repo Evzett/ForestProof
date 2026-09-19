@@ -599,10 +599,27 @@ def main() -> None:
         action="store_true",
         help="сверить средние запасы 2015 и 2019 с опорными значениями baseline.csv",
     )
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        metavar="AOI",
+        default=None,
+        help="считать только перечисленные участки (например, четыре участка кейса)",
+    )
     args = parser.parse_args()
 
     with open(args.data / "areas.csv", encoding="utf-8-sig") as handle:
         areas = list(csv.DictReader(handle))
+
+    # Участки кейса вложены в репозиторий и считаются без сети. Добавленным
+    # нами участкам нужны тайлы из кэша — гигабайты, которых на свежем
+    # клоне нет. Отбор даёт воспроизвести расчёт по кейсу, не скачивая их.
+    if args.only:
+        wanted = set(args.only)
+        unknown = wanted - {row["aoi_id"] for row in areas}
+        if unknown:
+            parser.error(f"нет таких участков в areas.csv: {', '.join(sorted(unknown))}")
+        areas = [row for row in areas if row["aoi_id"] in wanted]
     with open(args.data / "methodology" / "baseline.csv", encoding="utf-8-sig") as handle:
         baseline = list(csv.DictReader(handle))
     with open(args.data / "events.csv", encoding="utf-8-sig") as handle:
