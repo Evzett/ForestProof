@@ -19,6 +19,7 @@ import {
   login as apiLogin,
   logout as apiLogout,
   register as apiRegister,
+  enterDemo as apiEnterDemo,
   setToken,
 } from "../api";
 import type { Session } from "../api";
@@ -31,6 +32,7 @@ const VIEWER: Session = {
   role_label: "наблюдатель",
   role_note: "Просмотр участков, расчётов и журнала — без входа.",
   blocked: false,
+  demo_available: false,
   avatar: null,
   can: {
     view: true,
@@ -51,6 +53,8 @@ type SessionValue = {
   signIn: (login: string, password: string) => Promise<void>;
   signUp: (login: string, displayName: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Вернуться в демонстрационный режим после выхода. */
+  enterDemo: () => Promise<void>;
   /** Обновить сведения о себе после правки профиля — без повторного входа. */
   refresh: (value: Session) => void;
 };
@@ -112,6 +116,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback((value: Session) => setSession(value), []);
 
+  const enterDemo = useCallback(async () => {
+    await apiEnterDemo();
+    setSession(await getSession());
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await apiLogout();
@@ -132,8 +141,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ session, ready, offline, signIn, signUp, signOut, refresh }),
-    [session, ready, offline, signIn, signUp, signOut, refresh]
+    () => ({ session, ready, offline, signIn, signUp, signOut, refresh, enterDemo }),
+    [session, ready, offline, signIn, signUp, signOut, refresh, enterDemo]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

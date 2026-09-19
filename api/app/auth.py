@@ -48,6 +48,15 @@ TOKEN_TTL_SECONDS = 24 * 60 * 60
 
 COOKIE_NAME = "forestproof_session"
 
+# Отметка «человек вышел сам». Нужна из-за демонстрационного режима: без
+# неё выход не работал вовсе — токен снимался, сервис тут же подставлял
+# администратора обратно, и кнопка «Выйти» выглядела сломанной.
+#
+# Отдельная кука, а не отсутствие сессии: «я не входил» и «я вышел» —
+# разные состояния, и различать их должен сервер, потому что это он
+# решает, кем открыть сервис.
+DEMO_OFF_COOKIE = "forestproof_demo_off"
+
 
 def _secret() -> bytes:
     """Секрет подписи. Берётся из окружения и в репозиторий не попадает.
@@ -131,18 +140,42 @@ def _token_from_request(request: Request) -> str | None:
     return request.cookies.get(COOKIE_NAME)
 
 
-def _open_admin_enabled() -> bool:
-    """Открывать ли сервис администратором без входа.
+# Значение, которым демонстрационный режим включается на проде. Слово
+# длинное и неудобное намеренно: случайной единицей или словом «true»
+# открыть панель администратора в интернете нельзя, только вписав вот
+# это — то есть понимая, что делаешь.
+PUBLIC_DEMO_OPT_IN = "yes-i-know-this-is-public"
 
-    Это режим демонстрации, а не настройка по умолчанию «для удобства».
-    Явно включается переменной, и на проде (`ENVIRONMENT=production`) не
-    включается вовсе, чем бы ни была заполнена переменная: открытая
-    панель администратора в интернете — это не демо, а раздача доступа.
+
+def demo_admin_allowed() -> bool:
+    """Разрешён ли демонстрационный режим этой установкой сервиса.
+
+    В разработке включён по умолчанию: на защите никто не должен искать
+    логин, чтобы показать загрузку контура.
+
+    На проде (`ENVIRONMENT=production`) единицы и слова «true» мало —
+    нужно ровно `PUBLIC_DEMO_OPT_IN`. Разница не косметическая: открытый
+    демонстрационный режим в интернете означает, что панель
+    администратора доступна любому, кто знает адрес. Это законное
+    решение для показа, но оно должно быть принято, а не унаследовано
+    из конфига для разработки.
     """
-    if os.environ.get("ENVIRONMENT", "development").strip().lower() == "production":
-        return False
     value = os.environ.get("FORESTPROOF_OPEN_ADMIN", "1").strip().lower()
+    if os.environ.get("ENVIRONMENT", "development").strip().lower() == "production":
+        return value == PUBLIC_DEMO_OPT_IN
     return value not in {"", "0", "false", "no"}
+
+
+def _open_admin_for(request: Request) -> bool:
+    """...и не отменён ли он тем, что человек вышел сам.
+
+    Выход сильнее демонстрационного режима. Иначе получается то, что и
+    получалось: нажимаешь «Выйти», токен снимается, сервис подставляет
+    администратора обратно — и выйти нельзя в принципе.
+    """
+    if not demo_admin_allowed():
+        return False
+    return request.cookies.get(DEMO_OFF_COOKIE) != "1"
 
 
 def current_user(request: Request, db: Session = Depends(get_db)) -> models.User | None:
@@ -159,7 +192,7 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> models.User
     """
     token = _token_from_request(request)
     if not token:
-        if _open_admin_enabled():
+        if _open_admin_for(request):
             demo = db.scalars(
                 select(models.User)
                 .where(models.User.role == models.Role.admin, models.User.blocked.is_(False))

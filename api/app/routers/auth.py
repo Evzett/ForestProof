@@ -54,6 +54,10 @@ def _describe(user: models.User | None) -> dict:
         "role_label": auth.ROLE_LABELS[role],
         "role_note": auth.ROLE_NOTES[role],
         "blocked": bool(user.blocked) if user else False,
+        # Показывать ли кнопку возврата в демонстрационный режим. Фронт
+        # не должен догадываться об этом по роли: на проде режима нет
+        # вовсе, и кнопка была бы обещанием, которое некому выполнить.
+        "demo_available": auth.demo_admin_allowed(),
         "avatar": (
             {
                 "initials": initials(user.display_name, user.login),
@@ -172,7 +176,40 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
 
 @router.post("/logout")
 def logout(response: Response) -> dict:
+    """Выход. Снимает сессию и, если сервис работает в режиме
+    демонстрации, выключает его для этого браузера.
+
+    Без второго выход не работал: токен снимался, и сервис тут же
+    подставлял администратора обратно. Кнопка «Выйти» ничего не меняла,
+    и объяснить это человеку было нечем.
+    """
     response.delete_cookie(auth.COOKIE_NAME)
+    if auth.demo_admin_allowed():
+        response.set_cookie(
+            auth.DEMO_OFF_COOKIE,
+            "1",
+            max_age=auth.TOKEN_TTL_SECONDS,
+            samesite="lax",
+        )
+    return {"ok": True, "demo_available": auth.demo_admin_allowed()}
+
+
+@router.post("/demo")
+def demo(response: Response) -> dict:
+    """Вернуться в демонстрационный режим после выхода.
+
+    Нужна ровно потому, что выход теперь настоящий: выйдя, человек
+    остаётся наблюдателем, и вернуть показ «как видит администратор»
+    иначе можно было бы только чисткой кук.
+
+    На проде ничего не включает и честно об этом говорит.
+    """
+    if not auth.demo_admin_allowed():
+        raise HTTPException(
+            status_code=404,
+            detail="Демонстрационный режим на этой установке выключен. Нужен вход.",
+        )
+    response.delete_cookie(auth.DEMO_OFF_COOKIE)
     return {"ok": True}
 
 

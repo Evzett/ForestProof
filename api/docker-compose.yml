@@ -33,6 +33,7 @@ services:
       # состояние: справка собирается шаблоном, сервис работает.
       ROUTERAI_API_KEY: ${ROUTERAI_API_KEY:-}
       ROUTERAI_MODEL: ${ROUTERAI_MODEL:-}
+      ROUTERAI_BASE_URL: ${ROUTERAI_BASE_URL:-https://routerai.ru/api/v1}
     volumes:
       # Код — живьём, чтобы --reload имел смысл.
       - .:/app

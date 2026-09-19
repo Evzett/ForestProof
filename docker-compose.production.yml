@@ -19,20 +19,45 @@ services:
       context: .
       dockerfile: api/Dockerfile
     restart: unless-stopped
+    # Миграции и учётные записи — частью запуска. Без `seed_users` в
+    # базе нет ни одного человека, и войти в развёрнутый сервис нельзя
+    # физически: форма входа есть, а сверять пароль не с чем.
+    #
+    # Один рабочий процесс, а не два: на машине с одним ядром и двумя
+    # гигабайтами второй процесс не ускоряет, а отнимает память у чтения
+    # растров, которое здесь и есть настоящая работа.
     command: >-
       sh -c "alembic upgrade head &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
+      python -m app.seed_users &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1"
     environment:
       DATABASE_URL: postgresql+psycopg2://forestproof:${POSTGRES_PASSWORD}@db:5432/forestproof
       ENVIRONMENT: production
       FORESTPROOF_ROOT: /repo
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
-      FORESTPROOF_ANALYST_PASSWORD: ${FORESTPROOF_ANALYST_PASSWORD:?set FORESTPROOF_ANALYST_PASSWORD in .env}
+      FORESTPROOF_OPERATOR_PASSWORD: ${FORESTPROOF_OPERATOR_PASSWORD:?set FORESTPROOF_OPERATOR_PASSWORD in .env}
+      FORESTPROOF_INVESTOR_PASSWORD: ${FORESTPROOF_INVESTOR_PASSWORD:?set FORESTPROOF_INVESTOR_PASSWORD in .env}
       FORESTPROOF_ADMIN_PASSWORD: ${FORESTPROOF_ADMIN_PASSWORD:?set FORESTPROOF_ADMIN_PASSWORD in .env}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+      # Демонстрационный режим на публичном адресе. Пустое значение —
+      # выключено; включается только строкой
+      # `yes-i-know-this-is-public`, и это не придирка: включённый режим
+      # открывает панель администратора любому, кто знает адрес.
+      FORESTPROOF_OPEN_ADMIN: ${FORESTPROOF_OPEN_ADMIN:-}
+      # Языковая модель для краткой справки. Без ключа справка
+      # собирается шаблоном — сервис работает.
       ROUTERAI_API_KEY: ${ROUTERAI_API_KEY:-}
+      ROUTERAI_MODEL: ${ROUTERAI_MODEL:-deepseek/deepseek-v4-pro-0813}
+      ROUTERAI_BASE_URL: ${ROUTERAI_BASE_URL:-https://routerai.ru/api/v1}
+      # Токен Earthdata для продукта гарей MODIS. Без него гари просто
+      # не ищутся, расчёт от этого не падает.
+      EARTHDATA_TOKEN: ${EARTHDATA_TOKEN:-}
     volumes:
+      # Растры набора только на чтение: расчёт их не меняет, а том с
+      # правом записи однажды кто-нибудь перезапишет.
       - ./data:/repo/data:ro
+      # Карты посчитанных контуров и кэш скачанного — том: они растут,
+      # и в образе им не место.
       - api_runtime_data:/app/data
     depends_on:
       db:

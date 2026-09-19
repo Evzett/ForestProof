@@ -24,6 +24,12 @@ app = FastAPI(title="ForestProof API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
+    # Куки нужны: на них держится отметка «человек вышел сам», без
+    # которой демонстрационный режим возвращал администратора сразу
+    # после выхода. Со звёздочкой в allow_origins это было бы
+    # невозможно — браузер запрещает такое сочетание, и это ещё одна
+    # причина, по которой её здесь больше нет.
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

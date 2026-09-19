@@ -39,7 +39,7 @@ export function Avatar({
 }
 
 export default function TopBar() {
-  const { session, ready, offline, signOut } = useSession();
+  const { session, ready, offline, signOut, enterDemo } = useSession();
   const [menu, setMenu] = useState(false);
   const [auth, setAuth] = useState<"in" | "up" | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -93,6 +93,18 @@ export default function TopBar() {
             <span className="topbar__role" title="Просмотр открыт без входа">
               наблюдатель
             </span>
+            {/* Кнопка появляется только там, где демонстрационный режим
+                есть. На проде его нет, и обещать возврат было бы враньём. */}
+            {session.demo_available && (
+              <button
+                className="topbar__link"
+                type="button"
+                onClick={() => void enterDemo()}
+                title="Снова открыть сервис администратором, как в демонстрации"
+              >
+                демо-режим
+              </button>
+            )}
           </>
         ) : (
           <>

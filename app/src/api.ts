@@ -58,6 +58,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(`${BASE}${path}`, {
       ...init,
+      /* Куки ходят с каждым запросом. Без этого сервер не видел ни
+         сессионной куки, ни отметки «человек вышел сам»: фронт живёт на
+         другом порту, а на межсайтовый запрос браузер куки не шлёт, пока
+         его об этом не попросят. Токен мы и так носим заголовком, но
+         выход из демонстрационного режима держится именно на куке. */
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -208,6 +214,8 @@ export type Session = {
   role_label: string;
   role_note: string;
   blocked: boolean;
+  /** Доступен ли возврат в демонстрационный режим (на проде — нет). */
+  demo_available: boolean;
   avatar: Avatar | null;
   can: {
     view: boolean;
@@ -247,6 +255,11 @@ export function register(body: {
 
 export function logout(): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>("/api/auth/logout", { method: "POST" });
+}
+
+/** Вернуться в демонстрационный режим после выхода. */
+export function enterDemo(): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>("/api/auth/demo", { method: "POST" });
 }
 
 export function getRoles(): Promise<{ roles: RoleInfo[] }> {
