@@ -17,6 +17,7 @@ import csv
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -47,7 +48,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from forestproof_core.case_calculation import CaseCalculationConfig  # noqa: E402
-from tools.extract_case_data import build_aoi  # noqa: E402
+from tools.extract_case_data import build_aoi, read_year  # noqa: E402
 
 DATA_DIR = Path(os.environ.get("FORESTPROOF_DATA_DIR") or REPO_ROOT / "data")
 
@@ -215,32 +216,126 @@ def covering_area(geometry: dict) -> dict | None:
     return None
 
 
-def validate_request(geometry: dict, year_start: int, year_end: int) -> dict:
-    """Проверки до расчёта (В-03, В-05). Возвращает метаданные участка."""
+def validate_request(geometry: dict, year_start: int, year_end: int) -> dict | None:
+    """Проверки до расчёта (В-03, В-05).
+
+    Возвращает участок набора, накрывающий контур, либо None — контур
+    может лежать где угодно, и это штатный случай, а не отказ: продукты
+    открытые, и данные под такой контур подтягиваются из источника.
+    """
     if year_end <= year_start:
         raise CalculationError("конечный год должен быть больше начального")
     if not (YEAR_MIN <= year_start <= YEAR_MAX and YEAR_MIN <= year_end <= YEAR_MAX):
         raise CalculationError(f"период доступен только в диапазоне {YEAR_MIN}–{YEAR_MAX}")
 
-    meta = covering_area(geometry)
-    if meta is None:
-        raise CalculationError(
-            "контур выходит за пределы участков набора. Растры для него не скачаны, "
-            "и расчёт по обрезанным данным дал бы неверное число",
-            status=422,
+    return covering_area(geometry)
+
+
+# Историческое окно базовой линии — условия кейса: четырёхлетнее
+# изменение 2015→2019 продолжается вперёд.
+BASELINE_START = 2015
+BASELINE_ANCHOR = 2019
+BASELINE_HORIZON = 2029
+DERIVED_BASELINE_ID = "HIST-AGB-2015-2019-v1"
+
+
+def _derive_baseline(geometry: dict, aoi_id: str, config) -> tuple[list[dict], float]:
+    """Базовая линия для контура, которого нет в наборе.
+
+    Участкам кейса линия задана условием и пересчёту не подлежит. Для
+    чужого контура её задать неоткуда, но и отказывать незачем: кейс сам
+    описывает, как она строится — по собственной истории участка,
+    g = (c̄2019 − c̄2015) / 4, дальше продолжение с обрезкой снизу нулём.
+
+    Считается по тем же продуктам и тем же кодом, что и всё остальное:
+    читаются два года истории, а не выдумывается коэффициент.
+
+    Возвращает строки в форме baseline.csv — чтобы дальше по расчёту шла
+    одна ветка, а не отдельная для «своих» и «чужих» участков.
+    """
+    # Два года истории читаются параллельно: ожидание сетевое, и ставить
+    # их в очередь — лишние секунды на каждый запрос.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        start, anchor = pool.map(
+            lambda year: read_year(DATA_DIR, aoi_id, year, geometry, config),
+            (BASELINE_START, BASELINE_ANCHOR),
         )
-    return meta
+
+    c_start, c_anchor = start.get("c_t_ha"), anchor.get("c_t_ha")
+    if c_start is None or c_anchor is None:
+        raise CalculationError(
+            "по этому контуру нет данных биомассы за 2015 или 2019 год, "
+            "а без них базовую линию не построить"
+        )
+
+    rate = (c_anchor - c_start) / (BASELINE_ANCHOR - BASELINE_START)
+
+    def stock(year: int) -> float:
+        # Обрезка нулём снизу: отрицательного запаса не бывает, и
+        # продолжать падающую линию в минус значило бы считать по нему.
+        return max(0.0, c_anchor + rate * (year - BASELINE_ANCHOR))
+
+    rows = [
+        {
+            "baseline_id": DERIVED_BASELINE_ID,
+            "aoi_id": aoi_id,
+            "year_start": str(year),
+            "year_end": str(year + 1),
+            "pool": "AGB",
+            "reference_mean_2015_tc_ha": f"{c_start:.9f}",
+            "reference_mean_2019_tc_ha": f"{c_anchor:.9f}",
+            "historical_rate_tc_ha_yr": f"{rate:.9f}",
+            "baseline_stock_start_tc_ha": f"{stock(year):.9f}",
+            "baseline_stock_end_tc_ha": f"{stock(year + 1):.9f}",
+            "baseline_delta_tc_ha": f"{rate:.9f}",
+            "kind": "выведена нами по формуле кейса",
+            "history_product": "ESA CCI Biomass v7.0",
+        }
+        for year in range(BASELINE_ANCHOR, BASELINE_HORIZON)
+    ]
+    return rows, rate
 
 
 def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
-    """Полный расчёт по контуру. Форма результата — как у участка набора."""
+    """Полный расчёт по контуру. Форма результата — как у участка набора.
+
+    Контур не обязан лежать внутри участка набора. Если он снаружи,
+    данные под него подтягиваются из открытых источников окном по HTTP
+    Range, а базовая линия выводится по формуле кейса из его собственной
+    истории. Это и есть заявленная работа сервиса: проверить чужой
+    участок, а не показать свой набор.
+    """
     meta = validate_request(geometry, year_start, year_end)
     case = load_case_set()
+
+    derived_baseline = meta is None
+    if derived_baseline:
+        # Своего идентификатора у чужого контура нет. Он нужен только
+        # чтобы расчёт искал вырезку в наборе (её не будет) и подписывал
+        # строки базовой линии — поэтому берётся заведомо несуществующий.
+        aoi_id = "AOI-REQUEST"
+        baseline_rows, _rate = _derive_baseline(geometry, aoi_id, case.config)
+        west, south, east, north = geometry_bbox(geometry)
+        meta = {
+            "aoi_id": aoi_id,
+            "name": None,
+            "region": None,
+            "selection_role": "контур пользователя",
+            "project_status": "запрос",
+            "baseline_id": DERIVED_BASELINE_ID,
+            "bbox_west": west,
+            "bbox_south": south,
+            "bbox_east": east,
+            "bbox_north": north,
+            "area_ha": 0.0,
+        }
+    else:
+        baseline_rows = case.baseline
 
     area = build_aoi(
         DATA_DIR,
         meta,
-        case.baseline,
+        baseline_rows,
         case.events,
         None,  # карты не рендерим на каждый запрос: это отдельный шаг
         case.config,
@@ -261,6 +356,11 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
     if not periods:
         raise CalculationError(f"период {year_start}–{year_end} не посчитан по этому контуру")
 
+    # Источники слоёв берутся из самого расчёта, а не подписываются
+    # задним числом: на экране должно быть видно, читался ли продукт из
+    # вложенной вырезки, из тайла в кэше или прямо из облака.
+    sources = sorted({row["source"] for row in area.get("series", []) if row.get("source")})
+
     return {
         "aoi_id": meta["aoi_id"],
         "parent_area_name": meta.get("name"),
@@ -269,12 +369,20 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
         "series": area.get("series"),
         "cover_loss": area.get("cover_loss"),
         "stability": area.get("stability"),
-        "stability_model": stability_forecast(meta["aoi_id"]),
+        "stability_model": None if derived_baseline else stability_forecast(meta["aoi_id"]),
         "period": periods[0],
         "baseline_id": meta.get("baseline_id"),
+        "baseline_kind": (
+            "выведена нами по формуле кейса" if derived_baseline else "задана условиями кейса"
+        ),
         "baseline_note": (
-            "Базовая линия взята у участка набора, внутри которого лежит контур: "
+            "Базовая линия выведена по собственной истории контура: изменение запаса "
+            "2015→2019 продолжено вперёд, как предписывает кейс. Условием она не задана, "
+            "и дополнительность проекта не устанавливает"
+            if derived_baseline
+            else "Базовая линия взята у участка набора, внутри которого лежит контур: "
             "удельная траектория родительского участка и фактическая площадь запроса"
         ),
+        "data_sources": sources,
         "status": "расчёт по условиям кейса, а не сертифицированные единицы",
     }

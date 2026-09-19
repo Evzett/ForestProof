@@ -33,7 +33,6 @@ const NAV = [
      в макете взята «Методика», поэтому рисунок не выбивается из ряда. */
   { to: "/app/compare", label: "Сравнение", icon: "compare" },
   { to: "/app/projects", label: "Проекты", icon: "projects" },
-  { to: "/app/contours", label: "Мои контуры", icon: "areas" },
   { to: "/app/calculations", label: "Расчёты", icon: "calc" },
   { to: "/app/monitoring", label: "Что изменилось", icon: "monitoring" },
   { to: "/app/research", label: "Исследование", icon: "calc" },

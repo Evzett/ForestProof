@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -13,11 +13,22 @@ import {
 import { AddPlotButton, PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS, ROLE_HINT, formatBbox } from "../../data/case";
 import type { Area } from "../../data/case";
+import { ApiError, getContours, type SavedContour } from "../../api";
 import "./Areas.css";
 
 /* Каталог участков. В наборе кейса это исследовательские участки,
    а не зарегистрированные климатические проекты — так и подписано
-   в самом наборе, и подменять это словом «проект» нельзя. */
+   в самом наборе, и подменять это словом «проект» нельзя.
+
+   Загруженные пользователем контуры лежат здесь же, а не в отдельном
+   разделе. Отдельный раздел означал бы, что свой участок — что-то другое,
+   второго сорта. На деле это ровно тот же объект: тот же расчёт, теми же
+   формулами, по тем же продуктам. Разница только в происхождении границы
+   и базовой линии, и она подписана на карточке.
+
+   Данные под чужой контур подтягиваются из открытых источников окном по
+   HTTP Range — в этом и состоит работа сервиса. Участки набора посчитаны
+   заранее и показываются без сети; свои контуры приходят от API. */
 
 const ROLES = [
   { value: "all", label: "роль: все" },
@@ -34,6 +45,12 @@ const SIGNS = [
   { value: "all", label: "результат: любой" },
   { value: "loss", label: "потеря углерода" },
   { value: "gain", label: "накопление" },
+];
+
+const ORIGINS = [
+  { value: "all", label: "происхождение: все" },
+  { value: "case", label: "участки набора" },
+  { value: "mine", label: "мои контуры" },
 ];
 
 /* Самое свежее годное наблюдение. Негодные сцены сюда не попадают:
@@ -67,8 +84,32 @@ export default function Areas() {
   const [role, setRole] = useState("all");
   const [sign, setSign] = useState("all");
   const [onlyEvents, setOnlyEvents] = useState(false);
+  const [origin, setOrigin] = useState("all");
   const [picked, setPicked] = useState<string[]>([AREAS[0].aoi_id, AREAS[2].aoi_id]);
   const navigate = useNavigate();
+
+  /* Свои контуры живут на сервере: предпосчитать их нельзя, и без API их
+     просто нет. Это не ошибка — участки набора при этом открываются. */
+  const [mine, setMine] = useState<SavedContour[]>([]);
+  const [mineError, setMineError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getContours()
+      .then((data) => !cancelled && setMine(data.contours))
+      .catch((err) => {
+        if (cancelled) return;
+        setMine([]);
+        setMineError(
+          err instanceof ApiError && err.status !== 0
+            ? err.message
+            : "Сервис расчёта недоступен — загруженные контуры не показаны."
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const regions = useMemo(
     () => [
@@ -82,6 +123,7 @@ export default function Areas() {
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
+    if (origin === "mine") return [];
     return AREAS.filter((a) => {
       if (q && ![a.name, a.aoi_id, a.region].some((f) => f.toLowerCase().includes(q))) return false;
       if (region !== "all" && a.region !== region) return false;
@@ -91,16 +133,38 @@ export default function Areas() {
       if (onlyEvents && !EVENTS.some((e) => e.aoi_id === a.aoi_id)) return false;
       return true;
     });
-  }, [query, region, role, sign, onlyEvents]);
+  }, [query, region, role, sign, onlyEvents, origin]);
+
+  /* Свои контуры фильтруются теми же условиями, какие к ним применимы.
+     Роли и подтверждённого события у них нет — по этим фильтрам они
+     отсеиваются целиком, а не притворяются подходящими. */
+  const mineRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (origin === "case") return [];
+    if (role !== "all" || onlyEvents || region !== "all") return [];
+    return mine.filter((c) => {
+      if (q && ![c.name, c.contour_id, c.source_name].some((f) => f.toLowerCase().includes(q)))
+        return false;
+      if (sign === "loss" && !(c.e_tco2e !== null && c.e_tco2e > 0)) return false;
+      if (sign === "gain" && !(c.e_tco2e !== null && c.e_tco2e <= 0)) return false;
+      return true;
+    });
+  }, [mine, query, region, role, sign, onlyEvents, origin]);
 
   const filtersOn =
-    query.trim() !== "" || region !== "all" || role !== "all" || sign !== "all" || onlyEvents;
+    query.trim() !== "" ||
+    region !== "all" ||
+    role !== "all" ||
+    sign !== "all" ||
+    origin !== "all" ||
+    onlyEvents;
 
   const reset = () => {
     setQuery("");
     setRegion("all");
     setRole("all");
     setSign("all");
+    setOrigin("all");
     setOnlyEvents(false);
   };
 
@@ -115,11 +179,20 @@ export default function Areas() {
     <>
       <PageHead
         title="Участки"
-        subtitle={`${AREAS.length} ${plural(AREAS.length, [
-          "исследовательский участок",
-          "исследовательских участка",
-          "исследовательских участков",
-        ])} в наборе. Это не зарегистрированные климатические проекты — так помечены сами данные`}
+        subtitle={
+          `${AREAS.length} ${plural(AREAS.length, [
+            "исследовательский участок",
+            "исследовательских участка",
+            "исследовательских участков",
+          ])} в наборе — это не зарегистрированные климатические проекты, так помечены сами данные` +
+          (mine.length > 0
+            ? `, плюс ${mine.length} ${plural(mine.length, [
+                "загруженный контур",
+                "загруженных контура",
+                "загруженных контура",
+              ])}: данные под них подтянуты из открытых источников`
+            : ". Свой контур считается по тем же продуктам — загрузите границу")
+        }
         action={<AddPlotButton label="Задать свой контур" />}
       />
 
@@ -132,6 +205,12 @@ export default function Areas() {
         <FilterSelect value={region} onChange={setRegion} options={regions} label="регион" />
         <FilterSelect value={role} onChange={setRole} options={ROLES} label="роль участка" />
         <FilterSelect value={sign} onChange={setSign} options={SIGNS} label="знак результата" />
+        <FilterSelect
+          value={origin}
+          onChange={setOrigin}
+          options={ORIGINS}
+          label="происхождение участка"
+        />
         <FilterToggle on={onlyEvents} onClick={() => setOnlyEvents((v) => !v)}>
           только с подтверждённым событием
         </FilterToggle>
@@ -179,6 +258,70 @@ export default function Areas() {
       </div>
 
       <div className="areas scrollbox">
+        {/* Свои контуры идут первыми: человек пришёл смотреть на свой
+            участок, а не искать его среди двенадцати чужих. */}
+        {mineRows.map((c) => (
+          <Card key={c.contour_id} className="area area--mine">
+            <div className="area__map area__map--plain">
+              <span className="area__role">ваш контур</span>
+              <span className="area__plain-note">
+                карта изменений строится для участков набора заранее; по своему контуру
+                показываются числа расчёта
+              </span>
+            </div>
+
+            <h3 className="area__name">
+              <Link to={`/app/contours/${c.contour_id}`}>{c.name}</Link>
+            </h3>
+            <p className="area__meta">
+              {c.contour_id} · {formatDecimal(c.area_ha, 1)} га · {c.year_start}—{c.year_end}
+            </p>
+            <p className="area__hint">
+              загружен из «{c.source_name}»{c.created_by ? `, ${c.created_by}` : ""}
+            </p>
+
+            <dl className="area__kv">
+              <div>
+                <dt>результат за период</dt>
+                <dd className="tabular">
+                  {c.e_tco2e === null
+                    ? "—"
+                    : `${c.e_tco2e > 0 ? "+" : "−"}${formatNumber(Math.abs(Math.round(c.e_tco2e)))} т CO₂-экв.`}
+                </dd>
+              </div>
+              <div>
+                <dt>потенциальные единицы</dt>
+                <dd>
+                  {c.units === null ? (
+                    <span className="lvl lvl--none">недоступно</span>
+                  ) : c.units === 0 ? (
+                    <span className="lvl lvl--none">0</span>
+                  ) : (
+                    <span className="lvl lvl--low">{formatNumber(c.units)}</span>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>расчёт</dt>
+                <dd className="tabular">{c.calc_id ?? "—"}</dd>
+              </div>
+            </dl>
+
+            <p className="area__why">{c.reason ?? "результат превышает базовую линию"}</p>
+
+            <p className="area__legend">
+              <b>данные подтянуты из открытых источников.</b> Биомасса и её погрешность читаются
+              окном из продукта ESA CCI, потери покрова — из Hansen GFC. Базовая линия выведена по
+              собственной истории контура 2015 → 2019, как предписывает кейс: условием она не
+              задана и дополнительность не устанавливает.
+            </p>
+
+            <Link to={`/app/contours/${c.contour_id}`} className="row-action area__open">
+              открыть расчёт →
+            </Link>
+          </Card>
+        ))}
+
         {rows.map((a) => {
           const p = a.period_2019_2024;
           const events = EVENTS.filter((e) => e.aoi_id === a.aoi_id);
@@ -292,13 +435,21 @@ export default function Areas() {
         })}
       </div>
 
-      {rows.length === 0 && (
+      {rows.length === 0 && mineRows.length === 0 && (
         <Card>
           <p className="empty">
             Под фильтры не подходит ни один участок.{" "}
             <button className="link-btn" type="button" onClick={reset}>
               сбросить фильтры
             </button>
+          </p>
+        </Card>
+      )}
+
+      {mineError && origin !== "case" && (
+        <Card className="mb20">
+          <p className="ov-note" style={{ marginTop: 0 }}>
+            {mineError} Участки набора посчитаны заранее и открываются без него.
           </p>
         </Card>
       )}

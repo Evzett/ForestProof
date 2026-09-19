@@ -8,7 +8,7 @@ import ClaimProjects from "./pages/ClaimProjects/ClaimProjects";
 import Plot from "./pages/Plot/Plot";
 import Research from "./pages/Research/Research";
 import { Calculations, Methodology, Monitoring } from "./pages/Sections/Sections";
-import { ContourCard, Contours } from "./pages/Contours/Contours";
+import { ContourCard } from "./pages/Contours/Contours";
 
 /* Роутинг по структуре из docs/05-frontend-user-flow.md.
 
@@ -31,7 +31,11 @@ export default function App() {
           <Route path="area/:id" element={<Plot />} />
           <Route path="compare" element={<Compare />} />
           <Route path="projects" element={<ClaimProjects />} />
-          <Route path="contours" element={<Contours />} />
+          {/* Отдельного раздела для своих контуров нет: они лежат в
+              «Участках» вместе с участками набора. Адрес оставлен и
+              ведёт туда же — ссылки из Jira и переписки не должны
+              ломаться. */}
+          <Route path="contours" element={<Navigate to="/app/areas" replace />} />
           <Route path="contours/:id" element={<ContourCard />} />
           <Route path="calculations" element={<Calculations />} />
           <Route path="monitoring" element={<Monitoring />} />

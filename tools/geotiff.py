@@ -208,10 +208,13 @@ def read_geotiff(path: str, bbox: tuple[float, float, float, float] | None = Non
     # канал Sentinel-2 весит около 150 МБ, а окно участка — доли
     # процента, и качать тайл целиком незачем.
     if path.startswith(("http://", "https://")):
-        from cog import RangeReader
+        # Читатель берётся из общего кэша: за один расчёт тот же тайл
+        # открывается по разу на год и канал, и заново качать заголовок
+        # с таблицей смещений каждый раз — это минуты вместо секунд.
+        from cog import reader_for
 
         handle = None
-        buf = RangeReader(path)
+        buf = reader_for(path)
     else:
         # Файл отображается в память, а не читается целиком: тайл Hansen
         # весит 452 МБ, а окно затрагивает доли процента страниц. При чтении

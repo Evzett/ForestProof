@@ -20,6 +20,15 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 NEW = ("RU_VOLOGDA_08", "RU_MORDOVIA_12")
 
+# Ряды запаса выводит build_area_from_tiles.py из тайлов, а тайлы весят
+# гигабайты и в Git не хранятся. На свежем клоне файла нет, проверять
+# нечего — но ронять из-за этого весь прогон не за что.
+SERIES = DATA / "series.derived.json"
+needs_series = pytest.mark.skipif(
+    not SERIES.exists(),
+    reason="ряды выводятся из тайлов, которых нет в Git: tools/build_area_from_tiles.py",
+)
+
 
 def _catalog() -> list[dict]:
     with (DATA / "areas.csv").open(encoding="utf-8-sig") as handle:
@@ -42,6 +51,7 @@ def test_new_areas_have_their_own_baseline() -> None:
         assert sum(row["aoi_id"] == aoi for row in baseline) == 10
 
 
+@needs_series
 def test_new_areas_are_marked_as_derived_not_given() -> None:
     """Базовая линия новых участков выведена нами, а не задана набором.
 
@@ -54,6 +64,7 @@ def test_new_areas_are_marked_as_derived_not_given() -> None:
         assert series[aoi]["source_kind"] == "выведена нами по формуле кейса"
 
 
+@needs_series
 def test_new_areas_do_not_repeat_another_area_numbers() -> None:
     """Ряды запаса не скопированы у соседей.
 

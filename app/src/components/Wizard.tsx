@@ -902,7 +902,8 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                   {saved ? (
                     <p className="wz__note">
                       Контур сохранён как {saved.contour_id} из «{saved.source_name}» — он остаётся
-                      в разделе «Мои контуры» и учитывается в сводке по загруженным участкам.
+                      в разделе «Участки» рядом с участками набора: данные под него подтянуты
+                      из открытых источников.
                     </p>
                   ) : (
                     <p className="wz__note" style={{ color: "#9c3f66" }}>

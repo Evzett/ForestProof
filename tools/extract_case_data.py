@@ -19,8 +19,10 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import math
+import os
 from pathlib import Path
 import sys
 
@@ -46,7 +48,7 @@ from forestproof_core.scenario_economics import (  # noqa: E402
     calculate_scenario_value,
 )
 from forestproof_core.summary_generator import generate_summary  # noqa: E402
-from tools.fetch import _tile_name_cci, _tile_name_gfc, cci_url  # noqa: E402
+from tools.fetch import _tile_name_cci, _tile_name_gfc, cci_url, gfc_url  # noqa: E402
 from tools.geotiff import read_geotiff
 from tools.sentinel_evidence import build_event_evidence, build_period_evidence
 
@@ -73,6 +75,17 @@ CCI_CACHE = Path("data/cache/cci-biomass")
 GFC_CACHE = Path("data/cache/hansen-gfc")
 GFC_TILE_VERSION = "Hansen GFC v1.12 (тайл)"
 GFC_LOCAL_VERSION = "Hansen GFC v1.13 (вложен в набор)"
+
+# Чтение продукта прямо из облака, когда ни вырезки, ни тайла нет.
+#
+# Это и есть смысл сервиса: контур задаётся где угодно, и данные под него
+# подтягиваются из открытого источника. Иначе сервис умеет считать только
+# заранее нарезанные участки, а это не проверка чужого проекта, а показ
+# своего набора.
+#
+# Выключается переменной окружения FORESTPROOF_OFFLINE=1 — для прогонов,
+# которые обязаны быть воспроизводимы без сети.
+ALLOW_REMOTE = os.environ.get("FORESTPROOF_OFFLINE", "").strip() not in ("1", "true", "yes")
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,25 +153,40 @@ def open_cci(data_dir: Path, aoi: str, year: int, box) -> YearRaster:
 
     lon, lat = _centre(box)
     tile = _tile_name_cci(lon, lat)
-    agb_path = CCI_CACHE / cci_url(tile, year, "AGB").rsplit("/", 1)[-1]
-    sd_path = CCI_CACHE / cci_url(tile, year, "AGB_SD").rsplit("/", 1)[-1]
-    for path in (agb_path, sd_path):
-        if not path.exists():
-            raise FileNotFoundError(
-                f"нет ни {local}, ни тайла {path.name}; "
-                "сначала: python tools/fetch.py --bbox <W S E N> --years ..."
-            )
+    agb_url = cci_url(tile, year, "AGB")
+    sd_url = cci_url(tile, year, "AGB_SD")
+    agb_path = CCI_CACHE / agb_url.rsplit("/", 1)[-1]
+    sd_path = CCI_CACHE / sd_url.rsplit("/", 1)[-1]
+
+    # Порядок источников: вырезка в наборе → тайл в кэше → сам продукт в
+    # облаке. Последний шаг и есть смысл сервиса: контур можно задать где
+    # угодно, и данные под него подтягиваются из открытого источника, а не
+    # берутся из заранее нарезанного набора. Тайл весит сотни мегабайт, но
+    # читается окном по HTTP Range — едут только задетые блоки.
+    if agb_path.exists() and sd_path.exists():
+        agb_source, sd_source, origin = str(agb_path), str(sd_path), f"тайл {tile}"
+    elif ALLOW_REMOTE:
+        agb_source, sd_source, origin = agb_url, sd_url, f"CEDA, тайл {tile}"
+    else:
+        raise FileNotFoundError(
+            f"нет ни {local}, ни тайла {agb_path.name}; "
+            "сначала: python tools/fetch.py --bbox <W S E N> --years ..."
+        )
 
     window = _bounds(box)
-    agb_raster = read_geotiff(str(agb_path), bbox=window)
-    sd_raster = read_geotiff(str(sd_path), bbox=window)
+    # Биомасса и её погрешность — два отдельных файла, и в облаке они
+    # читаются независимо. Ждать их по очереди незачем.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        agb_raster, sd_raster = pool.map(
+            lambda src: read_geotiff(src, bbox=window), (agb_source, sd_source)
+        )
     agb = agb_raster.band(0).astype(float)
     sd = sd_raster.band(0).astype(float)
     if agb_raster.nodata is not None:
         agb[agb == agb_raster.nodata] = np.nan
     if sd_raster.nodata is not None:
         sd[sd == sd_raster.nodata] = np.nan
-    return YearRaster(agb, sd, agb_raster, f"тайл {tile}")
+    return YearRaster(agb, sd, agb_raster, origin)
 
 
 def open_gfc(data_dir: Path, aoi: str, box) -> CoverRaster:
@@ -176,21 +204,30 @@ def open_gfc(data_dir: Path, aoi: str, box) -> CoverRaster:
     tile = _tile_name_gfc(lon, lat)
     loss_path = GFC_CACHE / f"Hansen_GFC-2024-v1.12_lossyear_{tile}.tif"
     cover_path = GFC_CACHE / f"Hansen_GFC-2024-v1.12_treecover2000_{tile}.tif"
-    for path in (loss_path, cover_path):
-        if not path.exists():
-            raise FileNotFoundError(
-                f"нет ни {local}, ни тайла {path.name}; "
-                "сначала: python tools/fetch.py --bbox <W S E N> --cover"
-            )
+
+    if loss_path.exists() and cover_path.exists():
+        loss_source, cover_source = str(loss_path), str(cover_path)
+        origin = f"{GFC_TILE_VERSION} {tile}"
+    elif ALLOW_REMOTE:
+        # Тот же продукт, но окном прямо из Google Storage: контур может
+        # лежать вне заранее скачанных тайлов, и это не повод отказывать.
+        loss_source = gfc_url(tile, "lossyear")
+        cover_source = gfc_url(tile, "treecover2000")
+        origin = f"Google Storage, {GFC_TILE_VERSION} {tile}"
+    else:
+        raise FileNotFoundError(
+            f"нет ни {local}, ни тайла {loss_path.name}; "
+            "сначала: python tools/fetch.py --bbox <W S E N> --cover"
+        )
 
     window = _bounds(box)
-    loss = read_geotiff(str(loss_path), bbox=window)
-    cover = read_geotiff(str(cover_path), bbox=window)
+    loss = read_geotiff(loss_source, bbox=window)
+    cover = read_geotiff(cover_source, bbox=window)
     return CoverRaster(
         cover.band(0).astype(float),
         loss.band(0).astype(int),
         loss,
-        f"{GFC_TILE_VERSION} {tile}",
+        origin,
     )
 
 
@@ -503,7 +540,14 @@ def build_aoi(
     )
     aoi = meta["aoi_id"]
     contour = geometry if geometry is not None else box
-    series = [read_year(data_dir, aoi, year, contour, config) for year in range(2015, 2025)]
+    # Годы читаются параллельно. Каждый год продукта — отдельный файл, и
+    # когда они лежат в облаке, десять лет на два канала это два десятка
+    # обращений по сети подряд: около двух минут ожидания на запрос.
+    # Ожидание сетевое, а не счётное, поэтому потоки его и убирают —
+    # числа от порядка чтения не зависят, ряд собирается по году.
+    years = list(range(2015, 2025))
+    with ThreadPoolExecutor(max_workers=len(years)) as pool:
+        series = list(pool.map(lambda year: read_year(data_dir, aoi, year, contour, config), years))
     by_year = {row["year"]: row for row in series}
     area = series[0]["area_ha"]
 

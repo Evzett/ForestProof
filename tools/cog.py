@@ -93,4 +93,31 @@ class RangeReader:
         return joined[offset : offset + (stop - start)]
 
     def close(self) -> None:
-        self._blocks.clear()
+        # Блоки намеренно не выбрасываются: читатель живёт в общем кэше
+        # (см. reader_for), и один и тот же тайл открывается за расчёт
+        # два десятка раз — по разу на год и канал.
+        pass
+
+
+# Общий кэш читателей по адресу.
+#
+# Расчёт по контуру открывает один и тот же тайл около двадцати раз:
+# десять лет на два канала. Заголовок TIFF с таблицей смещений у него
+# общий, окна соседних лет попадают в те же блоки, и без кэша всё это
+# качалось заново — полторы минуты вместо нескольких секунд.
+#
+# Кэш ограничен по числу тайлов: каждый держит прочитанные блоки в
+# памяти, и расти без предела ему нельзя.
+_READERS: dict[str, RangeReader] = {}
+MAX_READERS = 8
+
+
+def reader_for(url: str) -> RangeReader:
+    reader = _READERS.get(url)
+    if reader is None:
+        if len(_READERS) >= MAX_READERS:
+            # Вытесняется самый старый: словарь помнит порядок вставки.
+            _READERS.pop(next(iter(_READERS)))
+        reader = RangeReader(url)
+        _READERS[url] = reader
+    return reader
