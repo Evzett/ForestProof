@@ -1,23 +1,21 @@
-/* Три ступени рядом: высокая, средняя, низкая. Порядок от худшего к
-   лучшему — читают такие сводки ради плохих новостей. */
 .risk__levels {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 18px;
-  margin-bottom: 26px;
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .risk__level {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
-  padding: 18px 20px;
+  padding: 20px 22px 22px;
   border: 1px solid rgb(46 62 40 / 14%);
   border-radius: 24px;
 }
 
 .risk__count {
+  margin-bottom: 12px;
   font-size: clamp(30px, 2.4vw, 44px);
   font-weight: 500;
   line-height: 1;
@@ -28,8 +26,9 @@
 .risk__names {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 2px;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 0;
   list-style: none;
   font-size: 12px;
   line-height: 1.35;
@@ -51,22 +50,28 @@
 }
 
 .risk__subhead {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .risk__drivers {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 13px;
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
+/* Название — по содержимому, полоса — на всю оставшуюся ширину, число
+   справа. Раньше название занимало всю свободную ширину, а полоса жалась
+   к правому краю: между подписью и диаграммой зиял провал в половину
+   карточки, и полосы было не с чем сопоставить. */
 .risk__drivers li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(90px, 30%) auto;
+  grid-template-columns: minmax(150px, max-content) minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
-  font-size: 13px;
+  gap: 18px;
+  font-size: 14px;
 }
 
 .risk__driver-name {
@@ -74,24 +79,35 @@
 }
 
 /* Полоса — доля участков, а не шкала риска: длина считается от самого
-   частого признака, и числом рядом подписана честно. Градиента нет
-   намеренно, он читался бы как величина риска. */
+   частого признака, и числом рядом подписана честно. Плавного градиента
+   нет намеренно, он читался бы как величина риска. */
 .risk__bar {
-  height: 8px;
-  border-radius: 4px;
+  height: 14px;
+  border-radius: var(--r-pill);
   background: rgb(46 62 40 / 8%);
   overflow: hidden;
 }
 
-.risk__bar i {
+.risk__bar-fill {
   display: block;
   height: 100%;
-  border-radius: 4px;
-  background: var(--c-ink);
+  border-radius: var(--r-pill);
+  background-color: var(--c-ink);
+  /* Та же штриховка, что у столбцов потерь покрова. */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 15px,
+    rgb(255 255 255 / 16%) 15px 22px
+  );
+  transition: width 0.35s ease;
+}
+
+.risk__bar-fill--top {
+  background-color: var(--c-lime);
 }
 
 .risk__driver-count {
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
   color: var(--c-muted-alt);
 }

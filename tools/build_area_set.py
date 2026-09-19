@@ -1,19 +1,21 @@
-"""Набор из десяти участков: четыре из кейса плюс шесть добавленных.
+"""Набор из двенадцати участков: четыре из кейса плюс восемь добавленных.
 
-Почему десять, а не двенадцать. Из восьми добавленных участков два
-повторяют роли, которые в наборе уже есть: «мозаика мелких потерь» —
-это Вологда-02, «ранние потери и повторные нарушения» — Мордовия-04.
-Показывать два участка с одинаковым поведением значит удлинять таблицу,
-не добавляя ни одного нового вопроса, поэтому они отложены.
-
-Оставшиеся шесть закрывают то, чего в кейсе не было:
+Восемь добавленных закрывают то, чего в кейсе не было:
 
     RU_TVER_05       второй контрольный участок без нарушений
     RU_TVER_06       накопление запаса
     RU_VOLOGDA_07    сплошная вырубка с чёткой границей
+    RU_VOLOGDA_08    повторная выборка мозаичных потерь
     RU_VOLOGDA_09    лесовосстановление и подрост
     RU_MORDOVIA_10   гарь с подтверждением MODIS
     RU_MORDOVIA_11   падающая историческая динамика, g < 0
+    RU_MORDOVIA_12   восстановление после нарушения
+
+Последние два пришли из KAN-62 вместе с вырезанными растрами и
+картами. Геометрия взята оттуда, а базовая линия и площадь посчитаны
+здешней цепочкой: в исходном виде площадь Мордовии-12 была занижена на
+38 гектаров, потому что считалась по окну, округлённому до границ
+пикселей, а не по доле пересечения пикселя с контуром.
 
 Что делает скрипт. Собирает `areas.csv`, `areas.geojson` и
 `methodology/baseline.csv` из исходного набора и выведенных данных,
@@ -22,8 +24,8 @@
 что задано условием, нельзя, даже если наш расчёт даёт то же самое.
 
 Запуск:
-    python tools/build_ten_areas.py
-    python tools/build_ten_areas.py --restore   # вернуть исходные четыре
+    python tools/build_area_set.py
+    python tools/build_area_set.py --restore   # вернуть исходные четыре
 """
 
 from __future__ import annotations
@@ -40,9 +42,11 @@ KEEP_ADDED = [
     "RU_TVER_05",
     "RU_TVER_06",
     "RU_VOLOGDA_07",
+    "RU_VOLOGDA_08",
     "RU_VOLOGDA_09",
     "RU_MORDOVIA_10",
     "RU_MORDOVIA_11",
+    "RU_MORDOVIA_12",
 ]
 
 FILES = [
@@ -98,7 +102,18 @@ def main() -> None:
     chosen = case_ids + KEEP_ADDED
 
     # --- areas.csv ---
-    out_areas = [a for a in case_areas] + [expanded[a] for a in KEEP_ADDED]
+    # Площадь добавленных участков берётся из расчёта по растрам, а не
+    # из каталога: в каталоге она может быть посчитана по округлённому
+    # окну и разойтись с тем, что потом считает сервис.
+    measured = json.loads((DATA / "series.derived.json").read_text(encoding="utf-8"))
+    out_areas = [a for a in case_areas]
+    for aoi in KEEP_ADDED:
+        row = dict(expanded[aoi])
+        area = measured.get(aoi, {}).get("area_ha")
+        if area is None:
+            raise SystemExit(f"{aoi}: нет площади в series.derived.json — сначала build_area_from_tiles.py")
+        row["area_ha"] = f"{area:.4f}"
+        out_areas.append(row)
     with open(DATA / "areas.csv", "w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(case_areas[0].keys()))
         writer.writeheader()
@@ -109,7 +124,19 @@ def main() -> None:
     case_geo = json.loads((DATA / "areas.geojson.case").read_text(encoding="utf-8-sig"))
     expanded_geo = json.loads((DATA / "areas.expanded.geojson").read_text(encoding="utf-8-sig"))
     by_id = {f["properties"]["aoi_id"]: f for f in expanded_geo["features"]}
-    features = list(case_geo["features"]) + [by_id[a] for a in KEEP_ADDED if a in by_id]
+    features = list(case_geo["features"])
+    for aoi in KEEP_ADDED:
+        feature = by_id.get(aoi)
+        if feature is None:
+            continue
+        # Площадь в свойствах обязана совпадать с тем, что считает
+        # сервис по этим же пикселям: иначе каталог и карта разойдутся,
+        # и первым это заметит расчёт, а не человек.
+        area = measured.get(aoi, {}).get("area_ha")
+        if area is not None:
+            feature = dict(feature)
+            feature["properties"] = {**feature["properties"], "area_ha": round(area, 4)}
+        features.append(feature)
     (DATA / "areas.geojson").write_text(
         json.dumps({"type": "FeatureCollection", "features": features}, ensure_ascii=False, indent=2),
         encoding="utf-8",

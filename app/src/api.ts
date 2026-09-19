@@ -143,6 +143,11 @@ export type CalcResult = {
   baseline_id: string | null;
   baseline_note: string;
   status: string;
+  /* Записан ли расчёт в журнал. Недоступная база не отменяет расчёт,
+     но означает, что этого расчёта не будет в списке сохранённых, —
+     и сказать об этом обязаны мы, а не пропажа строки потом. */
+  stored?: boolean;
+  storage_note?: string;
 };
 
 export function getAreas(): Promise<{ areas: ApiArea[] }> {

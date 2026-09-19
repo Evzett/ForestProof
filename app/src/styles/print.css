@@ -64,7 +64,9 @@
      разорванное «R = … → Q = 0» читается как две разные мысли. */
   .tbl tr,
   .chain li,
+  .steps li,
   .kv > div,
+  .limits li,
   .drivers li {
     break-inside: avoid;
   }

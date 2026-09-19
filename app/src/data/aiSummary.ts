@@ -13,6 +13,8 @@
    справка. Это штатное состояние, а не поломка: демо обязано работать
    без сети. */
 
+import { useCallback, useEffect, useRef, useState } from "react";
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 
 export type AiSummary =
@@ -38,4 +40,87 @@ export async function composeSummary(facts: Record<string, unknown>): Promise<Ai
   } catch {
     return { ok: false, reason: "сервер справки недоступен" };
   }
+}
+
+export type AiState = {
+  ai: { text: string; model: string } | null;
+  note: string | null;
+  busy: boolean;
+  refresh: () => void;
+};
+
+/* Справка запрашивается сразу, как только экран открыт, и заново при
+   смене исходных данных — периода, выбора участков, участка.
+
+   Почему не по кнопке. Кнопка означала бы, что изложение модели —
+   дополнительная возможность, которую надо попросить; на деле это
+   основной текст карточки, а шаблон — запасной путь на случай, когда
+   сервер не отвечает. Кнопка остаётся, но как «пересобрать», а не как
+   «включить».
+
+   `key` — то, при изменении чего справку надо пересобрать. Факты сюда
+   не годятся: это новый объект на каждый рендер, и запрос уходил бы
+   бесконечно. */
+export function useAiSummary(
+  key: string,
+  buildFacts: () => Record<string, unknown>
+): AiState {
+  const [ai, setAi] = useState<{ text: string; model: string } | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const factsRef = useRef(buildFacts);
+  factsRef.current = buildFacts;
+
+  /* Ответ на устаревший запрос не должен затирать свежий: при быстрой
+     смене периода модель отвечает не в том порядке, в каком её
+     спрашивали. */
+  const generation = useRef(0);
+
+  /* За какой ключ уже спрашивали. В режиме разработки React вызывает
+     эффект дважды, и без этой проверки каждый экран обращался бы к
+     модели по два раза — она платная, и второй ответ всё равно
+     отбрасывается как устаревший. */
+  const asked = useRef<string | null>(null);
+
+  const run = useCallback((key?: string) => {
+    if (key !== undefined) {
+      if (asked.current === key) return;
+      asked.current = key;
+    }
+    const mine = ++generation.current;
+    setBusy(true);
+    setNote(null);
+
+    composeSummary(factsRef.current()).then((result) => {
+      if (mine !== generation.current) return;
+      if (result.ok) {
+        setAi({ text: result.text, model: result.model });
+      } else {
+        setAi(null);
+        setNote(result.reason);
+      }
+      setBusy(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    run(key);
+    /* Здесь намеренно нет очистки, отменяющей запрос. В режиме
+       разработки React размонтирует и монтирует экран повторно; если
+       на размонтировании объявлять ответ устаревшим, то единственный
+       отправленный запрос возвращается уже «ненужным», а повторный не
+       уходит — и карточка навсегда остаётся в состоянии «модель
+       отвечает…». Устаревшие ответы отсекает счётчик поколений: он
+       растёт при каждом новом запросе, и этого достаточно. */
+  }, [key, run]);
+
+  /* Кнопка «пересобрать» спрашивает заново тот же ключ — это
+     осознанное действие пользователя, а не повтор эффекта. */
+  const refresh = useCallback(() => {
+    asked.current = null;
+    run(key);
+  }, [key, run]);
+
+  return { ai, note, busy, refresh };
 }

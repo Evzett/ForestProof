@@ -20,6 +20,7 @@ import {
 import { CALC_STEPS } from "../data/mock";
 import { formatArea, formatNumber } from "./ui";
 import "./Wizard.css";
+import { SAMPLE_CONTOURS, type SampleContour } from "../data/sampleContours";
 
 /* Мастер добавления участка. Требования FR-18 — FR-24.
 
@@ -276,6 +277,23 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     setFile({ name: f.name, size: f.size, vertices });
   };
 
+  /* Готовый контур вместо загрузки файла.
+
+     Без него мастер требует принести GeoJSON, которого у человека на
+     защите под рукой нет, и вся ветка «задать свой контур» остаётся
+     непроверенной. Примеры лежат внутри участков с данными, поэтому
+     расчёт по ним доходит до результата, а не до сообщения о том, что
+     растров на эту территорию нет. */
+  const useSample = (sample: SampleContour) => {
+    setFileError("");
+    setGeometry(sample.geometry as GeoJsonPolygon);
+    setFile({
+      name: `${sample.title}.geojson`,
+      size: JSON.stringify(sample.geometry).length,
+      vertices: sample.geometry.coordinates[0].length - 1,
+    });
+  };
+
   /* Полигон считается заданным, когда в нём есть что считать */
   const geometryReady =
     method === "file"
@@ -303,15 +321,16 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
       ? polygonAreaHa(parsed.points)
       : method === "table" && tableContour
         ? polygonAreaHa(tableContour.points)
-        : method === "file" && geometry
+        : /* Для файла площадь тоже считается по его собственным вершинам. */
+          method === "file" && geometry
           ? polygonAreaHa(outerRing(geometry))
           : null;
 
   /* Проверки геометрии считаются по самому файлу. Раньше здесь стоял
      готовый список из data/mock: любому файлу показывалось «18 200 га» и
      «самопересечения не найдены», хотя площадь не измерялась, а
-     пересечения не проверялись. Для сервиса, который продаётся
-     проверяемостью, выдуманная проверка хуже её отсутствия. */
+     пересечения не проверялись. Число на шаге проверки геометрии обязано
+     быть про этот контур, иначе проверка ничего не проверяет. */
   const geometryChecks: { name: string; ok: true | "warn"; value: string }[] = geometryReady
     ? [
         {
@@ -535,6 +554,28 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                     </div>
                   )}
                   {fileError && <p className="wz__err">{fileError}</p>}
+
+                  <div className="wz__samples">
+                    <span className="wz__samples-label">или взять готовый пример</span>
+                    <div className="wz__samples-row">
+                      {SAMPLE_CONTOURS.map((sample) => (
+                        <button
+                          key={sample.id}
+                          className="filter"
+                          type="button"
+                          onClick={() => useSample(sample)}
+                          title={`${sample.parent} · ${sample.note}`}
+                        >
+                          {sample.title}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="wz__samples-note">
+                      Контуры лежат внутри участков, по которым у нас есть растры, — расчёт по
+                      ним доходит до результата. Форма взята из проектных полигонов, границы
+                      выдуманы: это пример работы сервиса, а не чей-то настоящий участок.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -790,7 +831,10 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
               ) : (
                 <p className="wz__note">
                   Считаем по тем же растрам и тем же кодом, что и участки набора.
-                  {calc !== null && ` Расчёт ${calc.calc_id} записан в журнал.`}
+                  {calc !== null &&
+                    (calc.stored === false
+                      ? ` ${calc.storage_note ?? "Расчёт не записан в журнал."}`
+                      : ` Расчёт ${calc.calc_id} записан в журнал.`)}
                 </p>
               )}
             </>

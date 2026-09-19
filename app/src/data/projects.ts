@@ -167,16 +167,72 @@ export function checkProject(project: Project): ClaimCheck {
 
 /* ------------------------------------------------------- хранение ---- */
 
+/* Примеры заявок. Реестра в кейсе нет, и до первого ввода вкладка
+   открывалась пустой формой — по ней не понять ни что сверяется, ни
+   чем сверка заканчивается.
+
+   Три примера выбраны так, чтобы показать три разных исхода: заявка,
+   совпавшая с наблюдением; заявка, которой наблюдение противоречит; и
+   заявка, которую спутник не проверяет в принципе. Числа заявок
+   выдуманы — это ввод пользователя, а не данные набора, и подписано
+   это прямо на строке.
+
+   Примеры подставляются только при первом открытии. Если их удалить,
+   в хранилище останется пустой список, и они не вернутся: возвращать
+   удалённое пользователем — худшее, что может делать интерфейс. */
+export const EXAMPLE_PROJECTS: Project[] = [
+  {
+    id: "example-tver-01",
+    name: "Сохранение древостоя, Тверь",
+    company: "",
+    aoi_id: "RU_TVER_01",
+    period_start: 2019,
+    period_end: 2024,
+    claimed_tco2e: 6000,
+    reporting_date: "2024-12-31",
+    effect_kind: "removals",
+  },
+  {
+    id: "example-mordovia-03",
+    name: "Лесовосстановление после пожара",
+    company: "",
+    aoi_id: "RU_MORDOVIA_03",
+    period_start: 2019,
+    period_end: 2024,
+    claimed_tco2e: 25000,
+    reporting_date: "2024-12-31",
+    effect_kind: "removals",
+  },
+  {
+    id: "example-mordovia-04",
+    name: "Противопожарные меры",
+    company: "",
+    aoi_id: "RU_MORDOVIA_04",
+    period_start: 2019,
+    period_end: 2024,
+    claimed_tco2e: 40000,
+    reporting_date: "2024-12-31",
+    effect_kind: "avoided_emissions",
+  },
+];
+
 export function loadProjects(): Project[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    /* Ключа нет — человек здесь впервые, показываем примеры. Пустой
+       список в хранилище значит другое: примеры были и их убрали. */
+    if (raw === null) return EXAMPLE_PROJECTS;
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    /* приватное окно или запрет на хранилище — начинаем с пустого списка */
-    return [];
+    /* приватное окно или запрет на хранилище: примеры всё равно
+       показываем — без них вкладка выглядит нерабочей. */
+    return EXAMPLE_PROJECTS;
   }
+}
+
+export function isExample(project: Project): boolean {
+  return project.id.startsWith("example-");
 }
 
 export function saveProjects(projects: Project[]): void {

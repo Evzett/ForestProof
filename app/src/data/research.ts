@@ -2,6 +2,7 @@ import { AREAS, PARAMETERS, areaById } from "./case";
 import type { Area, Period } from "./case";
 import type { ReportBlock } from "../reportPdf";
 import sensitivityRaw from "./sensitivity-tver-2019-2020.json";
+import agreementRaw from "./source-agreement.json";
 
 /* Исследовательский отчёт — KAN-53.
 
@@ -19,6 +20,11 @@ import sensitivityRaw from "./sensitivity-tver-2019-2020.json";
 
 const CASE_IDS = ["RU_TVER_01", "RU_VOLOGDA_02", "RU_MORDOVIA_03", "RU_MORDOVIA_04"];
 
+/* Сравнение источников идёт по участкам, для которых локально есть все
+   четыре продукта. Контрольная Тверь в списке обязательна: она
+   показывает, сколько расхождения даёт сам метод без нарушения. */
+const AGREEMENT_IDS = CASE_IDS;
+
 export const sensitivity = sensitivityRaw as {
   rho_spatial: number[];
   rho_temporal: number[];
@@ -26,6 +32,24 @@ export const sensitivity = sensitivityRaw as {
   r: number;
   h: number;
 };
+
+/* Расхождения между источниками — KAN-61. Считает tools/source_agreement.py,
+   здесь только изложение. Числа не пересчитываются на клиенте: сведение
+   четырёх сеток к одной делается по растрам, а не по сводке. */
+export const agreement = agreementRaw as {
+  period: string;
+  dnbr_threshold: number;
+  caveat: string;
+  areas: Record<string, Record<string, Record<string, number | string | null>>>;
+};
+
+function pct(value: number | string | null | undefined, digits = 1): string {
+  return typeof value === "number" ? `${ru(value * 100, digits)} %` : "—";
+}
+
+function num(value: number | string | null | undefined, digits = 2): string {
+  return typeof value === "number" ? ru(value, digits) : "—";
+}
 
 function ru(value: number, digits = 0): string {
   return value.toLocaleString("ru-RU", {
@@ -104,6 +128,11 @@ export function researchBlocks(): ReportBlock[] {
   const tver = areaById("RU_TVER_01");
   const declining = f.worstBaseline;
   const baselineLoss = declining.period_2019_2024.e_base_tco2e ?? 0;
+
+  /* Числа раздела 6 берутся из сводки, а не набираются в тексте: иначе
+     абзац и таблица рядом разойдутся на первом же пересчёте. */
+  const fire = agreement.areas.RU_MORDOVIA_03;
+  const control = agreement.areas.RU_TVER_01;
 
   const blocks: ReportBlock[] = [
     {
@@ -253,7 +282,145 @@ export function researchBlocks(): ReportBlock[] {
         "определяет знак и величину результата относительно неё.",
     },
 
-    { kind: "heading", text: "6. Чего эти числа не означают" },
+    { kind: "heading", text: "6. Источники расходятся, и это измеримо" },
+    {
+      kind: "note",
+      text:
+        "Четыре продукта сняты с разным шагом — 20, 30, 100 и 463 метра — и в разных " +
+        "проекциях. Каждое сравнение сведено на сетку более грубого из двух источников; " +
+        "мелкий читается в центрах грубых пикселей. Столбец «совпадение» — доля площади, " +
+        "где на нарушение указывают оба источника, к площади, где указывает хотя бы один.",
+    },
+    {
+      kind: "table",
+      head: ["участок", "потеря Hansen", "падение NBR", "оба", "совпадение"],
+      rows: AGREEMENT_IDS.map((id) => {
+        const a = agreement.areas[id]?.hansen_vs_dnbr ?? {};
+        return [
+          areaById(id)?.name ?? id,
+          pct(a.hansen_loss_share),
+          pct(a.nbr_drop_share),
+          pct(a.both_share),
+          num(a.agreement_iou, 3),
+        ];
+      }),
+    },
+    {
+      kind: "note",
+      text:
+        "Hansen и dNBR почти не совпадают по площади: на горевшем участке в Мордовии оба " +
+        `источника указывают на нарушение лишь на ${pct(fire.hansen_vs_dnbr.both_share)} ` +
+        `площади при ${pct(fire.hansen_vs_dnbr.hansen_loss_share)} и ` +
+        `${pct(fire.hansen_vs_dnbr.nbr_drop_share)} у каждого по отдельности. Причина не ` +
+        "в чьей-то ошибке, а в том, что они отвечают на разные вопросы. Hansen фиксирует " +
+        "год, в котором покров исчез совсем; dNBR меряет, насколько потемнел полог, и " +
+        "реагирует на повреждение без сплошной потери. Плюс срок: между сценами периода " +
+        `прошло ${num(fire.hansen_vs_dnbr.days_between, 0)} дней, и гарь успела зарасти.`,
+    },
+    {
+      kind: "table",
+      head: ["участок", "пара вплотную к событию", "падение NBR", "совпадение с Hansen"],
+      rows: AGREEMENT_IDS.filter((id) => agreement.areas[id]?.hansen_vs_dnbr_near_event).map(
+        (id) => {
+          const a = agreement.areas[id].hansen_vs_dnbr_near_event;
+          return [
+            areaById(id)?.name ?? id,
+            `${String(a.before_scene).slice(-14, -8)} → ${String(a.after_scene).slice(-14, -8)}` +
+              ` (${num(a.days_between, 0)} дн.)`,
+            pct(a.nbr_drop_share),
+            num(a.agreement_iou, 3),
+          ];
+        }
+      ),
+    },
+    {
+      kind: "note",
+      text:
+        "Если взять сцены вплотную к пожару, падение NBR охватывает уже " +
+        `${pct(fire.hansen_vs_dnbr_near_event?.nbr_drop_share)} площади вместо ` +
+        `${pct(fire.hansen_vs_dnbr.nbr_drop_share)}. Сигнал есть, он просто затухает. ` +
+        "Заметно и ограничение наблюдения: ближайший снимок после пожара, 12 сентября " +
+        "2021 года, непригоден — годных пикселей внутри контура 1,7 %, — поэтому " +
+        `ближайшее пригодное наблюдение отстоит от предыдущего на ` +
+        `${num(fire.hansen_vs_dnbr_near_event?.days_between, 0)} дней.`,
+    },
+    {
+      kind: "table",
+      head: [
+        "участок",
+        "ячеек CCI",
+        "с потерей Hansen",
+        "с падением запаса",
+        "совпадение",
+        "ранговая связь",
+      ],
+      rows: AGREEMENT_IDS.map((id) => {
+        const a = agreement.areas[id]?.cci_vs_hansen ?? {};
+        return [
+          areaById(id)?.name ?? id,
+          num(a.cells_compared, 0),
+          pct(a.hansen_cells_share),
+          pct(a.cci_drop_share),
+          num(a.agreement_iou, 3),
+          num(a.spearman_loss_vs_drop, 2),
+        ];
+      }),
+    },
+    {
+      kind: "note",
+      text:
+        "Здесь расхождение самое поучительное. Запас по CCI падает в половине и более " +
+        "ячеек на каждом участке, включая контрольный, где потерь покрова нет вовсе: " +
+        `${pct(control.cci_vs_hansen.cci_drop_share)} ячеек Твери показывают снижение ` +
+        `запаса при потере Hansen в ${pct(control.cci_vs_hansen.hansen_cells_share)} ячеек. ` +
+        "Значит падение запаса по CCI — это в основном не вырубка и не пожар, а " +
+        "собственный шум продукта и переоценка модели между годами. Ранговая связь с " +
+        "потерями Hansen положительная, но слабая: порядок ячеек совпадает лишь " +
+        "отчасти. Отсюда прямое следствие для расчёта: считать по CCI разность запаса " +
+        "можно, а приписывать её конкретному нарушению — нельзя.",
+    },
+    {
+      kind: "table",
+      head: ["участок", "пикселей MODIS", "горевших", "dNBR горевших", "dNBR негоревших"],
+      rows: AGREEMENT_IDS.map((id) => {
+        const base = agreement.areas[id]?.modis_vs_dnbr ?? {};
+        const a = agreement.areas[id]?.modis_vs_dnbr_near_event ?? base;
+        return [
+          areaById(id)?.name ?? id,
+          num(base.pixels_compared, 0),
+          num(base.burned_pixels, 0),
+          num(a.mean_dnbr_burned, 3),
+          num(a.mean_dnbr_unburned, 3),
+        ];
+      }),
+    },
+    {
+      kind: "note",
+      text:
+        "Это единственная пара источников, которая согласуется убедительно. На горевшем " +
+        "участке в Мордовии средний dNBR в пикселях, помеченных MODIS как горевшие, равен " +
+        `${num(fire.modis_vs_dnbr_near_event?.mean_dnbr_burned, 3)} против ` +
+        `${num(fire.modis_vs_dnbr_near_event?.mean_dnbr_unburned, 3)} у остальных, и ` +
+        `${pct(fire.modis_vs_dnbr_near_event?.burned_above_threshold, 0)} горевших пикселей ` +
+        `проходят порог ${num(agreement.dnbr_threshold, 2)}. Два продукта разного ` +
+        "разрешения, снятые разными приборами, указывают на одно место. На контрольном " +
+        `участке в Твери горевших пикселей за весь период ` +
+        `${num(control.modis_vs_dnbr.burned_pixels, 0)} из ` +
+        `${num(control.modis_vs_dnbr.pixels_compared, 0)} — и dNBR там около нуля.`,
+    },
+    {
+      kind: "note",
+      text:
+        "Что из этого следует для доверия к источникам. О факте исчезновения покрова " +
+        "надёжнее судить по Hansen: он для этого и сделан. О тяжести повреждения — по " +
+        "dNBR, но только по сценам вплотную к событию. О причине «пожар» — по MODIS, и " +
+        "только по нему. О запасе биомассы — по CCI, но на уровне участка целиком, а не " +
+        "отдельной ячейки. И ни одно из этих согласий не является наземной валидацией: " +
+        "все четыре продукта меряют отражённый свет и могут ошибаться одинаково. Никто " +
+        "из них не был в лесу.",
+    },
+
+    { kind: "heading", text: "7. Чего эти числа не означают" },
     {
       kind: "list",
       items: [
@@ -264,7 +431,7 @@ export function researchBlocks(): ReportBlock[] {
       ],
     },
 
-    { kind: "heading", text: "7. Вывод" },
+    { kind: "heading", text: "8. Вывод" },
     {
       kind: "note",
       text:

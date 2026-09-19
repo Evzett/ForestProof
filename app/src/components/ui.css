@@ -1,16 +1,20 @@
 /* ---------- Кнопка ---------- */
-/* Подпись кнопки набрана как ведущий абзац: тот же кегль и та же
-   плотность. Прежние 16 px рядом с лидом в 24 выглядели мелочью,
-   хотя кнопка — главное действие экрана. */
+/* Размер по умолчанию — ровно как у «открыть расчёт» на карточке
+   участка: 14 px и padding 12/22. Внутри раздела кнопка одна из
+   многих, и набранная лидом в 24 px она перетягивает внимание с
+   содержимого — а содержимое здесь и есть ответ.
+
+   Крупный кегль остался у .btn--hero: на обложке кнопка единственная
+   и уводит со страницы, там он уместен. */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-height: var(--h-btn);
-  padding: 14px clamp(20px, 1.9vw, 36px);
+  padding: 12px 22px;
   border-radius: var(--r-pill);
-  font-size: var(--t-lead);
-  letter-spacing: -0.04em;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   transition: filter 0.15s ease;
   /* Кнопкой может быть и ссылка: переход на страницу участка — это
      навигация, а не действие на месте. Подчёркивание от ссылки на
@@ -32,6 +36,12 @@
   background: var(--c-lime);
   color: var(--c-ink);
   justify-content: space-between;
+  gap: 18px;
+  padding-right: 20px;
+}
+
+/* Широкой лаймовая кнопка остаётся только там, где она главная. */
+.btn--hero.btn--lime {
   min-width: clamp(240px, 16.46vw, 316px);
   padding-right: 24px;
 }
@@ -52,7 +62,15 @@
   filter: none;
 }
 
-.btn--outline:hover .btn__arrow {
+.btn--outline:hover /* Обложка: кнопка единственная на экране и уводит со страницы. */
+.btn--hero {
+  min-height: var(--h-btn);
+  padding: 14px clamp(20px, 1.9vw, 36px);
+  font-size: var(--t-lead);
+  letter-spacing: -0.04em;
+}
+
+.btn__arrow {
   color: #fff;
 }
 
@@ -146,6 +164,57 @@
   color: inherit;
 }
 
+/* Подзаголовок внутри карточки. Того же рода, что заголовок карточки,
+   но ступенью ниже: читателю нужно видеть, что «источники и версии» —
+   это часть отчёта, а не отдельная плашка. Раньше здесь стояла мелкая
+   метка с инлайновым отступом, и раздел терялся между таблицами. */
+.card__subtitle {
+  margin: 26px 0 12px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--c-ink);
+}
+
+.card__subtitle:first-of-type {
+  margin-top: 22px;
+}
+
+.card--dark .card__subtitle {
+  color: #fff;
+}
+
+/* Ограничения: то, чего расчёт не утверждает. Список намеренно без
+   номеров — порядок здесь ничего не значит, и нумерация читалась бы
+   как очерёдность важности. */
+.limits {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+.limits li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.limits li::before {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-lime);
+  content: "";
+}
+
 .card__note {
   font-size: 12px;
   color: var(--c-muted-alt);
@@ -166,23 +235,26 @@
   white-space: nowrap;
 }
 
+/* Ступени — в фирменной гамме проекта. Раньше здесь были розовый,
+   сиреневый и салатовый: они не «светофорные», но и не наши, и рядом с
+   тёмно-зелёными карточками читались как чужая вставка.
+
+   Шкала идёт насыщенностью, а не тоном: чем темнее плашка, тем выше
+   ступень. Жёлтого и красного нет по-прежнему — они читаются как оценка
+   качества участка, а оценивается устойчивость результата. */
 .lvl--low {
-  background: #e9ecdd;
-  color: #283a0e;
+  background: #eef1e6;
+  color: #46543c;
 }
 
-/* Шкала намеренно не «светофорная»: жёлтый и красный читаются как
-   оценка качества участка, а мы оцениваем не участок, а устойчивость
-   результата. Фиолетовый и розовый различают уровни не хуже, но не
-   несут приговора. */
 .lvl--medium {
-  background: #ece7f5;
-  color: #5b4a86;
+  background: #cbd7bd;
+  color: #33452a;
 }
 
 .lvl--high {
-  background: #f8e3ec;
-  color: #9c3f66;
+  background: var(--c-ink);
+  color: #f2f5ec;
 }
 
 /* Плашка-метка с лёгкой обводкой — для подписей вроде «собрано шаблоном» */

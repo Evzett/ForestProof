@@ -148,6 +148,27 @@
       }
     },
     {
+      "aoi_id": "RU_VOLOGDA_08",
+      "available": true,
+      "probability": 0.20227066903214672,
+      "category": "low",
+      "label": 1,
+      "future_loss_pct": 12.7141,
+      "forecast": {
+        "probability": 0.9999780078044229,
+        "category": "high",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 12.7141
+      }
+    },
+    {
       "aoi_id": "RU_VOLOGDA_09",
       "available": true,
       "probability": 0.26479291973601554,
@@ -192,6 +213,27 @@
           2029
         ],
         "recent_loss_pct": 0.045
+      }
+    },
+    {
+      "aoi_id": "RU_MORDOVIA_12",
+      "available": true,
+      "probability": 0.4248660804689475,
+      "category": "medium",
+      "label": 0,
+      "future_loss_pct": 0.3696,
+      "forecast": {
+        "probability": 0.4581223166460004,
+        "category": "medium",
+        "feature_window": [
+          2006,
+          2024
+        ],
+        "horizon": [
+          2025,
+          2029
+        ],
+        "recent_loss_pct": 0.1825
       }
     }
   ],

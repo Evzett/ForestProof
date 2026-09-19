@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Card, LevelPill, plural } from "./ui";
-import { AREAS, MODEL, modelFor } from "../data/case";
+import { AREAS, MODEL, SCREENING_HORIZON_LABEL, modelFor } from "../data/case";
 import "./RiskSummary.css";
 
 /* Сводка по рискам для обзора — KAN-35.
@@ -53,10 +53,16 @@ export default function RiskSummary() {
       return forecast && a.stability && forecast.category === a.stability.level;
     }).length;
 
+    const counted = AREAS.filter((a) => a.stability).length;
+    const stackLabel = LEVELS.map(
+      (level) => `${LEVEL_TITLE[level]} — ${(byLevel[level] ?? []).length}`
+    ).join(", ");
+
     return {
+      stackLabel,
       byLevel,
       drivers: [...drivers.entries()].sort((a, b) => b[1] - a[1]),
-      counted: AREAS.filter((a) => a.stability).length,
+      counted,
       scored,
       agree,
     };
@@ -67,7 +73,7 @@ export default function RiskSummary() {
   return (
     <Card
       title="Устойчивость результата по набору"
-      note={`горизонт 2024—2029 · ${MODEL.method.split(",")[0]}`}
+      note={`горизонт ${SCREENING_HORIZON_LABEL} · ${MODEL.method.split(",")[0]}`}
       className="risk"
     >
       <div className="risk__levels">
@@ -93,11 +99,18 @@ export default function RiskSummary() {
 
       <p className="tile__label risk__subhead">какие признаки срабатывают чаще</p>
       <ul className="risk__drivers">
-        {stats.drivers.map(([label, count]) => (
+        {stats.drivers.map(([label, count], index) => (
           <li key={label}>
             <span className="risk__driver-name">{label}</span>
             <span className="risk__bar" aria-hidden="true">
-              <i style={{ width: `${(count / top) * 100}%` }} />
+              {/* Самый частый признак выделен лаймом — тем же акцентом,
+                  что и пиковый год на графике потерь покрова. Остальные
+                  одного цвета: ранг между вторым и третьим ничего не
+                  значит, и раскрашивать его было бы выдумкой. */}
+              <i
+                className={index === 0 ? "risk__bar-fill risk__bar-fill--top" : "risk__bar-fill"}
+                style={{ width: `${(count / top) * 100}%` }}
+              />
             </span>
             <span className="risk__driver-count tabular">
               {count} из {stats.counted}

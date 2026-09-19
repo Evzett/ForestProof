@@ -624,8 +624,37 @@ def main() -> None:
         baseline = list(csv.DictReader(handle))
     with open(args.data / "events.csv", encoding="utf-8-sig") as handle:
         events = list(csv.DictReader(handle))
+    for event in events:
+        event.setdefault("source_kind", "пришло с набором кейса")
+
+    # События, найденные нашим инструментом по продукту гарей. Файла
+    # может не быть — тогда набор остаётся как есть, и это не ошибка:
+    # поиск требует учётной записи Earthdata, которой на чужой машине
+    # может не оказаться.
+    derived_events = args.data / "events.derived.csv"
+    if derived_events.exists():
+        with open(derived_events, encoding="utf-8-sig") as handle:
+            found = list(csv.DictReader(handle))
+        known = {(e["aoi_id"], e["date_min_product"]) for e in events}
+        for event in found:
+            if (event["aoi_id"], event["date_min_product"]) in known:
+                continue
+            event.setdefault("date_uncertainty_days_min", "0")
+            event.setdefault("date_uncertainty_days_max", "0")
+            event.setdefault("context_url", "")
+            event.setdefault("qa_file", "")
+            event["source_kind"] = "найдено нашим поиском по продукту MODIS"
+            events.append(event)
     with open(args.data / "methodology" / "parameters.csv", encoding="utf-8-sig") as handle:
         config = CaseCalculationConfig.from_parameter_rows(list(csv.DictReader(handle)))
+    # Превью, собранные из облака для участков без вложенных снимков.
+    # Файла может не быть — тогда карточки покажут карту изменений, и
+    # это не поломка, а отсутствие картинки.
+    previews_path = args.data / "scene_previews.json"
+    previews = (
+        json.loads(previews_path.read_text(encoding="utf-8")) if previews_path.exists() else {}
+    )
+
     with open(args.data / "areas.geojson", encoding="utf-8-sig") as handle:
         geometries = {feature["properties"]["aoi_id"]: feature["geometry"]
                       for feature in json.load(handle)["features"]}
@@ -645,8 +674,16 @@ def main() -> None:
             "treecover_threshold_pct": TREECOVER_THRESHOLD,
             "prices_rub": dict(config.prices_rub),
         },
-        "areas": [build_aoi(args.data, meta, baseline, events, args.maps,
-                            config, geometries[meta["aoi_id"]]) for meta in areas],
+        "areas": [
+            {
+                **build_aoi(
+                    args.data, meta, baseline, events, args.maps,
+                    config, geometries[meta["aoi_id"]],
+                ),
+                "scene_preview": previews.get(meta["aoi_id"]),
+            }
+            for meta in areas
+        ],
         "events": [
             {
                 "event_id": e["event_id"],
@@ -663,6 +700,7 @@ def main() -> None:
                 ],
                 "source_id": e["source_id"],
                 "context_url": e["context_url"],
+                "source_kind": e.get("source_kind", "пришло с набором кейса"),
                 "limitations": e["limitations"],
             }
             for e in events

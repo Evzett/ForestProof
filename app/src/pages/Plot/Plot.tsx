@@ -24,6 +24,7 @@ import {
   eventsFor,
   modelFor,
   periodFor,
+  SCREENING_HORIZON_LABEL,
 } from "../../data/case";
 import { useScenario } from "../../data/scenario";
 import { summaryForPeriod } from "../../data/summary";
@@ -134,7 +135,7 @@ export default function Plot() {
         </span>
       </div>
 
-      <CalculationSummary summary={summary} />
+      <CalculationSummary summary={summary} area={area} period={period} />
 
       <nav className="tabs">
         {TABS.map((t) => (
@@ -527,6 +528,36 @@ function ChangesTab({
         )}
       </Card>
 
+      {/* Снимок, найденный нами. Показывается там, где в набор сцены не
+          вложены: без него у восьми добавленных участков блока снимков
+          не было вовсе, и страница молчала о том, как выглядит место. */}
+      {(!area.sentinel || area.sentinel.observations.length === 0) && area.scene_preview && (
+        <Card
+          title="Снимок участка"
+          note={`Sentinel-2 L2A · ${area.scene_preview.date}`}
+          className="plot-block"
+        >
+          <div className="shots">
+            <figure>
+              <img src={`/maps/${area.scene_preview.image}`} alt={`Снимок участка ${area.name}`} />
+              <figcaption>
+                <b>{area.scene_preview.date}</b>
+                <span>
+                  сцена {area.scene_preview.scene_id} · годных пикселей внутри контура{" "}
+                  {formatDecimal(area.scene_preview.usable_fraction * 100, 0)} %
+                </span>
+              </figcaption>
+            </figure>
+          </div>
+          <p className="ov-note">
+            Сцена найдена нашим поиском по контуру, а не вложена в набор: выбрана по доле
+            годных пикселей внутри участка, а не по облачности всего кадра. Яркость приведена
+            к виду для показа общим множителем на три канала — цвет при этом не меняется.
+            Ни одно число расчёта из этой картинки не берётся.
+          </p>
+        </Card>
+      )}
+
       {area.sentinel && area.sentinel.observations.length > 0 && (
         <Card
           title="Снимки до и после"
@@ -602,13 +633,21 @@ function ChangesTab({
               <div className="event__head">
                 <b>{e.cause_supported}</b>
                 <span className="lvl lvl--medium">{e.evidence_type}</span>
+                {e.source_kind && e.source_kind !== "пришло с набором кейса" && (
+                  <span className="lvl lvl--outline">{e.source_kind}</span>
+                )}
               </div>
               <dl className="kv">
                 <div>
                   <dt>доступный интервал дат</dt>
                   <dd>
-                    {e.date_min} — {e.date_max} · неопределённость {e.uncertainty_days[0]}—
-                    {e.uncertainty_days[1]} дней
+                    {e.date_min} — {e.date_max}
+                    {/* Оценка неопределённости даты есть только у событий
+                        набора. У найденных нами её нет, и писать «0—0 дней»
+                        значило бы выдать отсутствие оценки за точную дату. */}
+                    {e.uncertainty_days[1] > 0
+                      ? ` · неопределённость ${e.uncertainty_days[0]}—${e.uncertainty_days[1]} дней`
+                      : " · оценки неопределённости даты у этого события нет"}
                   </dd>
                 </div>
                 <div>
@@ -622,14 +661,19 @@ function ChangesTab({
                   <dt>источник</dt>
                   <dd>{e.source_id}</dd>
                 </div>
-                <div>
-                  <dt>контекст</dt>
-                  <dd>
-                    <a href={e.context_url} target="_blank" rel="noreferrer">
-                      сообщение МЧС
-                    </a>
-                  </dd>
-                </div>
+                {/* Ссылка на внешнее сообщение есть не у каждого события:
+                    у найденных нами её нет, и пустая ссылка в отчёте хуже,
+                    чем её отсутствие. */}
+                {e.context_url && (
+                  <div>
+                    <dt>контекст</dt>
+                    <dd>
+                      <a href={e.context_url} target="_blank" rel="noreferrer">
+                        сообщение МЧС
+                      </a>
+                    </dd>
+                  </div>
+                )}
               </dl>
               <div className="disclaimer">{e.limitations}</div>
             </div>
@@ -1195,7 +1239,11 @@ function StabilityTab({ area }: { area: Area }) {
   return (
     <>
       <div className="plot-row plot-row--even">
-        <Card title="Устойчивость результата" note="горизонт 2024—2029" className="plot-block">
+        <Card
+        title="Устойчивость результата"
+        note={`горизонт ${SCREENING_HORIZON_LABEL}`}
+        className="plot-block"
+      >
           <div className="vuln">
             <LevelPill level={s.level} />
           </div>
@@ -1372,7 +1420,7 @@ function ModelEvidence({ aoiId }: { aoiId: string }) {
           <p className="ov-note" style={{ marginTop: 0 }}>
             Ту же модель прогоняем по окну 2001—2019 и спрашиваем про 2020—2024 — период,
             который уже прошёл и чей исход известен. Это единственный способ узнать, чего
-            стоит прогноз на 2025—2029.
+            стоит прогноз на {SCREENING_HORIZON_LABEL}.
           </p>
           {prediction?.available ? (
             <dl className="kv">
@@ -1706,9 +1754,7 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
           </div>
         </dl>
 
-        <p className="tile__label" style={{ margin: "18px 0 10px" }}>
-          источники и версии
-        </p>
+        <h3 className="card__subtitle">источники и версии</h3>
         <div className="tbl__scroll">
           <table className="tbl">
             <thead>
@@ -1737,10 +1783,8 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
         {/* Цепочка вывода. Проверяющему нужно не итоговое число, а то,
             как оно получено: какой параметр дал какую величину. Раньше
             отчёт показывал результат и источники, но не путь между ними. */}
-        <p className="tile__label" style={{ margin: "18px 0 10px" }}>
-          как получен результат
-        </p>
-        <ol className="chain">
+        <h3 className="card__subtitle">как получен результат</h3>
+        <ol className="steps">
           <li>
             <b>Растры</b>
             <span>
@@ -1800,10 +1844,8 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
           </li>
         </ol>
 
-        <p className="tile__label" style={{ margin: "18px 0 10px" }}>
-          ограничения
-        </p>
-        <ul className="drivers">
+        <h3 className="card__subtitle">ограничения</h3>
+        <ul className="limits">
           {report.limitations.map((l) => (
             <li key={l}>{l}</li>
           ))}
@@ -1816,10 +1858,10 @@ function ReportTab({ area, period }: { area: Area; period: Period }) {
             onClick={downloadPdf}
             disabled={pdfState === "busy"}
           >
-            <span>{pdfState === "busy" ? "Готовим PDF…" : "Скачать отчёт в PDF"}</span>
+            <span>{pdfState === "busy" ? "Готовим PDF…" : "Скачать в PDF"}</span>
           </button>
           <button className="btn btn--outline" type="button" onClick={download}>
-            <span>Выгрузить отчёт в JSON</span>
+            <span>Выгрузить в JSON</span>
           </button>
         </div>
         {pdfState === "failed" && (

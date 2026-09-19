@@ -15,6 +15,7 @@ import {
   parseProjectsCsv,
   plausibleClaim,
   saveProjects,
+  isExample,
 } from "../../data/projects";
 import type { EffectKind, Project } from "../../data/projects";
 import "./ClaimProjects.css";
@@ -287,7 +288,14 @@ export default function ClaimProjects() {
                       <td>
                         <span className="tbl__name">
                           <b>{project.name}</b>
-                          <span>{project.company || "компания не указана"}</span>
+                          {/* Заявленное число вводит человек, и у примеров
+                              оно выдумано нами. Показывать выдуманную заявку
+                              неотличимо от настоящей нельзя. */}
+                          <span>
+                            {isExample(project)
+                              ? "пример: заявка выдумана, расчёт настоящий"
+                              : project.company || "компания не указана"}
+                          </span>
                         </span>
                       </td>
                       <td>

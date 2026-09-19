@@ -1,8 +1,29 @@
+/* Двенадцать карточек с мини-лесом занимают три экрана, и таблица
+   сравнения — то, ради чего сюда пришли, — уезжает за край. Видно два
+   ряда, остальное прокручивается внутри списка.
+
+   Высота задана в рядах, а не в пикселях: карточка растёт вместе с
+   картинкой, и прибитая высота обрезала бы второй ряд посередине. */
 .cmp-cards {
+  --scrollbox: calc(var(--cmp-row) * 2 + 20px + 8px);
+
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
+  padding-right: 4px;
+}
+
+@media (min-width: 900px) {
+  .cmp-cards {
+    --cmp-row: 322px;
+  }
+}
+
+@media (max-width: 899px) {
+  .cmp-cards {
+    --cmp-row: 300px;
+  }
 }
 
 /* Карточка участка: карта сверху, подпись снизу.
@@ -98,6 +119,8 @@
 }
 
 .cmp-summary__list {
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -121,4 +144,41 @@
   height: 7px;
   border-radius: 50%;
   background: var(--c-lime);
+}
+
+/* Изложение модели идёт впереди шаблонных строк: это связный текст,
+   а строки под ним — те же величины по пунктам. Строки остаются на
+   месте и когда модель не ответила: числа важнее их изложения. */
+.cmp-summary__ai {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--c-page);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--c-ink-black);
+}
+
+/* Подсветка по наведению. В таблице участок обозначен кодом вроде
+   «TVER_01», и связать его с картинкой можно было только памятью.
+
+   Подсветка намеренно слабее выбора: выбор меняет содержимое сравнения,
+   а наведение — нет, и выглядеть одинаково они не должны. */
+.cmp-card--hl {
+  outline: 2px solid var(--c-lime);
+  outline-offset: -2px;
+}
+
+.cmp-card--hl .cmp-card__body {
+  background: rgb(213 231 139 / 18%);
+}
+
+.cmp-col--hl {
+  background: rgb(213 231 139 / 26%);
+}
+
+/* Мини-лес чуть подаётся вперёд: подсветка рамкой на картинке почти не
+   видна, а именно на неё и нужно перевести взгляд. */
+.cmp-card--hl .terrain,
+.cmp-card--hl .cmp-card__img {
+  filter: saturate(1.12) brightness(1.03);
 }

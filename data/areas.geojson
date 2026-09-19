@@ -206,7 +206,7 @@
         "region": "Тверская область",
         "analysis_start_year": 2019,
         "analysis_end_year": 2024,
-        "area_ha": 1750.4733,
+        "area_ha": 1750.4839,
         "selection_role": "контроль без нарушений",
         "project_status": "исследовательский участок",
         "stand_age": null,
@@ -255,7 +255,7 @@
         "region": "Тверская область",
         "analysis_start_year": 2019,
         "analysis_end_year": 2024,
-        "area_ha": 1748.1739,
+        "area_ha": 1748.1845,
         "selection_role": "участок с накоплением запаса",
         "project_status": "исследовательский участок",
         "stand_age": null,
@@ -304,7 +304,7 @@
         "region": "Вологодская область",
         "analysis_start_year": 2019,
         "analysis_end_year": 2024,
-        "area_ha": 1617.7077,
+        "area_ha": 1617.7139,
         "selection_role": "сплошная вырубка с четкой границей",
         "project_status": "исследовательский участок",
         "stand_age": null,
@@ -346,6 +346,55 @@
     },
     {
       "type": "Feature",
+      "id": "RU_VOLOGDA_08",
+      "properties": {
+        "aoi_id": "RU_VOLOGDA_08",
+        "name": "Вологодская область рассеянные потери",
+        "region": "Вологодская область",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1615.338,
+        "selection_role": "мозаика мелких потерь",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 40.66975,
+        "bbox_south": 59.48,
+        "bbox_east": 40.73375,
+        "bbox_north": 59.52,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              40.67,
+              59.48
+            ],
+            [
+              40.734,
+              59.48
+            ],
+            [
+              40.734,
+              59.52
+            ],
+            [
+              40.67,
+              59.52
+            ],
+            [
+              40.67,
+              59.48
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
       "id": "RU_VOLOGDA_09",
       "properties": {
         "aoi_id": "RU_VOLOGDA_09",
@@ -353,7 +402,7 @@
         "region": "Вологодская область",
         "analysis_start_year": 2019,
         "analysis_end_year": 2024,
-        "area_ha": 1617.7077,
+        "area_ha": 1617.7139,
         "selection_role": "лесовосстановление и подрост",
         "project_status": "исследовательский участок",
         "stand_age": null,
@@ -402,7 +451,7 @@
         "region": "Республика Мордовия",
         "analysis_start_year": 2019,
         "analysis_end_year": 2024,
-        "area_ha": 1829.5986,
+        "area_ha": 1829.6118,
         "selection_role": "гарь с подтверждением MODIS",
         "project_status": "исследовательский участок",
         "stand_age": null,
@@ -451,7 +500,7 @@
         "region": "Республика Мордовия",
         "analysis_start_year": 2019,
         "analysis_end_year": 2024,
-        "area_ha": 1829.5986,
+        "area_ha": 1829.6118,
         "selection_role": "падающая историческая динамика (g < 0)",
         "project_status": "исследовательский участок",
         "stand_age": null,
@@ -485,6 +534,55 @@
             ],
             [
               43.304,
+              54.85025
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "RU_MORDOVIA_12",
+      "properties": {
+        "aoi_id": "RU_MORDOVIA_12",
+        "name": "Мордовия южный кластер нарушений",
+        "region": "Республика Мордовия",
+        "analysis_start_year": 2019,
+        "analysis_end_year": 2024,
+        "area_ha": 1829.6118,
+        "selection_role": "ранние потери покрова и повторные нарушения",
+        "project_status": "исследовательский участок",
+        "stand_age": null,
+        "dominant_species": null,
+        "site_class": null,
+        "bbox_west": 43.1,
+        "bbox_south": 54.78025,
+        "bbox_east": 43.164,
+        "bbox_north": 54.82025,
+        "baseline_id": "HIST-AGB-2015-2019-v1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              43.31,
+              54.85025
+            ],
+            [
+              43.374,
+              54.85025
+            ],
+            [
+              43.374,
+              54.89025
+            ],
+            [
+              43.31,
+              54.89025
+            ],
+            [
+              43.31,
               54.85025
             ]
           ]

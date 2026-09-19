@@ -166,3 +166,36 @@
   padding: 15px 28px;
   font-size: 15px;
 }
+
+/* Переключатель обложки. Снимок отвечает на вопрос «что это за место»,
+   карта изменений — «где изменился запас»; это разные вопросы, и ни
+   один из них не отменяет другой. */
+.areas__cover-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.filter--on {
+  border-color: var(--c-ink);
+  background: var(--c-ink);
+  color: #fff;
+}
+
+/* Дата снимка поверх обложки: без неё непонятно, к какому году
+   относится то, что видно на картинке. */
+.area__date {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: rgb(27 27 23 / 62%);
+  font-size: 11px;
+  color: #fff;
+  backdrop-filter: blur(3px);
+}

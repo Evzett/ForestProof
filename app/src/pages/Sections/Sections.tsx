@@ -4,8 +4,9 @@ import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../compo
 import { PageHead } from "../../components/AppShell";
 import { AREAS, ASSUMPTIONS, DATASETS, EVENTS, PARAMETERS, YEARS } from "../../data/case";
 import type { Area, Period } from "../../data/case";
-import { composeSummary } from "../../data/aiSummary";
+import { useAiSummary } from "../../data/aiSummary";
 import "./Sections.css";
+import { postCalc, type CalcResult } from "../../api";
 
 /* Журнал расчётов и наблюдение.
    Методика вынесена в отдельный модуль — см. Methodology.tsx. */
@@ -302,7 +303,15 @@ function changesSince(entry: Entry): Change[] {
   for (const e of newEvents) {
     changes.push({
       title: "в продукте гарей нашлось событие после расчёта",
-      detail: `${e.date_min} — ${e.date_max}: ${e.cause_supported}; затронуто ${e.burned_pixels} из ${e.all_pixels} пикселей, неопределённость даты ${e.uncertainty_days[0]}—${e.uncertainty_days[1]} дней`,
+      /* Оценка неопределённости даты есть только у событий набора.
+         У найденных нами её нет, и «0—0 дней» выдало бы отсутствие
+         оценки за точную дату. */
+      detail:
+        `${e.date_min} — ${e.date_max}: ${e.cause_supported}; ` +
+        `затронуто ${e.burned_pixels} из ${e.all_pixels} пикселей` +
+        (e.uncertainty_days[1] > 0
+          ? `, неопределённость даты ${e.uncertainty_days[0]}—${e.uncertainty_days[1]} дней`
+          : ""),
       weight: "material",
     });
   }
@@ -348,6 +357,7 @@ function recalcTarget(entry: Entry) {
   return {
     start,
     end,
+    period,
     available: Boolean(period),
     hash: period ? inputHash(entry.area, period) : null,
   };
@@ -355,13 +365,36 @@ function recalcTarget(entry: Entry) {
 
 export function Monitoring() {
   const journal = useMemo(buildJournal, []);
-  /* Справку по разделу излагает та же модель, что и в обзоре: список
-     карточек отвечает «что именно изменилось», а одна фраза сверху —
-     «стоит ли вообще этим заниматься». Числа считает наш код, модель
-     их только связывает, и лишние величины сервер отбраковывает. */
-  const [ai, setAi] = useState<{ text: string; model: string } | null>(null);
-  const [aiNote, setAiNote] = useState<string | null>(null);
-  const [asking, setAsking] = useState(false);
+
+  /* Результаты пересчёта, сделанного в этом сеансе. Сохранённый расчёт
+     при этом остаётся на месте: смысл раздела в том, чтобы видеть оба
+     числа рядом и понимать, насколько отчёт устарел. */
+  const [recalculated, setRecalculated] = useState<
+    Record<string, { state: "busy" } | { state: "done"; result: CalcResult } | { state: "local" }>
+  >({});
+
+  const recalc = async (entry: Entry, start: number, end: number) => {
+    setRecalculated((done) => ({ ...done, [entry.calc_id]: { state: "busy" } }));
+    try {
+      const result = await postCalc({
+        aoi_id: entry.area.aoi_id,
+        year_start: start,
+        year_end: end,
+      });
+      setRecalculated((done) => ({ ...done, [entry.calc_id]: { state: "done", result } }));
+    } catch {
+      /* Сервис не ответил. Показываем предпосчитанное значение из
+         набора и говорим, что это оно: без бэкенда демо обязано
+         работать, но подстановка не должна выдаваться за свежий
+         расчёт. */
+      setRecalculated((done) => ({ ...done, [entry.calc_id]: { state: "local" } }));
+    }
+  };
+  /* Какой расчёт открыт подробно. Раздел отвечает на вопрос про
+     конкретный участок, и заставлять пролистывать одиннадцать чужих
+     карточек ради своей — значит прятать ответ. */
+  const [opened, setOpened] = useState<string | null>(null);
+  const [onlyStale, setOnlyStale] = useState(true);
 
   /* По одному сохранённому расчёту на участок — самому раннему по концу
      периода. Он и есть «прошлый расчёт»: остальные строки журнала уже
@@ -391,28 +424,28 @@ export function Monitoring() {
 
   const stale = rows.filter((r) => r.material.length > 0);
 
-  const askModel = async () => {
-    if (asking) return;
-    setAsking(true);
-    setAiNote(null);
-    const result = await composeSummary({
-      "раздел": "устаревание сохранённых расчётов",
-      "сохранённых расчётов": rows.length,
-      "стоит повторить": stale.length,
-      "почему стоит повторить": stale.length
-        ? "во входных данных появились изменения, влияющие на результат"
-        : null,
-      "участки, где расчёт устарел": stale.map((r) => r.entry.area.name),
-      "ничего не пересчитывается само": true,
-    });
-    if (result.ok) {
-      setAi({ text: result.text, model: result.model });
-    } else {
-      setAi(null);
-      setAiNote(result.reason);
-    }
-    setAsking(false);
-  };
+  /* Справку модель излагает сразу при открытии раздела — так же, как на
+     обзоре, участке и в сравнении. Кнопка осталась как «пересобрать». */
+  const {
+    ai,
+    note: aiNote,
+    busy: asking,
+    refresh: askModel,
+  } = useAiSummary(`monitoring:${stale.length}/${rows.length}`, () => ({
+    "раздел": "устаревание сохранённых расчётов",
+    "сохранённых расчётов": rows.length,
+    "стоит повторить": stale.length,
+    "почему стоит повторить": stale.length
+      ? "во входных данных появились изменения, влияющие на результат"
+      : null,
+    "участки, где расчёт устарел": stale.map((r) => r.entry.area.name),
+    "ничего не пересчитывается само": true,
+  }));
+
+  /* По умолчанию открыт первый устаревший: именно он и есть повод
+     зайти в этот раздел. */
+  const shown = onlyStale && stale.length > 0 ? stale : rows;
+  const current = shown.find((r) => r.entry.calc_id === opened) ?? shown[0];
 
   return (
     <>
@@ -437,7 +470,9 @@ export function Monitoring() {
       <Card className="mon-summary mb20">
         <div className="ov-summary__head">
           <h2 className="card__title">Коротко по разделу</h2>
-          <span className="lvl lvl--outline">{ai ? "изложено моделью" : "собрано шаблоном"}</span>
+          <span className="lvl lvl--outline">
+            {ai ? "изложено моделью" : asking ? "модель отвечает…" : "собрано шаблоном"}
+          </span>
           <span className="ov-summary__spacer" />
           <button
             className="btn btn--dark btn--inline"
@@ -445,7 +480,7 @@ export function Monitoring() {
             onClick={askModel}
             disabled={asking}
           >
-            {asking ? "модель отвечает…" : "спросить модель"}
+            {asking ? "модель отвечает…" : "пересобрать"}
           </button>
         </div>
         <p className="mon-summary__text">
@@ -463,8 +498,69 @@ export function Monitoring() {
         </p>
       </Card>
 
-      <div className="scrollbox mon-list">
-      {rows.map(({ entry, changes, material, target }) => (
+      <Card className="mb20">
+        <div className="ov-summary__head">
+          <h2 className="card__title">Сохранённые расчёты</h2>
+          <span className="ov-summary__spacer" />
+          {stale.length > 0 && stale.length < rows.length && (
+            <button
+              className="filter"
+              type="button"
+              onClick={() => setOnlyStale((v) => !v)}
+            >
+              {onlyStale ? `показать все ${rows.length}` : `только устаревшие (${stale.length})`}
+            </button>
+          )}
+        </div>
+
+        <div className="tbl__scroll">
+          <table className="tbl mon-table">
+            <thead>
+              <tr>
+                <th>участок</th>
+                <th>период</th>
+                <th className="num">результат</th>
+                <th className="num">единицы</th>
+                <th>состояние</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((row) => (
+                <tr
+                  key={row.entry.calc_id}
+                  className={
+                    current?.entry.calc_id === row.entry.calc_id ? "mon-row mon-row--on" : "mon-row"
+                  }
+                  onClick={() => setOpened(row.entry.calc_id)}
+                >
+                  <td>{row.entry.area.name}</td>
+                  <td className="tabular">
+                    {row.entry.period.year_start}—{row.entry.period.year_end}
+                  </td>
+                  <td className="num tabular">
+                    {formatNumber(Math.round(row.entry.period.e_tco2e))}
+                  </td>
+                  <td className="num tabular">
+                    {row.entry.period.units === null ? "—" : row.entry.period.units}
+                  </td>
+                  <td>
+                    <span className={`lvl lvl--${row.material.length > 0 ? "low" : "none"}`}>
+                      {row.material.length > 0 ? "стоит пересчитать" : "актуален"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="ov-note">
+          Нажмите строку, чтобы посмотреть, что именно изменилось во входных данных этого
+          расчёта. Ничего не пересчитывается само.
+        </p>
+      </Card>
+
+      <div className="mon-list">
+      {(current ? [current] : []).map(({ entry, changes, material, target }) => (
         <Card
           key={entry.calc_id}
           title={entry.area.name}
@@ -497,27 +593,103 @@ export function Monitoring() {
                   <b>{c.title}</b>
                   <span>{c.detail}</span>
                 </span>
-                <span className={`lvl lvl--${c.weight === "material" ? "medium" : "none"}`}>
+                <span className={`lvl lvl--${c.weight === "material" ? "low" : "none"}`}>
                   {c.weight === "material" ? "влияет на результат" : "без изменений"}
                 </span>
               </li>
             ))}
           </ul>
 
-          {material.length > 0 && target.available && (
-            <div className="report-actions">
-              <Link
-                className="btn btn--dark btn--inline"
-                to={`/app/area/${entry.area.aoi_id}?start=${target.start}&end=${target.end}`}
-              >
-                <span>
-                  Пересчитать за {target.start}—{target.end}
-                </span>
-              </Link>
-            </div>
+          {material.length > 0 && target.available && target.period && (
+            <>
+              {recalculated[entry.calc_id] ? (
+                <div className="mon-recalc">
+                  <div className="mon-recalc__head">
+                    <b>
+                      пересчёт за {target.start}—{target.end}
+                    </b>
+                    {recalculated[entry.calc_id].state === "busy" ? (
+                      <span className="lvl lvl--none">считаем по растрам…</span>
+                    ) : recalculated[entry.calc_id].state === "local" ? (
+                      <span className="lvl lvl--none">значение из набора</span>
+                    ) : (
+                      <span className="lvl lvl--low">посчитано сервисом</span>
+                    )}
+                  </div>
+                  {(() => {
+                    const state = recalculated[entry.calc_id];
+                    if (state.state === "busy") {
+                      return (
+                        <p className="ov-note" style={{ marginTop: 0 }}>
+                          Сервис считает запас по растрам за {target.start}—{target.end}. Это тот
+                          же путь, которым считается любой контур.
+                        </p>
+                      );
+                    }
+
+                    const fresh = state.state === "done" ? state.result : null;
+                    const e = fresh ? fresh.period.e_tco2e : target.period.e_tco2e;
+                    const units = fresh ? fresh.period.units : target.period.units;
+                    const reason = fresh ? fresh.period.reason : target.period.reason;
+                    const hash = fresh ? fresh.input_hash : target.hash;
+
+                    return (
+                      <dl className="kv">
+                        <div>
+                          <dt>результат</dt>
+                          <dd className="tabular">
+                            {formatNumber(Math.round(e))} т CO₂-экв.{" "}
+                            <small>было {formatNumber(Math.round(entry.period.e_tco2e))}</small>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>потенциальные единицы</dt>
+                          <dd className="tabular">
+                            {units === null ? "недоступны" : units}
+                            {reason ? ` · ${reason}` : ""}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>хеш входных данных</dt>
+                          <dd className="tabular">
+                            {hash?.slice(0, 12)}{" "}
+                            <small>вместо {entry.input_hash.slice(0, 12)}</small>
+                          </dd>
+                        </div>
+                      </dl>
+                    );
+                  })()}
+                  <div className="report-actions">
+                    <Link
+                      className="btn btn--outline"
+                      to={`/app/area/${entry.area.aoi_id}?start=${target.start}&end=${target.end}`}
+                    >
+                      <span>Открыть полный отчёт →</span>
+                    </Link>
+                  </div>
+                  <p className="ov-note">
+                    {recalculated[entry.calc_id].state === "local"
+                      ? "Сервис расчёта недоступен, поэтому показано значение, посчитанное заранее для этой пары лет. Числа те же, но прямо сейчас ничего не считалось."
+                      : "Сохранённый расчёт остался на месте: раздел показывает, что изменилось, а не подменяет прежний отчёт новым."}
+                  </p>
+                </div>
+              ) : (
+                <div className="report-actions">
+                  <button
+                    className="btn btn--dark"
+                    type="button"
+                    onClick={() => void recalc(entry, target.start, target.end)}
+                  >
+                    <span>
+                      Пересчитать за {target.start}—{target.end}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
-          {material.length > 0 && target.available && target.hash && (
+          {material.length > 0 && target.available && target.hash && !recalculated[entry.calc_id] && (
             <p className="ov-note">
               Хеш входных данных после пересчёта: {target.hash.slice(0, 12)} вместо{" "}
               {entry.input_hash.slice(0, 12)} — это другой вход, а значит и другой отчёт.

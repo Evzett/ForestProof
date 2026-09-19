@@ -1,0 +1,61 @@
+/* График сравнения: линии запаса по годам. */
+.cmpchart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.cmpchart__grid {
+  stroke: rgb(46 62 40 / 12%);
+  stroke-width: 1;
+}
+
+.cmpchart__tick {
+  font-size: 10px;
+  fill: var(--c-muted-alt);
+}
+
+.cmpchart__line path {
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 0.15s ease;
+}
+
+.cmpchart__line circle {
+  transition: opacity 0.15s ease, r 0.15s ease;
+}
+
+/* Наведение приглушает остальные линии, а не подсвечивает выбранную:
+   подсветка одной среди восьми всё равно теряется, а приглушение
+   остальных оставляет на виду ровно то, что нужно. */
+.cmpchart__line--dim {
+  opacity: 0.22;
+}
+
+.cmpchart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 14px 0 10px;
+  list-style: none;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.cmpchart__legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+
+.cmpchart__legend--on {
+  color: var(--c-ink-black);
+}
+
+.cmpchart__legend i {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
