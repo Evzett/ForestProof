@@ -6,6 +6,7 @@ import { AREAS, ASSUMPTIONS, DATASETS, EVENTS, PARAMETERS, YEARS } from "../../d
 import type { Area, Period } from "../../data/case";
 import { useAiSummary } from "../../data/aiSummary";
 import "./Sections.css";
+import { postCalc, type CalcResult } from "../../api";
 
 /* Журнал расчётов и наблюдение.
    Методика вынесена в отдельный модуль — см. Methodology.tsx. */
@@ -365,13 +366,30 @@ function recalcTarget(entry: Entry) {
 export function Monitoring() {
   const journal = useMemo(buildJournal, []);
 
-  /* Какие расчёты пересчитаны в этом сеансе. Сам пересчёт мгновенный:
-     все пары лет посчитаны сервисом заранее, здесь берётся готовая. Но
-     заменять сохранённый результат новым нельзя — тогда пропадёт то,
-     ради чего раздел и нужен: видно должно быть оба числа сразу. */
-  const [recalculated, setRecalculated] = useState<Set<string>>(new Set());
-  const recalc = (calcId: string) =>
-    setRecalculated((done) => new Set(done).add(calcId));
+  /* Результаты пересчёта, сделанного в этом сеансе. Сохранённый расчёт
+     при этом остаётся на месте: смысл раздела в том, чтобы видеть оба
+     числа рядом и понимать, насколько отчёт устарел. */
+  const [recalculated, setRecalculated] = useState<
+    Record<string, { state: "busy" } | { state: "done"; result: CalcResult } | { state: "local" }>
+  >({});
+
+  const recalc = async (entry: Entry, start: number, end: number) => {
+    setRecalculated((done) => ({ ...done, [entry.calc_id]: { state: "busy" } }));
+    try {
+      const result = await postCalc({
+        aoi_id: entry.area.aoi_id,
+        year_start: start,
+        year_end: end,
+      });
+      setRecalculated((done) => ({ ...done, [entry.calc_id]: { state: "done", result } }));
+    } catch {
+      /* Сервис не ответил. Показываем предпосчитанное значение из
+         набора и говорим, что это оно: без бэкенда демо обязано
+         работать, но подстановка не должна выдаваться за свежий
+         расчёт. */
+      setRecalculated((done) => ({ ...done, [entry.calc_id]: { state: "local" } }));
+    }
+  };
   /* Какой расчёт открыт подробно. Раздел отвечает на вопрос про
      конкретный участок, и заставлять пролистывать одиннадцать чужих
      карточек ради своей — значит прятать ответ. */
@@ -584,38 +602,63 @@ export function Monitoring() {
 
           {material.length > 0 && target.available && target.period && (
             <>
-              {recalculated.has(entry.calc_id) ? (
+              {recalculated[entry.calc_id] ? (
                 <div className="mon-recalc">
                   <div className="mon-recalc__head">
                     <b>
                       пересчёт за {target.start}—{target.end}
                     </b>
-                    <span className="lvl lvl--low">готово</span>
+                    {recalculated[entry.calc_id].state === "busy" ? (
+                      <span className="lvl lvl--none">считаем по растрам…</span>
+                    ) : recalculated[entry.calc_id].state === "local" ? (
+                      <span className="lvl lvl--none">значение из набора</span>
+                    ) : (
+                      <span className="lvl lvl--low">посчитано сервисом</span>
+                    )}
                   </div>
-                  <dl className="kv">
-                    <div>
-                      <dt>результат</dt>
-                      <dd className="tabular">
-                        {formatNumber(Math.round(target.period.e_tco2e))} т CO₂-экв.{" "}
-                        <small>
-                          было {formatNumber(Math.round(entry.period.e_tco2e))}
-                        </small>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>потенциальные единицы</dt>
-                      <dd className="tabular">
-                        {target.period.units === null ? "недоступны" : target.period.units}
-                        {target.period.reason ? ` · ${target.period.reason}` : ""}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>хеш входных данных</dt>
-                      <dd className="tabular">
-                        {target.hash?.slice(0, 12)} <small>вместо {entry.input_hash.slice(0, 12)}</small>
-                      </dd>
-                    </div>
-                  </dl>
+                  {(() => {
+                    const state = recalculated[entry.calc_id];
+                    if (state.state === "busy") {
+                      return (
+                        <p className="ov-note" style={{ marginTop: 0 }}>
+                          Сервис считает запас по растрам за {target.start}—{target.end}. Это тот
+                          же путь, которым считается любой контур.
+                        </p>
+                      );
+                    }
+
+                    const fresh = state.state === "done" ? state.result : null;
+                    const e = fresh ? fresh.period.e_tco2e : target.period.e_tco2e;
+                    const units = fresh ? fresh.period.units : target.period.units;
+                    const reason = fresh ? fresh.period.reason : target.period.reason;
+                    const hash = fresh ? fresh.input_hash : target.hash;
+
+                    return (
+                      <dl className="kv">
+                        <div>
+                          <dt>результат</dt>
+                          <dd className="tabular">
+                            {formatNumber(Math.round(e))} т CO₂-экв.{" "}
+                            <small>было {formatNumber(Math.round(entry.period.e_tco2e))}</small>
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>потенциальные единицы</dt>
+                          <dd className="tabular">
+                            {units === null ? "недоступны" : units}
+                            {reason ? ` · ${reason}` : ""}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>хеш входных данных</dt>
+                          <dd className="tabular">
+                            {hash?.slice(0, 12)}{" "}
+                            <small>вместо {entry.input_hash.slice(0, 12)}</small>
+                          </dd>
+                        </div>
+                      </dl>
+                    );
+                  })()}
                   <div className="report-actions">
                     <Link
                       className="btn btn--outline"
@@ -625,8 +668,9 @@ export function Monitoring() {
                     </Link>
                   </div>
                   <p className="ov-note">
-                    Сохранённый расчёт остался на месте: раздел показывает, что изменилось, а
-                    не подменяет прежний отчёт новым.
+                    {recalculated[entry.calc_id].state === "local"
+                      ? "Сервис расчёта недоступен, поэтому показано значение, посчитанное заранее для этой пары лет. Числа те же, но прямо сейчас ничего не считалось."
+                      : "Сохранённый расчёт остался на месте: раздел показывает, что изменилось, а не подменяет прежний отчёт новым."}
                   </p>
                 </div>
               ) : (
@@ -634,7 +678,7 @@ export function Monitoring() {
                   <button
                     className="btn btn--dark"
                     type="button"
-                    onClick={() => recalc(entry.calc_id)}
+                    onClick={() => void recalc(entry, target.start, target.end)}
                   >
                     <span>
                       Пересчитать за {target.start}—{target.end}
@@ -645,7 +689,7 @@ export function Monitoring() {
             </>
           )}
 
-          {material.length > 0 && target.available && target.hash && !recalculated.has(entry.calc_id) && (
+          {material.length > 0 && target.available && target.hash && !recalculated[entry.calc_id] && (
             <p className="ov-note">
               Хеш входных данных после пересчёта: {target.hash.slice(0, 12)} вместо{" "}
               {entry.input_hash.slice(0, 12)} — это другой вход, а значит и другой отчёт.

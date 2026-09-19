@@ -135,6 +135,16 @@ export type Area = {
   maps: AreaMaps | null;
   terrain: Terrain | null;
   sentinel: SentinelEvidence | null;
+  /* Снимок, собранный нами для участков без вложенных в набор сцен:
+     окно каналов Sentinel-2 прочитано из облака по контуру. */
+  scene_preview: {
+    image: string;
+    date: string;
+    scene_id: string;
+    usable_fraction: number;
+    cloud_percent: number | null;
+    source: string;
+  } | null;
   stability: Stability;
   name: string;
   region: string;

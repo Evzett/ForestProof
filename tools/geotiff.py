@@ -203,17 +203,27 @@ def read_geotiff(path: str, bbox: tuple[float, float, float, float] | None = Non
     123 МБ сжатых и около 500 МБ в памяти, а участок кейса занимает в нём
     меньше тысячной доли. Распаковываем только задетые блоки.
     """
-    # Файл отображается в память, а не читается целиком: тайл Hansen
-    # весит 452 МБ, а окно затрагивает доли процента страниц. При чтении
-    # через read() каждый вызов стоил бы полгигабайта дискового ввода,
-    # и нарезка четырёхсот участков превращалась в двести гигабайт.
-    handle = open(path, "rb")
-    try:
-        buf = mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ)
-    except ValueError:
-        # пустой файл — mmap на нём не работает
-        handle.close()
-        raise ValueError(f"{path}: пустой файл")
+    # Адрес вместо пути — тот же растр, лежащий в облаке. Читается он
+    # точно так же, срезами, только байты приезжают по HTTP Range:
+    # канал Sentinel-2 весит около 150 МБ, а окно участка — доли
+    # процента, и качать тайл целиком незачем.
+    if path.startswith(("http://", "https://")):
+        from cog import RangeReader
+
+        handle = None
+        buf = RangeReader(path)
+    else:
+        # Файл отображается в память, а не читается целиком: тайл Hansen
+        # весит 452 МБ, а окно затрагивает доли процента страниц. При чтении
+        # через read() каждый вызов стоил бы полгигабайта дискового ввода,
+        # и нарезка четырёхсот участков превращалась в двести гигабайт.
+        handle = open(path, "rb")
+        try:
+            buf = mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ)
+        except ValueError:
+            # пустой файл — mmap на нём не работает
+            handle.close()
+            raise ValueError(f"{path}: пустой файл")
 
     if buf[:2] not in (b"II", b"MM"):
         raise ValueError(f"{path}: не TIFF")
@@ -385,7 +395,8 @@ def read_geotiff(path: str, bbox: tuple[float, float, float, float] | None = Non
     # ссылку на буфер, и обращение к нему после close() уронит процесс.
     data = np.array(data, copy=True)
     buf.close()
-    handle.close()
+    if handle is not None:
+        handle.close()
 
     return Raster(
         data=data,

@@ -625,6 +625,14 @@ def main() -> None:
             events.append(event)
     with open(args.data / "methodology" / "parameters.csv", encoding="utf-8-sig") as handle:
         config = CaseCalculationConfig.from_parameter_rows(list(csv.DictReader(handle)))
+    # Превью, собранные из облака для участков без вложенных снимков.
+    # Файла может не быть — тогда карточки покажут карту изменений, и
+    # это не поломка, а отсутствие картинки.
+    previews_path = args.data / "scene_previews.json"
+    previews = (
+        json.loads(previews_path.read_text(encoding="utf-8")) if previews_path.exists() else {}
+    )
+
     with open(args.data / "areas.geojson", encoding="utf-8-sig") as handle:
         geometries = {feature["properties"]["aoi_id"]: feature["geometry"]
                       for feature in json.load(handle)["features"]}
@@ -644,8 +652,16 @@ def main() -> None:
             "treecover_threshold_pct": TREECOVER_THRESHOLD,
             "prices_rub": dict(config.prices_rub),
         },
-        "areas": [build_aoi(args.data, meta, baseline, events, args.maps,
-                            config, geometries[meta["aoi_id"]]) for meta in areas],
+        "areas": [
+            {
+                **build_aoi(
+                    args.data, meta, baseline, events, args.maps,
+                    config, geometries[meta["aoi_id"]],
+                ),
+                "scene_preview": previews.get(meta["aoi_id"]),
+            }
+            for meta in areas
+        ],
         "events": [
             {
                 "event_id": e["event_id"],

@@ -38483,7 +38483,8 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
-      }
+      },
+      "scene_preview": null
     },
     {
       "aoi_id": "RU_VOLOGDA_02",
@@ -77036,7 +77037,8 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
-      }
+      },
+      "scene_preview": null
     },
     {
       "aoi_id": "RU_MORDOVIA_03",
@@ -115623,7 +115625,8 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
-      }
+      },
+      "scene_preview": null
     },
     {
       "aoi_id": "RU_MORDOVIA_04",
@@ -154159,7 +154162,8 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
-      }
+      },
+      "scene_preview": null
     },
     {
       "aoi_id": "RU_TVER_05",
@@ -195301,6 +195305,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_TVER_05_scene.png",
+        "date": "2024-09-08",
+        "scene_id": "S2B_36VVH_20240908_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 0.024867,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     },
     {
@@ -235625,6 +235637,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_TVER_06_scene.png",
+        "date": "2024-09-11",
+        "scene_id": "S2B_36VVH_20240911_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 32.500547,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     },
     {
@@ -276790,6 +276810,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_VOLOGDA_07_scene.png",
+        "date": "2024-09-12",
+        "scene_id": "S2B_37VEF_20240912_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 25.545678,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     },
     {
@@ -318720,6 +318748,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_VOLOGDA_08_scene.png",
+        "date": "2024-09-12",
+        "scene_id": "S2B_37VEF_20240912_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 25.545678,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     },
     {
@@ -359849,6 +359885,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_VOLOGDA_09_scene.png",
+        "date": "2024-09-10",
+        "scene_id": "S2A_37VEF_20240910_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 13.590027,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     },
     {
@@ -400975,6 +401019,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_MORDOVIA_10_scene.png",
+        "date": "2024-09-14",
+        "scene_id": "S2A_38ULF_20240914_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 5.658789,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     },
     {
@@ -442123,6 +442175,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_MORDOVIA_11_scene.png",
+        "date": "2024-09-14",
+        "scene_id": "S2A_38ULF_20240914_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 5.658789,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     },
     {
@@ -483275,6 +483335,14 @@
           "period_2019_2024.scenario_economics.scenarios[1].value_rub",
           "period_2019_2024.scenario_economics.disclaimer"
         ]
+      },
+      "scene_preview": {
+        "image": "RU_MORDOVIA_12_scene.png",
+        "date": "2024-09-06",
+        "scene_id": "S2B_38ULF_20240906_0_L2A",
+        "usable_fraction": 1.0,
+        "cloud_percent": 1.13633,
+        "source": "Sentinel-2 L2A, окно прочитано из облака по контуру"
       }
     }
   ],

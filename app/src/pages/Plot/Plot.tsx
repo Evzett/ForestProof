@@ -528,6 +528,36 @@ function ChangesTab({
         )}
       </Card>
 
+      {/* Снимок, найденный нами. Показывается там, где в набор сцены не
+          вложены: без него у восьми добавленных участков блока снимков
+          не было вовсе, и страница молчала о том, как выглядит место. */}
+      {(!area.sentinel || area.sentinel.observations.length === 0) && area.scene_preview && (
+        <Card
+          title="Снимок участка"
+          note={`Sentinel-2 L2A · ${area.scene_preview.date}`}
+          className="plot-block"
+        >
+          <div className="shots">
+            <figure>
+              <img src={`/maps/${area.scene_preview.image}`} alt={`Снимок участка ${area.name}`} />
+              <figcaption>
+                <b>{area.scene_preview.date}</b>
+                <span>
+                  сцена {area.scene_preview.scene_id} · годных пикселей внутри контура{" "}
+                  {formatDecimal(area.scene_preview.usable_fraction * 100, 0)} %
+                </span>
+              </figcaption>
+            </figure>
+          </div>
+          <p className="ov-note">
+            Сцена найдена нашим поиском по контуру, а не вложена в набор: выбрана по доле
+            годных пикселей внутри участка, а не по облачности всего кадра. Яркость приведена
+            к виду для показа общим множителем на три канала — цвет при этом не меняется.
+            Ни одно число расчёта из этой картинки не берётся.
+          </p>
+        </Card>
+      )}
+
       {area.sentinel && area.sentinel.observations.length > 0 && (
         <Card
           title="Снимки до и после"

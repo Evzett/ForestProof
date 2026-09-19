@@ -41,10 +41,18 @@ const SIGNS = [
    на обложке выглядел бы как поломка, хотя это штатное состояние
    наблюдения. */
 function coverScene(area: Area): { image: string; date: string } | null {
+  /* Снимки, вложенные в набор, идут первыми: они пришли с данными
+     кейса, и подменять их собранными нами нельзя. Для остальных
+     участков берётся наше превью. */
   const usable = (area.sentinel?.observations ?? []).filter((o) => o.usable && o.image);
-  if (usable.length === 0) return null;
-  const latest = usable.reduce((a, b) => (a.date >= b.date ? a : b));
-  return { image: latest.image, date: latest.date };
+  if (usable.length > 0) {
+    const latest = usable.reduce((a, b) => (a.date >= b.date ? a : b));
+    return { image: latest.image, date: latest.date };
+  }
+  if (area.scene_preview) {
+    return { image: area.scene_preview.image, date: area.scene_preview.date };
+  }
+  return null;
 }
 
 export default function Areas() {
