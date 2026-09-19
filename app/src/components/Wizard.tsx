@@ -351,6 +351,10 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
      расчёт по ним доходит до результата, а не до сообщения о том, что
      растров на эту территорию нет. */
   const applySample = (sample: SampleContour) => {
+    if (sample.period) {
+      setYearStart(sample.period[0]);
+      setYearEnd(sample.period[1]);
+    }
     setFileError("");
     setGeometry(sample.geometry as GeoJsonPolygon);
     setFile({
@@ -629,9 +633,9 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                       ))}
                     </div>
                     <p className="wz__samples-note">
-                      Контуры лежат внутри участков, по которым у нас есть растры, — расчёт по
-                      ним доходит до результата. Форма взята из проектных полигонов, границы
-                      выдуманы: это пример работы сервиса, а не чей-то настоящий участок.
+                      Первый пример проверяет расчёт на периоде 2019–2024 и при выборе
+                      устанавливает этот период. Остальные примеры расположены внутри
+                      участков каталога. Это демонстрационные границы, а не реальные проекты.
                     </p>
                   </div>
                 </div>

@@ -4,6 +4,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_positive_sample_resets_period_and_is_first():
+    import json
+    import re
+
+    samples = (ROOT / "app/src/data/sampleContours.ts").read_text(encoding="utf-8")
+    first = samples.split("export const SAMPLE_CONTOURS")[1].split('id: "vologda_02"')[0]
+    assert 'id: "primer-1"' in first
+    assert "period: [2019, 2024]" in first
+    fixture = json.loads((ROOT / "examples/primer-1-edinic-29438.geojson").read_text(encoding="utf-8"))
+    points = [[float(x), float(y)] for x, y in re.findall(r"\[([\d.]+), ([\d.]+)\]", first) if "." in x]
+    assert points == fixture["features"][0]["geometry"]["coordinates"][0]
+    wizard = (ROOT / "app/src/components/Wizard.tsx").read_text(encoding="utf-8")
+    apply = wizard.split("const applySample =")[1].split("\n  };")[0]
+    assert "setYearStart(sample.period[0])" in apply
+    assert "setYearEnd(sample.period[1])" in apply
+    assert "useState(2019)" in wizard and "useState(2024)" in wizard
+
+
 def test_wizard_sends_selected_period_not_hardcoded_period() -> None:
     source = (ROOT / "app/src/components/Wizard.tsx").read_text(encoding="utf-8")
     assert "year_start: yearStart" in source

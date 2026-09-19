@@ -72,7 +72,14 @@ def fit(ring: list[list[float]], box, inset: float = 0.18) -> list[list[float]]:
     return out
 
 
-entries = []
+entries = [{
+    "id": "primer-1",
+    "title": "Пример с положительным потенциалом — Вологодская область",
+    "note": "Контрольный пример для проверки расчётного контура. На периоде 2019–2024 проходит фильтры текущей методики.",
+    "parent": "Вологодская область",
+    "period": [2019, 2024],
+    "geometry": json.loads(Path("examples/primer-1-edinic-29438.geojson").read_text(encoding="utf-8"))["features"][0]["geometry"],
+}]
 for aoi, source in SOURCES.items():
     meta = areas[aoi]
     box = (
@@ -95,7 +102,8 @@ for aoi, source in SOURCES.items():
 lines = [
     "/* Примеры контуров для мастера «Задать контур».",
     "",
-    "   Форма взята из старых проектных полигонов: это настоящие контуры в",
+    "   Первый — контрольный primer-1 из examples, период 2019–2024.",
+    "   Форма остальных взята из старых проектных полигонов: это контуры в",
     "   пятнадцать вершин, а не прямоугольник, которым проще всего обойтись.",
     "   Лежали они, однако, в Красноярском крае — за полторы тысячи",
     "   километров от покрытия наших растров, — поэтому перенесена только",
@@ -111,6 +119,7 @@ lines = [
     "  title: string;",
     "  note: string;",
     "  parent: string;",
+    "  period?: [number, number];",
     "  geometry: { type: \"Polygon\"; coordinates: number[][][] };",
     "};",
     "",
@@ -124,6 +133,8 @@ for entry in entries:
     lines.append(f'    title: "{entry["title"]}",')
     lines.append(f'    note: "{entry["note"]}",')
     lines.append(f'    parent: "{entry["parent"]}",')
+    if "period" in entry:
+        lines.append(f'    period: {entry["period"]},')
     lines.append('    geometry: {')
     lines.append('      type: "Polygon",')
     lines.append("      coordinates: [")
