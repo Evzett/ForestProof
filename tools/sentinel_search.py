@@ -61,7 +61,7 @@ VALID_SCL = {4, 5, 6, 7}
 # нельзя судить, что стало с участком.
 MIN_USABLE = 0.50
 
-TIMEOUT = 120
+TIMEOUT = 15
 
 
 def search(
@@ -113,7 +113,7 @@ def search(
     return out
 
 
-def _download(url: str, target: Path, *, attempts: int = 3) -> Path:
+def _download(url: str, target: Path, *, attempts: int = 2) -> Path:
     """Скачивание с провенансом рядом. Повторно не качает.
 
     Попыток несколько: облако изредка рвёт TLS на середине

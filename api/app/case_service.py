@@ -419,8 +419,9 @@ def _external_evidence(geometry: dict, year_start: int, year_end: int, maps_dir:
     from tools.contour_evidence import Evidence, collect
 
     bbox = geometry_bbox(geometry)
+    timeout = float(os.environ.get("FORESTPROOF_EVIDENCE_TIMEOUT", "20.0"))
     try:
-        return collect(bbox, (year_start, year_end), maps_dir, "contour")
+        return collect(bbox, (year_start, year_end), maps_dir, "contour", timeout=timeout)
     except Exception as error:  # noqa: BLE001 — любой отказ источника терпим
         return Evidence(notes=[f"внешние источники недоступны: {type(error).__name__}"])
 

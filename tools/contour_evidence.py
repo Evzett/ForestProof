@@ -148,7 +148,7 @@ def burned_events(
             try:
                 path = modis.download(granule, MODIS_CACHE, auth)
                 result = modis.burned_in_bbox(path, granule["title"], bbox)
-            except (urllib.error.URLError, OSError, ValueError, KeyError) as error:
+            except (urllib.error.URLError, TimeoutError, OSError, ValueError, KeyError) as error:
                 notes.append(f"{granule['title']}: не разобрана ({type(error).__name__})")
                 continue
             except ImportError:
@@ -192,17 +192,48 @@ def collect(
     prefix: str,
     *,
     with_fire: bool = True,
+    timeout: float = 20.0,
 ) -> Evidence:
-    """Всё, что можно подтвердить по контуру внешними источниками."""
+    """Всё, что можно подтвердить по контуру внешними источниками.
+
+    Снимки и гари собираются параллельно: снимок читает STAC и каналы Sentinel-2,
+    гари опрашивают CMR и MODIS. Сеть независимая, ждать одно за другим
+    незачем, а таймаут защищает расчёт от зависания внешних каталогов.
+    """
     evidence = Evidence()
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
-    shots, notes = scene_pair(bbox, years, out_dir, prefix)
-    evidence.scenes.extend(shots)
-    evidence.notes.extend(notes)
+    def get_scenes():
+        return scene_pair(bbox, years, out_dir, prefix)
 
-    if with_fire:
-        events, fire_notes = burned_events(bbox, years)
-        evidence.events.extend(events)
-        evidence.notes.extend(fire_notes)
+    def get_fire():
+        if with_fire:
+            return burned_events(bbox, years)
+        return [], []
+
+    pool = ThreadPoolExecutor(max_workers=2)
+    try:
+        f_scenes = pool.submit(get_scenes)
+        f_fire = pool.submit(get_fire)
+
+        try:
+            shots, scene_notes = f_scenes.result(timeout=timeout)
+            evidence.scenes.extend(shots)
+            evidence.notes.extend(scene_notes)
+        except (FuturesTimeoutError, TimeoutError):
+            evidence.notes.append("каталог снимков: превышено время ожидания")
+        except Exception as err:
+            evidence.notes.append(f"каталог снимков недоступен: {type(err).__name__}")
+
+        try:
+            events, fire_notes = f_fire.result(timeout=max(1.0, timeout / 2))
+            evidence.events.extend(events)
+            evidence.notes.extend(fire_notes)
+        except (FuturesTimeoutError, TimeoutError):
+            evidence.notes.append("каталог гарей: превышено время ожидания")
+        except Exception as err:
+            evidence.notes.append(f"каталог гарей недоступен: {type(err).__name__}")
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
     return evidence
