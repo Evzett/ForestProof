@@ -70,6 +70,22 @@ class CalcRequest(BaseModel):
         return self
 
 
+class CalcJobRequest(CalcRequest):
+    """`POST /api/calc/jobs`. Расчёт плюс то, как назвать результат.
+
+    Имя приходит вместе с постановкой задачи, а не после её окончания,
+    потому что сохраняет контур сама задача. Оно известно заранее: его
+    вводят на шаге метаданных, до запуска расчёта.
+
+    Поля необязательные: без имени задача просто считает и ничего не
+    сохраняет — так работает пересчёт участка набора.
+    """
+
+    name: str | None = Field(default=None, max_length=255)
+    source_name: str | None = Field(default=None, max_length=255)
+    source_kind: str | None = Field(default=None, max_length=32)
+
+
 class SummaryRequest(BaseModel):
     """Факты для изложения. Считает их фронт из уже готового расчёта —
     сервер ничего не пересчитывает и ничего не добавляет."""

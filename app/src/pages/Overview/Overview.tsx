@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -23,6 +23,7 @@ import { useScenario } from "../../data/scenario";
 import RiskSummary from "../../components/RiskSummary";
 import { YearLossChart } from "../../components/YearLossChart";
 import { useAiSummary } from "../../data/aiSummary";
+import { getContourStats, type ContourStats } from "../../api";
 import "./Overview.css";
 
 /* Обзор — состояние набора и результатов по всем участкам сразу.
@@ -176,9 +177,36 @@ export default function Overview() {
     refresh: regenerate,
   } = useAiSummary(`overview:${startYear}-${endYear}`, () => summaryFacts(startYear, endYear));
 
-  const totalArea = AREAS.reduce((s, a) => s + a.area_ha, 0);
-  const losing = rows.filter((r) => r.period.e_tco2e > 0).length;
-  const withUnits = rows.filter((r) => (r.period.units ?? 0) > 0).length;
+  /* Загруженные пользователем контуры. Они живут на сервере, а не в
+     предпосчитанном наборе, — но на дашборде обязаны считаться вместе с
+     ним. Иначе добавление участка не меняет ни одной цифры на первом
+     экране, и человек справедливо решает, что оно не сработало.
+
+     Сводка берётся запросом к базе, а не обходом списка на клиенте:
+     она должна сходиться с содержимым каталога и при тысяче строк. */
+  const [contours, setContours] = useState<ContourStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getContourStats()
+      .then((value) => !cancelled && setContours(value))
+      // Сервис недоступен — штатное состояние демо: участки набора
+      // посчитаны заранее и показываются без него.
+      .catch(() => !cancelled && setContours(null));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setArea = AREAS.reduce((s, a) => s + a.area_ha, 0);
+  const setLosing = rows.filter((r) => r.period.e_tco2e > 0).length;
+  const setWithUnits = rows.filter((r) => (r.period.units ?? 0) > 0).length;
+
+  const added = contours?.total ?? 0;
+  const totalPlots = AREAS.length + added;
+  const totalArea = setArea + (contours?.area_ha ?? 0);
+  const losing = setLosing + (contours?.losing_carbon ?? 0);
+  const withUnits = setWithUnits + (contours?.with_units ?? 0);
   const totalLoss = AREAS.reduce(
     (s, a) =>
       s + a.cover_loss.filter((l) => l.year > 2019 && l.year <= 2024).reduce((x, l) => x + l.area_ha, 0),
@@ -213,10 +241,19 @@ export default function Overview() {
       <div className="ov">
         <div className="ov-tiles">
           <div className="tile tile--light">
-            <span className="tile__label">Участков в наборе</span>
-            <span className="tile__value tabular">{AREAS.length}</span>
+            <span className="tile__label">
+              {added > 0 ? "Участков всего" : "Участков в наборе"}
+            </span>
+            <span className="tile__value tabular">{totalPlots}</span>
             <span className="tile__note">
               {formatDecimal(totalArea, 0)} га суммарно · 2019—2024
+              {added > 0 && (
+                <>
+                  {" · "}
+                  {AREAS.length} из набора и {added}{" "}
+                  {plural(added, ["загруженный", "загруженных", "загруженных"])}
+                </>
+              )}
             </span>
             <span className="tile__btn">
               <CircleBtn to="/app/areas" label="Открыть каталог участков" />
@@ -227,7 +264,7 @@ export default function Overview() {
             <span className="tile__label">Показывают потерю углерода</span>
             <span className="tile__value tabular">
               {losing}
-              <span className="tile__unit">из {AREAS.length}</span>
+              <span className="tile__unit">из {totalPlots}</span>
             </span>
             <span className="tile__note">за выбранный период, по разности запасов</span>
           </div>
@@ -236,10 +273,24 @@ export default function Overview() {
             <span className="tile__label">Дают потенциальные единицы</span>
             <span className="tile__value tabular">
               {withUnits}
-              <span className="tile__unit">из {AREAS.length}</span>
+              <span className="tile__unit">из {totalPlots}</span>
             </span>
             <span className="tile__note">
               на остальных результат не отличим от базовой линии
+              {/* «Недоступно» и «ноль» — разные ответы (Е-05): участки,
+                  где единицы не считались, в знаменатель попадают, но
+                  нулями не притворяются. */}
+              {contours && contours.units_unavailable > 0 && (
+                <>
+                  {" · "}у {contours.units_unavailable}{" "}
+                  {plural(contours.units_unavailable, [
+                    "загруженного",
+                    "загруженных",
+                    "загруженных",
+                  ])}{" "}
+                  единицы недоступны
+                </>
+              )}
             </span>
           </div>
         </div>

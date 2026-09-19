@@ -438,10 +438,20 @@ class SavedContour(Base):
     created_by: Mapped[str | None] = mapped_column(
         String(64), ForeignKey("users.login", ondelete="SET NULL"), index=True
     )
-    # Опубликован ли контур. По умолчанию нет: человек загружает файл,
-    # чтобы посмотреть, а не чтобы сразу показать всем. Публикация —
-    # отдельное осознанное действие автора.
-    published: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Опубликован ли контур. По умолчанию да — и это изменение прежнего
+    # решения, принятое по результату проверки.
+    #
+    # Рассуждение «человек загружает файл, чтобы посмотреть, а не чтобы
+    # показать всем» звучало разумно, но на практике давало вот что:
+    # загрузил участок, посчитал его несколько минут, вышел из учётной
+    # записи — и участок исчез отовсюду, включая сводку на первом
+    # экране. Выглядело как потеря данных, хотя данные были на месте.
+    #
+    # Здесь скрининговый инструмент для команды: загруженный контур —
+    # рабочий результат, который коллеги должны видеть. Спрятать его
+    # автор может переключателем в профиле; это осознанное действие, и
+    # теперь оно требуется для сокрытия, а не для показа.
+    published: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     calculation: Mapped["Calculation"] = relationship()
@@ -486,6 +496,19 @@ class CalcJob(Base):
     geometry: Mapped[dict] = mapped_column(JSONB)
     year_start: Mapped[int] = mapped_column(Integer)
     year_end: Mapped[int] = mapped_column(Integer)
+    # Как назвать контур, когда расчёт закончится. Имя известно ещё до
+    # запуска — его вводят на предыдущем шаге мастера, — и задача
+    # сохраняет контур сама.
+    #
+    # Раньше это делал браузер после окончания опроса, и обещание «окно
+    # можно закрыть» было неправдой: закрыли окно, перезагрузили
+    # вкладку, запустили второй расчёт поверх первого — и посчитанный
+    # контур не сохранялся никуда. Расчёт при этом проходил целиком, что
+    # делало потерю особенно обидной.
+    name: Mapped[str | None] = mapped_column(String(255))
+    source_name: Mapped[str | None] = mapped_column(String(255))
+    source_kind: Mapped[str | None] = mapped_column(String(32))
+    contour_id: Mapped[str | None] = mapped_column(String(32))
     status: Mapped[JobStatus] = mapped_column(_enum(JobStatus), default=JobStatus.queued)
     step: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(String(1024))

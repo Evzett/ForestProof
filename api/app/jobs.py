@@ -26,10 +26,12 @@ import threading
 import traceback
 from datetime import datetime, timezone
 
+from sqlalchemy import select
+
 from app import case_service, models
 from app.database import SessionLocal
 from app.hashing import compute_input_hash
-from app.ids import next_calc_id
+from app.ids import next_calc_id, next_contour_id
 
 # Шаги, которые видит пользователь. Список закреплён здесь, чтобы
 # интерфейс не придумывал свой и не расходился с тем, что происходит.
@@ -141,15 +143,102 @@ def run(job_id: str) -> None:
             )
 
         job = db.get(models.CalcJob, job_id)
+
+        # Контур сохраняется здесь, а не браузером после опроса. Раньше
+        # это делал фронт, и результат многоминутного расчёта терялся от
+        # чего угодно: закрытой вкладки, перезагрузки, второго расчёта,
+        # запущенного поверх первого. Расчёт при этом проходил целиком —
+        # терялась только запись о нём.
+        #
+        # Сохранение отделено от расчёта: если оно не удалось, числа всё
+        # равно отдаются, а о том, что контура в списке не будет, сказано
+        # прямо. Молча терять — худшее из возможного.
+        contour_id = None
+        if job.name:
+            try:
+                contour_id = _save_contour(db, job, result, calc_id)
+                result["contour_id"] = contour_id
+            except Exception:  # noqa: BLE001
+                db.rollback()
+                result["contour_note"] = (
+                    "Расчёт выполнен, но контур не сохранён в списке участков."
+                )
+                traceback.print_exc()
+                job = db.get(models.CalcJob, job_id)
+
         _set(
             db,
             job,
             status=models.JobStatus.done,
             step=len(STEPS),
             calc_id=calc_id,
+            contour_id=contour_id,
             result=result,
             finished_at=datetime.now(timezone.utc),
         )
+    finally:
+        db.close()
+
+
+def _save_contour(db, job: models.CalcJob, result: dict, calc_id: str) -> str:
+    """Кладёт посчитанный контур в список участков.
+
+    Площадь берётся из расчёта, а не из полигона: это измеренная по долям
+    пересечения пикселей величина, и расходиться с площадью полигона она
+    может заметно.
+    """
+    contour_id = next_contour_id(db)
+    period = result.get("period", {})
+    db.add(
+        models.SavedContour(
+            contour_id=contour_id,
+            name=job.name.strip() or "Контур без названия",
+            source_name=(job.source_name or "").strip() or "контур пользователя",
+            source_kind=job.source_kind or "file",
+            geometry=job.geometry,
+            area_ha=result.get("area_ha") or 0.0,
+            year_start=period.get("year_start") or job.year_start,
+            year_end=period.get("year_end") or job.year_end,
+            calc_id=calc_id,
+            created_by=job.created_by,
+        )
+    )
+    db.commit()
+    return contour_id
+
+
+def recover_orphans() -> None:
+    """Помечает неудачными задачи, чей поток не пережил перезапуск.
+
+    Поток демонский: при перезапуске сервиса он просто исчезает, а строка
+    в базе остаётся в состоянии «считаем» навсегда. Мастер честно
+    опрашивает её полчаса и только потом сдаётся, хотя считать уже
+    некому с первой секунды.
+
+    Продолжить с места остановки нельзя: промежуточного состояния расчёт
+    не хранит. Поэтому говорим правду — задача прервана, запустите
+    заново, — вместо вечного вращения.
+    """
+    db = SessionLocal()
+    try:
+        stuck = db.scalars(
+            select(models.CalcJob).where(
+                models.CalcJob.status.in_([models.JobStatus.queued, models.JobStatus.running])
+            )
+        ).all()
+        for job in stuck:
+            job.status = models.JobStatus.failed
+            job.error = (
+                "Расчёт прерван перезапуском сервиса. Промежуточное состояние "
+                "не сохраняется — запустите расчёт заново."
+            )
+            job.finished_at = datetime.now(timezone.utc)
+        if stuck:
+            db.commit()
+            print(f"jobs: прервано перезапуском — {len(stuck)}")
+    except Exception:  # noqa: BLE001
+        db.rollback()
+        traceback.print_exc()
     finally:
         db.close()
 

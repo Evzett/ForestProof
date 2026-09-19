@@ -16,7 +16,7 @@ from app import auth, case_service, jobs, models
 from app.database import get_db
 from app.hashing import compute_input_hash
 from app.ids import next_calc_id
-from app.schemas import CalcRequest
+from app.schemas import CalcJobRequest, CalcRequest
 
 router = APIRouter(prefix="/api", tags=["case"])
 
@@ -133,7 +133,7 @@ def calculate(
 
 @router.post("/calc/jobs")
 def start_calc_job(
-    body: CalcRequest,
+    body: CalcJobRequest,
     db: Session = Depends(get_db),
     user: models.User = Depends(auth.require_operator),
 ) -> dict:
@@ -166,6 +166,12 @@ def start_calc_job(
         year_end=body.year_end,
         status=models.JobStatus.queued,
         created_by=user.login,
+        # Имя сохраняется вместе с задачей: контур кладёт в список она
+        # сама, когда досчитает, — а не браузер, который к тому моменту
+        # может быть закрыт.
+        name=(body.name or "").strip() or None,
+        source_name=body.source_name,
+        source_kind=body.source_kind,
     )
     db.add(job)
     db.commit()
@@ -189,6 +195,9 @@ def calc_job_status(job_id: str, db: Session = Depends(get_db)) -> dict:
         "steps": jobs.STEPS,
         "error": job.error,
         "calc_id": job.calc_id,
+        # Номер сохранённого контура: по нему фронт открывает участок,
+        # не сохраняя ничего сам.
+        "contour_id": job.contour_id,
         "created_by": job.created_by,
         "result": job.result if job.status is models.JobStatus.done else None,
     }

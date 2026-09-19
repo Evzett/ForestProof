@@ -154,6 +154,11 @@ export type CalcResult = {
      и сказать об этом обязаны мы, а не пропажа строки потом. */
   stored?: boolean;
   storage_note?: string;
+  /* Контур кладёт в список сама задача. Если это не удалось, числа всё
+     равно приходят, а причина стоит здесь: молча терять запись о
+     посчитанном участке нельзя. */
+  contour_id?: string | null;
+  contour_note?: string;
 };
 
 export function getAreas(): Promise<{ areas: ApiArea[] }> {
@@ -344,15 +349,22 @@ export type CalcJob = {
   steps: string[];
   error: string | null;
   calc_id: string | null;
+  /** Номер сохранённого контура. Кладёт его сама задача, а не браузер. */
+  contour_id: string | null;
   created_by: string | null;
   result: CalcResult | null;
 };
 
-export function startCalcJob(body: CalcRequest): Promise<{
-  job_id: string;
-  status: string;
-  steps: string[];
-}> {
+/* Имя и происхождение контура уходят вместе с постановкой задачи.
+
+   Раньше контур сохранял браузер: дожидался конца расчёта и слал
+   `POST /api/contours`. Результат многоминутной работы терялся от чего
+   угодно — закрытой вкладки, перезагрузки, второго расчёта, запущенного
+   поверх первого. Теперь его сохраняет задача, и от того, смотрит ли
+   кто-то на экран, это больше не зависит. */
+export function startCalcJob(
+  body: CalcRequest & { name?: string; source_name?: string; source_kind?: string }
+): Promise<{ job_id: string; status: string; steps: string[] }> {
   return request("/api/calc/jobs", { method: "POST", body: JSON.stringify(body) });
 }
 

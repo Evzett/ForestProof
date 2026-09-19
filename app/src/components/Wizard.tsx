@@ -12,11 +12,9 @@ import {
   geometryFromGeoJson,
   getCalcJob,
   polygonFromPoints,
-  saveContour,
   startCalcJob,
   type CalcResult,
   type GeoJsonPolygon,
-  type SavedContour,
 } from "../api";
 import { formatArea, formatNumber } from "./ui";
 import "./Wizard.css";
@@ -36,7 +34,7 @@ import DrawMap, { type LatLon } from "./DrawMap";
 async function waitForJob(
   jobId: string,
   onStep: (state: { steps: string[]; step: number }) => void
-): Promise<CalcResult> {
+): Promise<{ result: CalcResult; contourId: string | null }> {
   const EVERY_MS = 2000;
   const LIMIT = 900; // полчаса
 
@@ -44,7 +42,9 @@ async function waitForJob(
     const state = await getCalcJob(jobId);
     onStep({ steps: state.steps, step: state.step });
 
-    if (state.status === "done" && state.result) return state.result;
+    if (state.status === "done" && state.result) {
+      return { result: state.result, contourId: state.contour_id };
+    }
     if (state.status === "failed") {
       throw new ApiError(state.error ?? "Расчёт не удался.", 500);
     }
@@ -283,7 +283,10 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
   const [geometry, setGeometry] = useState<GeoJsonPolygon | null>(null);
   /* Сохранённый контур и отдельная ошибка сохранения: расчёт мог удаться,
      а запись — нет, и путать эти два состояния нельзя. */
-  const [saved, setSaved] = useState<SavedContour | null>(null);
+  /* Номер сохранённого контура. Раньше здесь лежал весь объект, который
+     возвращал `POST /api/contours` из браузера; теперь контур сохраняет
+     задача, и знать о нём нужно ровно одно — куда перейти. */
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState("");
   const [calc, setCalc] = useState<CalcResult | null>(null);
   const [calcError, setCalcError] = useState("");
@@ -480,7 +483,7 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     setStep(3);
     setCalc(null);
     setCalcError("");
-    setSaved(null);
+    setSavedId(null);
     setSaveError("");
 
     const geom = requestGeometry();
@@ -496,34 +499,30 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
         geometry: geom,
         year_start: yearStart,
         year_end: yearEnd,
+        name: name.trim() || "Контур без названия",
+        source_name: sourceLabel(),
+        source_kind: method,
       });
       setJob({ id: started.job_id, steps: started.steps, step: 0 });
 
-      const result = await waitForJob(started.job_id, (state) =>
+      const { result, contourId } = await waitForJob(started.job_id, (state) =>
         setJob({ id: started.job_id, steps: state.steps, step: state.step })
       );
       setCalc(result);
 
-      /* Контур сохраняется сразу после расчёта. Раньше загруженный файл
-         разбирался в браузере, уходил на расчёт и исчезал: результат
-         показывался один раз, и вернуться к нему было нельзя. Теперь он
-         находится в списке, открывается повторно и попадает в сводку.
+      /* Контур уже сохранён — задачей, на сервере. Браузеру осталось
+         только узнать его номер.
 
-         Сохранение отделено от расчёта: если оно не удалось, результат
-         всё равно показывается — он посчитан и записан в журнал, терять
-         его из-за неудачной записи контура нельзя. */
-      try {
-        const contour = await saveContour({
-          name: name.trim() || "Контур без названия",
-          source_name: sourceLabel(),
-          source_kind: method,
-          geometry: geom,
-          calc_id: result.calc_id,
-        });
-        setSaved(contour);
-      } catch (err) {
+         Так и должно быть: расчёт идёт минутами, и ставить сохранение
+         результата в зависимость от того, открыта ли вкладка, значит
+         терять посчитанное на ровном месте. Именно это и происходило. */
+      if (contourId) {
+        setSavedId(contourId);
+      } else {
         setSaveError(
-          err instanceof ApiError ? err.message : "Расчёт готов, но контур не сохранён."
+          typeof result.contour_note === "string"
+            ? result.contour_note
+            : "Расчёт готов, но контур не попал в список участков."
         );
       }
     } catch (err) {
@@ -982,9 +981,9 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                     Расчёт {calc.calc_id}, хеш входа {calc.input_hash.slice(0, 12)}… — по нему
                     результат воспроизводится независимо.
                   </p>
-                  {saved ? (
+                  {savedId ? (
                     <p className="wz__note">
-                      Контур сохранён как {saved.contour_id} из «{saved.source_name}» — он остаётся
+                      Контур сохранён как {savedId} из «{sourceLabel()}» — он остаётся
                       в разделе «Участки» рядом с участками набора: данные под него подтянуты
                       из открытых источников.
                     </p>
@@ -1073,11 +1072,11 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
               <button
                 className="btn btn--outline"
                 type="button"
-                disabled={saved === null}
-                title={saved === null ? "Контур не сохранён — открывать нечего" : undefined}
+                disabled={savedId === null}
+                title={savedId === null ? "Контур не сохранён — открывать нечего" : undefined}
                 onClick={() => {
                   onClose();
-                  if (saved) navigate(`/app/area/${saved.contour_id}`);
+                  if (savedId) navigate(`/app/area/${savedId}`);
                 }}
               >
                 <span>Открыть контур</span>

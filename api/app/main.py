@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app import jobs
 from app.config import settings
 from app.routers import (
     admin,
@@ -49,6 +50,18 @@ app.include_router(watchlist.router)
 # обращений во внешнюю сеть — демо обязано работать офлайн.
 settings.data_root.mkdir(parents=True, exist_ok=True)
 app.mount("/data", StaticFiles(directory=settings.data_root), name="data")
+
+
+@app.on_event("startup")
+def recover_jobs() -> None:
+    """Задачи, чей поток не пережил прошлый запуск, помечаются неудачными.
+
+    Иначе строка остаётся в состоянии «считаем» навсегда: поток
+    демонский и при перезапуске просто исчезает. Мастер честно
+    опрашивал такую задачу полчаса, хотя считать было некому с первой
+    секунды.
+    """
+    jobs.recover_orphans()
 
 
 @app.get("/")
