@@ -1,15 +1,21 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { AREAS, GENERATED_FROM } from "../data/case";
 import { plural } from "./ui";
 import { WizardProvider, useWizard } from "./Wizard";
+import { RoleBadge, SignInDialog } from "./SignIn";
+import { SessionProvider, useSession } from "../data/session";
 import { ScenarioProvider } from "../data/scenario";
 import "./AppShell.css";
 
 /* Каркас приложения: постоянная навигация из шести разделов.
    Требования FR-02 — FR-04.
-   Элементов авторизации здесь нет и не появится: одно рабочее
-   пространство, состояние на сервере (NFR-05).
+   Роль показана пилюлей внизу панели (KAN-78). Формы входа на пути к
+   демо нет: сервис открывается наблюдателем, и всё содержимое видно
+   сразу. Вход предлагается там, где начинается запись, — прежнее
+   «регистрации нет» (NFR-05) принималось именно из-за риска, что форма
+   входа на старте сломает защиту, и этот риск снят, а не принят.
 
    Раздел «Проекты» переименован в «Участки»: в наборе кейса это
    исследовательские участки, а не зарегистрированные климатические
@@ -27,6 +33,7 @@ const NAV = [
      в макете взята «Методика», поэтому рисунок не выбивается из ряда. */
   { to: "/app/compare", label: "Сравнение", icon: "compare" },
   { to: "/app/projects", label: "Проекты", icon: "projects" },
+  { to: "/app/contours", label: "Мои контуры", icon: "areas" },
   { to: "/app/calculations", label: "Расчёты", icon: "calc" },
   { to: "/app/monitoring", label: "Что изменилось", icon: "monitoring" },
   { to: "/app/research", label: "Исследование", icon: "calc" },
@@ -37,10 +44,31 @@ const NAV = [
    поэтому доступна из любого раздела (FR-03). */
 export function AddPlotButton({ className = "", label = "Задать контур" }) {
   const { open } = useWizard();
+  const { session, ready } = useSession();
+  const [askLogin, setAskLogin] = useState(false);
+
+  /* Наблюдателю кнопка видна, но ведёт к объяснению, а не к мастеру.
+     Прятать её нельзя: тогда непонятно, что продукт вообще это умеет,
+     и непонятно, чего не хватает. Доступ всё равно закрывает сервер —
+     кнопка только объясняет. */
+  const allowed = !ready || session.can.upload;
+
   return (
-    <button className={`add-btn ${className}`.trim()} type="button" onClick={() => open()}>
-      <i className="ic ic--plus" aria-hidden="true" /> {label}
-    </button>
+    <>
+      <button
+        className={`add-btn ${className}`.trim()}
+        type="button"
+        onClick={() => (allowed ? open() : setAskLogin(true))}
+      >
+        <i className="ic ic--plus" aria-hidden="true" /> {label}
+      </button>
+      {askLogin && (
+        <SignInDialog
+          onClose={() => setAskLogin(false)}
+          reason="Загрузка своего контура и расчёт по нему доступны аналитику: у расчёта появляется владелец, и он попадает в журнал. Просмотр участков набора остаётся открытым без входа."
+        />
+      )}
+    </>
   );
 }
 
@@ -70,6 +98,8 @@ function Shell() {
           ))}
         </nav>
 
+        <RoleBadge />
+
         <div className="sidebar__foot">
           <span>набор данных</span>
           <span className="sidebar__foot-strong">
@@ -88,11 +118,13 @@ function Shell() {
 
 export default function AppShell() {
   return (
-    <ScenarioProvider>
-      <WizardProvider>
-        <Shell />
-      </WizardProvider>
-    </ScenarioProvider>
+    <SessionProvider>
+      <ScenarioProvider>
+        <WizardProvider>
+          <Shell />
+        </WizardProvider>
+      </ScenarioProvider>
+    </SessionProvider>
   );
 }
 

@@ -1,9 +1,15 @@
 # Зависимости для запуска тестов. Отдельно от requirements.txt: в образ
 # API и на машину, где только считают, pytest ставить незачем.
 #
-#     pip install -r requirements.txt -r requirements-dev.txt
+#     pip install -r requirements-dev.txt
 #     python -m pytest tests -q
 
+# Расчётный слой: tools/ и forestproof_core/.
 -r requirements.txt
+
+# Зависимости сервиса. Тесты ролей и разграничения доступа импортируют
+# app.auth и app.models, а те тянут SQLAlchemy и драйвер Postgres —
+# без них набор не собирается вовсе.
+-r api/requirements.txt
 
 pytest==8.3.4

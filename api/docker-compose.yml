@@ -16,6 +16,11 @@ services:
       DATABASE_URL: postgresql+psycopg2://forestproof:forestproof@db:5432/forestproof
       ENVIRONMENT: development
       FORESTPROOF_ROOT: /repo
+      # Секрет подписи токенов и пароли учётных записей — из окружения,
+      # не из репозитория (KAN-78). Локально можно оставить пустыми.
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      FORESTPROOF_ANALYST_PASSWORD: ${FORESTPROOF_ANALYST_PASSWORD:-}
+      FORESTPROOF_ADMIN_PASSWORD: ${FORESTPROOF_ADMIN_PASSWORD:-}
     volumes:
       # Код — живьём, чтобы --reload имел смысл.
       - .:/app

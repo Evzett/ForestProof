@@ -43,7 +43,7 @@ export default function Welcome() {
           <div className="hero__copy">
             <h1 className="hero__title">Проверка запаса углерода в лесу по спутнику</h1>
             <p className="hero__note">
-              Без регистрации. Все входные данные открытые — спутниковые продукты ESA, NASA и
+              Просмотр без входа. Все входные данные открытые — спутниковые продукты ESA, NASA и
               Мэрилендского университета.
             </p>
             <Button size="hero" onClick={() => navigate("/app/areas")}>
@@ -138,7 +138,7 @@ export default function Welcome() {
         </div>
       </section>
 
-      <p className="sources">Без регистрации. Источники: {SOURCES.join(" · ")}</p>
+      <p className="sources">Просмотр без входа. Источники: {SOURCES.join(" · ")}</p>
     </main>
   );
 }

@@ -9,3 +9,5 @@ python-dotenv==1.0.1
 python-multipart==0.0.20
 shapely==2.0.6
 pillow==11.0.0
+# Хеширование паролей (KAN-78). Открытых паролей в базе нет.
+bcrypt==4.2.1

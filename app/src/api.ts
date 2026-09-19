@@ -25,12 +25,44 @@ export class ApiError extends Error {
   }
 }
 
+/* Токен сессии. KAN-78.
+
+   Сервер кладёт его ещё и в куку с httpOnly, но фронт живёт на другом
+   порту, а на межсайтовый запрос кука не поедет. Поэтому для разработки
+   и демо токен носим заголовком. В localStorage — чтобы вход пережил
+   перезагрузку страницы: иначе аналитик терял бы его на каждом F5. */
+const TOKEN_KEY = "forestproof_token";
+
+function readToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    // Приватное окно или запрещённые данные сайта: работаем без памяти,
+    // вход просто не переживёт перезагрузку.
+    return null;
+  }
+}
+
+export function setToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* см. readToken */
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
+  const token = readToken();
   try {
     response = await fetch(`${BASE}${path}`, {
       ...init,
-      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init?.headers ?? {}),
+      },
     });
   } catch {
     // Сеть не ответила вовсе: сервис не запущен или недоступен.
@@ -153,4 +185,90 @@ export function polygonFromPoints(points: { lon: number; lat: number }[]): GeoJs
     ring.push([first[0], first[1]]);
   }
   return { type: "Polygon", coordinates: [ring] };
+}
+
+/* ---------- Роли и вход. KAN-78 ---------- */
+
+export type Session = {
+  authenticated: boolean;
+  login: string | null;
+  display_name: string | null;
+  role: "viewer" | "analyst" | "admin";
+  role_label: string;
+  can: { view: boolean; calculate: boolean; upload: boolean; manage: boolean };
+  token?: string;
+};
+
+export function getSession(): Promise<Session> {
+  return request<Session>("/api/auth/me");
+}
+
+export function login(loginName: string, password: string): Promise<Session> {
+  return request<Session>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ login: loginName, password }),
+  });
+}
+
+export function logout(): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>("/api/auth/logout", { method: "POST" });
+}
+
+/* ---------- Сохранённые контуры. KAN-78 ---------- */
+
+export type SavedContour = {
+  contour_id: string;
+  name: string;
+  source_name: string;
+  source_kind: string;
+  geometry: GeoJsonPolygon;
+  area_ha: number;
+  year_start: number;
+  year_end: number;
+  calc_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  e_tco2e: number | null;
+  units: number | null;
+  reason: string | null;
+};
+
+export type ContourStats = {
+  total: number;
+  area_ha: number;
+  with_units: number;
+  units_unavailable: number;
+  units_total: number;
+  e_tco2e_total: number | null;
+  losing_carbon: number;
+  gaining_carbon: number;
+};
+
+export function getContours(): Promise<{ contours: SavedContour[] }> {
+  return request<{ contours: SavedContour[] }>("/api/contours");
+}
+
+export function getContourStats(): Promise<ContourStats> {
+  return request<ContourStats>("/api/contours/stats");
+}
+
+export function getContour(id: string): Promise<SavedContour & { result: CalcResult | null }> {
+  return request<SavedContour & { result: CalcResult | null }>(`/api/contours/${id}`);
+}
+
+export function saveContour(body: {
+  name: string;
+  source_name: string;
+  source_kind: string;
+  geometry: GeoJsonPolygon;
+  calc_id: string;
+}): Promise<SavedContour> {
+  return request<SavedContour>("/api/contours", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteContour(id: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/contours/${id}`, { method: "DELETE" });
 }

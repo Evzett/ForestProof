@@ -12,10 +12,12 @@ import {
   geometryFromGeoJson,
   polygonFromPoints,
   postCalc,
+  saveContour,
   type CalcResult,
   type GeoJsonPolygon,
+  type SavedContour,
 } from "../api";
-import { CALC_STEPS, GEOMETRY_CHECKS } from "../data/mock";
+import { CALC_STEPS } from "../data/mock";
 import { formatArea, formatNumber } from "./ui";
 import "./Wizard.css";
 
@@ -162,6 +164,17 @@ function polygonAreaHa(points: { lat: number; lon: number }[]) {
   return Math.abs(sum / 2) * 100; /* км² → га */
 }
 
+/* Внешнее кольцо полигона в точках. У MultiPolygon берётся первая часть:
+   оценка площади на экране нужна для понимания масштаба, а точную
+   площадь по всем частям всё равно считает сервер. */
+function outerRing(geom: GeoJsonPolygon): { lat: number; lon: number }[] {
+  const ring =
+    geom.type === "Polygon"
+      ? (geom.coordinates as number[][][])[0]
+      : (geom.coordinates as number[][][][])[0]?.[0];
+  return (ring ?? []).map(([lon, lat]) => ({ lon, lat }));
+}
+
 /* Разбор пар «широта, долгота» из произвольного текста */
 function parseCoords(text: string) {
   const points: { lat: number; lon: number }[] = [];
@@ -219,6 +232,10 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
   /* Геометрия, которая уйдёт на расчёт. Раньше мастер разбирал файл ради
      числа вершин и выбрасывал сам полигон — считать было нечего. */
   const [geometry, setGeometry] = useState<GeoJsonPolygon | null>(null);
+  /* Сохранённый контур и отдельная ошибка сохранения: расчёт мог удаться,
+     а запись — нет, и путать эти два состояния нельзя. */
+  const [saved, setSaved] = useState<SavedContour | null>(null);
+  const [saveError, setSaveError] = useState("");
   const [calc, setCalc] = useState<CalcResult | null>(null);
   const [calcError, setCalcError] = useState("");
   const [calcPending, setCalcPending] = useState(false);
@@ -286,7 +303,50 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
       ? polygonAreaHa(parsed.points)
       : method === "table" && tableContour
         ? polygonAreaHa(tableContour.points)
-        : null;
+        : method === "file" && geometry
+          ? polygonAreaHa(outerRing(geometry))
+          : null;
+
+  /* Проверки геометрии считаются по самому файлу. Раньше здесь стоял
+     готовый список из data/mock: любому файлу показывалось «18 200 га» и
+     «самопересечения не найдены», хотя площадь не измерялась, а
+     пересечения не проверялись. Для сервиса, который продаётся
+     проверяемостью, выдуманная проверка хуже её отсутствия. */
+  const geometryChecks: { name: string; ok: true | "warn"; value: string }[] = geometryReady
+    ? [
+        {
+          name: "Система координат",
+          ok: true,
+          value: "EPSG:4326 по спецификации GeoJSON",
+        },
+        {
+          name: "Тип геометрии",
+          ok: true,
+          value:
+            method === "file" && geometry
+              ? `${geometry.type}, ${geometry.type === "Polygon" ? "одна часть" : `${geometry.coordinates.length} частей`}`
+              : "Polygon, одна часть",
+        },
+        {
+          name: "Число вершин",
+          ok: true,
+          value: vertexCount != null ? `${vertexCount}` : "—",
+        },
+        {
+          name: "Площадь полигона",
+          ok: true,
+          value:
+            drawnAreaHa !== null
+              ? `примерно ${formatArea(Math.round(drawnAreaHa))} га`
+              : "будет измерена расчётом",
+        },
+        {
+          name: "Покрытие данными",
+          ok: "warn",
+          value: "проверяется расчётом",
+        },
+      ]
+    : [];
 
   /* Источник границы обязателен (FR-21): все числа считаются по этому контуру,
      и если он обведён по лесничеству, допущение обязаны назвать мы. */
@@ -322,10 +382,21 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     return null;
   };
 
+  /* Чем задана граница — это попадает в карточку контура, чтобы человек
+     узнал свою загрузку среди прочих: имя файла, а не «Polygon». */
+  const sourceLabel = (): string => {
+    if (method === "file") return file?.name ?? "файл границы";
+    if (method === "table") return table?.file ?? "таблица координат";
+    if (method === "coords") return "координаты вершин";
+    return "обводка на карте";
+  };
+
   const runCalculation = async () => {
     setStep(3);
     setCalc(null);
     setCalcError("");
+    setSaved(null);
+    setSaveError("");
 
     const geom = requestGeometry();
     if (!geom) {
@@ -341,7 +412,31 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     setCalcPending(true);
     try {
       // Период по умолчанию — весь доступный диапазон кейса.
-      setCalc(await postCalc({ geometry: geom, year_start: 2019, year_end: 2024 }));
+      const result = await postCalc({ geometry: geom, year_start: 2019, year_end: 2024 });
+      setCalc(result);
+
+      /* Контур сохраняется сразу после расчёта. Раньше загруженный файл
+         разбирался в браузере, уходил на расчёт и исчезал: результат
+         показывался один раз, и вернуться к нему было нельзя. Теперь он
+         находится в списке, открывается повторно и попадает в сводку.
+
+         Сохранение отделено от расчёта: если оно не удалось, результат
+         всё равно показывается — он посчитан и записан в журнал, терять
+         его из-за неудачной записи контура нельзя. */
+      try {
+        const contour = await saveContour({
+          name: name.trim() || "Контур без названия",
+          source_name: sourceLabel(),
+          source_kind: method,
+          geometry: geom,
+          calc_id: result.calc_id,
+        });
+        setSaved(contour);
+      } catch (err) {
+        setSaveError(
+          err instanceof ApiError ? err.message : "Расчёт готов, но контур не сохранён."
+        );
+      }
     } catch (err) {
       // Причина от сервиса показывается как есть: «контур вне набора»,
       // «площадь превышает предел». Выдумывать числа вместо неё нельзя.
@@ -589,23 +684,21 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                 {vertexCount != null && <span>· {vertexCount} вершин</span>}
               </div>
               <ul className="wz__checks">
-                {GEOMETRY_CHECKS.map((c) => (
+                {geometryChecks.map((c) => (
                   <li key={c.name}>
                     <span className={`wz__dot wz__dot--${c.ok === "warn" ? "warn" : "ok"}`}>
                       {c.ok === "warn" ? "!" : "✓"}
                     </span>
                     <b>{c.name}</b>
-                    <span className="wz__val">
-                      {c.name === "Площадь полигона" && drawnAreaHa !== null
-                        ? `${formatNumber(Math.round(drawnAreaHa))} га`
-                        : c.value}
-                    </span>
+                    <span className="wz__val">{c.value}</span>
                   </li>
                 ))}
               </ul>
               <p className="wz__note">
-                Предупреждение не мешает расчёту: за 2017 год будет прочерк, а не подстановка
-                соседнего значения.
+                Площадь здесь оценена по контуру на плоскости — чтобы понять масштаб до расчёта.
+                Считать будет сервер по доле пересечения каждого пикселя с контуром, и значение
+                будет другим. Покрытие данными выясняется там же: год без наблюдений даст прочерк,
+                а не подстановку соседнего значения.
               </p>
             </>
           )}
@@ -762,6 +855,17 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                     Расчёт {calc.calc_id}, хеш входа {calc.input_hash.slice(0, 12)}… — по нему
                     результат воспроизводится независимо.
                   </p>
+                  {saved ? (
+                    <p className="wz__note">
+                      Контур сохранён как {saved.contour_id} из «{saved.source_name}» — он остаётся
+                      в разделе «Мои контуры» и учитывается в сводке по загруженным участкам.
+                    </p>
+                  ) : (
+                    <p className="wz__note" style={{ color: "#9c3f66" }}>
+                      {saveError ||
+                        "Контур не сохранён: результат посчитан, но вернуться к нему из списка не получится."}
+                    </p>
+                  )}
                 </>
               )}
             </>
@@ -835,15 +939,20 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
               >
                 <span>В журнал расчётов</span>
               </button>
+              {/* Открывается ИМЕННО загруженный контур. Раньше здесь стоял
+                  зашитый proj-03, и после своей загрузки открывался чужой
+                  участок — ровно то, что замечают первым. */}
               <button
                 className="btn btn--outline"
                 type="button"
+                disabled={saved === null}
+                title={saved === null ? "Контур не сохранён — открывать нечего" : undefined}
                 onClick={() => {
                   onClose();
-                  navigate("/app/plot/proj-03");
+                  if (saved) navigate(`/app/contours/${saved.contour_id}`);
                 }}
               >
-                <span>Открыть участок</span>
+                <span>Открыть контур</span>
               </button>
             </>
           )}

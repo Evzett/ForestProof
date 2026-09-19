@@ -57,3 +57,30 @@ class SummaryRequest(BaseModel):
     сервер ничего не пересчитывает и ничего не добавляет."""
 
     facts: dict
+
+
+class LoginRequest(BaseModel):
+    """`POST /api/auth/login`. KAN-78.
+
+    Пароль приходит один раз и дальше нигде не хранится: сервер сверяет
+    его с хешем и забывает. В логи это поле не попадает.
+    """
+
+    login: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class SaveContourRequest(BaseModel):
+    """`POST /api/contours`. KAN-78.
+
+    Сохраняет загруженный пользователем контур вместе с уже посчитанным
+    расчётом, чтобы к нему можно было вернуться: `calc_id` приходит от
+    `POST /api/calc`, а не считается заново — иначе одно и то же получило
+    бы два разных номера.
+    """
+
+    name: str = Field(min_length=1, max_length=255)
+    source_name: str = Field(min_length=1, max_length=255)
+    source_kind: str = Field(min_length=1, max_length=32)
+    geometry: dict
+    calc_id: str = Field(min_length=1, max_length=32)

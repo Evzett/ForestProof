@@ -36,3 +36,8 @@ def next_calc_id(db: Session) -> str:
 def next_plot_id(db: Session) -> str:
     n = _next_numeric_suffix(db, models.Plot.plot_id, r"^PLOT-(\d+)$")
     return f"PLOT-{n:04d}"
+
+
+def next_contour_id(db: Session) -> str:
+    n = _next_numeric_suffix(db, models.SavedContour.contour_id, r"^AOI-(\d+)$")
+    return f"AOI-{n:04d}"

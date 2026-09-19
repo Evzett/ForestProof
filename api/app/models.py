@@ -15,6 +15,8 @@ docs/04-kontrakty-dannyh.md. Расхождение с контрактом — 
     geometry_uploads     — временные проверенные геометрии между /plots/validate и /plots
     plots                — участки, созданные через мастер загрузки границы (раздел 12)
     watchlist            — отслеживаемые участки (раздел 12)
+    users                — учётные записи и роли (KAN-78), пароли только хешем
+    saved_contours       — загруженные пользователем контуры и расчёты по ним (KAN-78)
 """
 
 import enum
@@ -41,6 +43,14 @@ from app.database import Base
 # --- Перечисления допустимых значений (раздел 0, 1, 2, 6 контракта) ---
 # native_enum=False — чтобы Alembic не возился с CREATE TYPE в Postgres
 # и добавление нового значения не требовало отдельной миграции типа.
+
+
+class Role(str, enum.Enum):
+    """Роли из KAN-78. Порядок значений — по возрастанию прав."""
+
+    viewer = "viewer"  # наблюдатель: только смотреть
+    analyst = "analyst"  # аналитик: плюс загружать контур и считать
+    admin = "admin"  # администратор: плюс управлять набором и журналом
 
 
 class ProjectMode(str, enum.Enum):
@@ -264,6 +274,11 @@ class Calculation(Base):
     # --- конец обязательных аудит-полей ---
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Ж-01 (KAN-78): чей это расчёт. Пусто у расчётов, созданных до
+    # появления ролей, и у сидовых — врать об авторстве нельзя.
+    created_by: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("users.login", ondelete="SET NULL"), index=True
+    )
 
     project: Mapped["Project"] = relationship(back_populates="calculations")
 
@@ -347,6 +362,60 @@ class Plot(Base):
     )
     status: Mapped[PlotStatus] = mapped_column(_enum(PlotStatus))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class User(Base):
+    """Учётная запись. KAN-78.
+
+    Пароль хранится ТОЛЬКО хешем bcrypt — открытого пароля в базе нет и
+    быть не может, и в логи он не попадает ни при каких обстоятельствах.
+
+    Регистрации нет намеренно: на хакатоне подтверждение почты — время без
+    баллов. Учётные записи заводятся заранее (`python -m app.seed_users`).
+    """
+
+    __tablename__ = "users"
+
+    login: Mapped[str] = mapped_column(String(64), primary_key=True)
+    display_name: Mapped[str] = mapped_column(String(255))
+    password_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[Role] = mapped_column(_enum(Role))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SavedContour(Base):
+    """Контур, загруженный пользователем, вместе с расчётом по нему. KAN-78.
+
+    Почему отдельно от `geometry_uploads`: там временный токен между двумя
+    шагами мастера, который живёт до использования. Здесь — сам результат
+    работы пользователя: он должен пережить перезагрузку страницы, найтись
+    в списке и открыться снова. Без этого загруженный файл исчезал сразу
+    после показа результата, и вернуться к нему было нельзя.
+
+    Геометрия хранится целиком: по ней участок отрисовывается повторно и
+    пересчитывается, а `source_name` — имя исходного файла, чтобы человек
+    узнал свою загрузку среди прочих.
+    """
+
+    __tablename__ = "saved_contours"
+
+    contour_id: Mapped[str] = mapped_column(String(32), primary_key=True)  # "AOI-0001"
+    name: Mapped[str] = mapped_column(String(255))
+    source_name: Mapped[str] = mapped_column(String(255))  # имя файла или способ ввода
+    source_kind: Mapped[str] = mapped_column(String(32))  # file | coords | table | draw
+    geometry: Mapped[dict] = mapped_column(JSONB)
+    area_ha: Mapped[float] = mapped_column(Numeric(14, 4))
+    year_start: Mapped[int] = mapped_column(Integer)
+    year_end: Mapped[int] = mapped_column(Integer)
+    calc_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("calculations.calc_id", ondelete="SET NULL"), index=True
+    )
+    created_by: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("users.login", ondelete="SET NULL"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    calculation: Mapped["Calculation"] = relationship()
 
 
 class WatchlistEntry(Base):
