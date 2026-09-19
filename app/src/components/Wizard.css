@@ -466,3 +466,32 @@
   cursor: not-allowed;
   filter: none;
 }
+
+/* Готовые контуры рядом с загрузкой файла. Без них ветка «задать свой
+   контур» требует принести GeoJSON, которого под рукой обычно нет, и
+   остаётся непроверенной — а это половина сценария. */
+.wz__samples {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--c-page);
+}
+
+.wz__samples-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.wz__samples-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wz__samples-note {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}

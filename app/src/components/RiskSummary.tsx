@@ -76,38 +76,6 @@ export default function RiskSummary() {
       note={`горизонт ${SCREENING_HORIZON_LABEL} · ${MODEL.method.split(",")[0]}`}
       className="risk"
     >
-      <div className="risk__chart">
-        <div className="risk__stack" role="img" aria-label={stats.stackLabel}>
-          {LEVELS.map((level) => {
-            const count = (stats.byLevel[level] ?? []).length;
-            if (!count) return null;
-            return (
-              <span
-                key={level}
-                className={`risk__seg risk__seg--${level}`}
-                style={{ flexGrow: count }}
-              >
-                <b className="tabular">{count}</b>
-              </span>
-            );
-          })}
-        </div>
-        <ul className="risk__legend">
-          {LEVELS.map((level) => {
-            const count = (stats.byLevel[level] ?? []).length;
-            return (
-              <li key={level}>
-                <i className={`risk__dot risk__dot--${level}`} aria-hidden="true" />
-                {LEVEL_TITLE[level]}
-                <b className="tabular">
-                  {count} из {stats.counted}
-                </b>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
       <div className="risk__levels">
         {LEVELS.map((level) => {
           const areas = stats.byLevel[level] ?? [];
@@ -131,11 +99,18 @@ export default function RiskSummary() {
 
       <p className="tile__label risk__subhead">какие признаки срабатывают чаще</p>
       <ul className="risk__drivers">
-        {stats.drivers.map(([label, count]) => (
+        {stats.drivers.map(([label, count], index) => (
           <li key={label}>
             <span className="risk__driver-name">{label}</span>
             <span className="risk__bar" aria-hidden="true">
-              <i style={{ width: `${(count / top) * 100}%` }} />
+              {/* Самый частый признак выделен лаймом — тем же акцентом,
+                  что и пиковый год на графике потерь покрова. Остальные
+                  одного цвета: ранг между вторым и третьим ничего не
+                  значит, и раскрашивать его было бы выдумкой. */}
+              <i
+                className={index === 0 ? "risk__bar-fill risk__bar-fill--top" : "risk__bar-fill"}
+                style={{ width: `${(count / top) * 100}%` }}
+              />
             </span>
             <span className="risk__driver-count tabular">
               {count} из {stats.counted}

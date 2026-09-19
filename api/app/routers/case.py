@@ -7,6 +7,7 @@ KAN-51. Заменяет заглушку `_build_synthetic_result`: числа 
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app import case_service, models
@@ -47,8 +48,16 @@ def calculate(body: CalcRequest, db: Session = Depends(get_db)) -> dict:
         # пользователю вместо результата (В-05).
         raise HTTPException(status_code=exc.status, detail=exc.reason) from exc
 
-    calc_id = next_calc_id(db)
     now = datetime.now(timezone.utc)
+
+    # Номер расчёта тоже берётся из журнала — значит и он недоступен,
+    # когда база лежит. Без него результат всё равно есть, и показать
+    # его важнее, чем присвоить красивый номер.
+    try:
+        calc_id = next_calc_id(db)
+    except SQLAlchemyError:
+        db.rollback()
+        calc_id = f"CALC-LOCAL-{now.strftime('%Y%m%d-%H%M%S')}"
 
     # Ж-02: хеш входа выводится из участка, периода, базовой линии и версий
     # источников — по нему видно, что два расчёта шли по одним данным.
@@ -66,21 +75,39 @@ def calculate(body: CalcRequest, db: Session = Depends(get_db)) -> dict:
     result["calculated_at"] = now.isoformat()
     result["input_hash"] = input_hash
 
-    db.add(
-        models.Calculation(
-            calc_id=calc_id,
-            project_id=None,
-            calculated_at=now,
-            methodology_version="case-1.0",
-            algorithm_version="calc-1.0",
-            model_version=None,
-            input_hash=input_hash,
-            observation_dates=[str(body.year_start), str(body.year_end)],
-            datasets=[{"name": "ESA CCI Biomass", "version": "v7.0"}],
-            parameters={"year_start": body.year_start, "year_end": body.year_end},
-            result=result,
+    # Журнал — не условие расчёта. Раньше недоступная база роняла весь
+    # запрос пятисоткой: числа были посчитаны, но пользователь видел
+    # «Запрос отклонён (500)» и не получал ничего. Запись в журнал и
+    # ответ на вопрос «сколько углерода на участке» — разные задачи, и
+    # отказ первой не отменяет вторую.
+    #
+    # Молчать об этом нельзя: незаписанный расчёт не попадёт ни в список
+    # расчётов, ни в раздел «что изменилось», и человек должен знать об
+    # этом сразу, а не обнаружить позже пропажу.
+    try:
+        db.add(
+            models.Calculation(
+                calc_id=calc_id,
+                project_id=None,
+                calculated_at=now,
+                methodology_version="case-1.0",
+                algorithm_version="calc-1.0",
+                model_version=None,
+                input_hash=input_hash,
+                observation_dates=[str(body.year_start), str(body.year_end)],
+                datasets=[{"name": "ESA CCI Biomass", "version": "v7.0"}],
+                parameters={"year_start": body.year_start, "year_end": body.year_end},
+                result=result,
+            )
         )
-    )
-    db.commit()
+        db.commit()
+        result["stored"] = True
+    except SQLAlchemyError:
+        db.rollback()
+        result["stored"] = False
+        result["storage_note"] = (
+            "Расчёт выполнен, но не записан в журнал: база данных недоступна. "
+            "Числа верны, однако этого расчёта не будет в списке сохранённых."
+        )
 
     return result

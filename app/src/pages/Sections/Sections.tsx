@@ -4,7 +4,7 @@ import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../compo
 import { PageHead } from "../../components/AppShell";
 import { AREAS, ASSUMPTIONS, DATASETS, EVENTS, PARAMETERS, YEARS } from "../../data/case";
 import type { Area, Period } from "../../data/case";
-import { composeSummary } from "../../data/aiSummary";
+import { useAiSummary } from "../../data/aiSummary";
 import "./Sections.css";
 
 /* Журнал расчётов и наблюдение.
@@ -302,7 +302,15 @@ function changesSince(entry: Entry): Change[] {
   for (const e of newEvents) {
     changes.push({
       title: "в продукте гарей нашлось событие после расчёта",
-      detail: `${e.date_min} — ${e.date_max}: ${e.cause_supported}; затронуто ${e.burned_pixels} из ${e.all_pixels} пикселей, неопределённость даты ${e.uncertainty_days[0]}—${e.uncertainty_days[1]} дней`,
+      /* Оценка неопределённости даты есть только у событий набора.
+         У найденных нами её нет, и «0—0 дней» выдало бы отсутствие
+         оценки за точную дату. */
+      detail:
+        `${e.date_min} — ${e.date_max}: ${e.cause_supported}; ` +
+        `затронуто ${e.burned_pixels} из ${e.all_pixels} пикселей` +
+        (e.uncertainty_days[1] > 0
+          ? `, неопределённость даты ${e.uncertainty_days[0]}—${e.uncertainty_days[1]} дней`
+          : ""),
       weight: "material",
     });
   }
@@ -364,13 +372,11 @@ export function Monitoring() {
   const [recalculated, setRecalculated] = useState<Set<string>>(new Set());
   const recalc = (calcId: string) =>
     setRecalculated((done) => new Set(done).add(calcId));
-  /* Справку по разделу излагает та же модель, что и в обзоре: список
-     карточек отвечает «что именно изменилось», а одна фраза сверху —
-     «стоит ли вообще этим заниматься». Числа считает наш код, модель
-     их только связывает, и лишние величины сервер отбраковывает. */
-  const [ai, setAi] = useState<{ text: string; model: string } | null>(null);
-  const [aiNote, setAiNote] = useState<string | null>(null);
-  const [asking, setAsking] = useState(false);
+  /* Какой расчёт открыт подробно. Раздел отвечает на вопрос про
+     конкретный участок, и заставлять пролистывать одиннадцать чужих
+     карточек ради своей — значит прятать ответ. */
+  const [opened, setOpened] = useState<string | null>(null);
+  const [onlyStale, setOnlyStale] = useState(true);
 
   /* По одному сохранённому расчёту на участок — самому раннему по концу
      периода. Он и есть «прошлый расчёт»: остальные строки журнала уже
@@ -400,28 +406,28 @@ export function Monitoring() {
 
   const stale = rows.filter((r) => r.material.length > 0);
 
-  const askModel = async () => {
-    if (asking) return;
-    setAsking(true);
-    setAiNote(null);
-    const result = await composeSummary({
-      "раздел": "устаревание сохранённых расчётов",
-      "сохранённых расчётов": rows.length,
-      "стоит повторить": stale.length,
-      "почему стоит повторить": stale.length
-        ? "во входных данных появились изменения, влияющие на результат"
-        : null,
-      "участки, где расчёт устарел": stale.map((r) => r.entry.area.name),
-      "ничего не пересчитывается само": true,
-    });
-    if (result.ok) {
-      setAi({ text: result.text, model: result.model });
-    } else {
-      setAi(null);
-      setAiNote(result.reason);
-    }
-    setAsking(false);
-  };
+  /* Справку модель излагает сразу при открытии раздела — так же, как на
+     обзоре, участке и в сравнении. Кнопка осталась как «пересобрать». */
+  const {
+    ai,
+    note: aiNote,
+    busy: asking,
+    refresh: askModel,
+  } = useAiSummary(`monitoring:${stale.length}/${rows.length}`, () => ({
+    "раздел": "устаревание сохранённых расчётов",
+    "сохранённых расчётов": rows.length,
+    "стоит повторить": stale.length,
+    "почему стоит повторить": stale.length
+      ? "во входных данных появились изменения, влияющие на результат"
+      : null,
+    "участки, где расчёт устарел": stale.map((r) => r.entry.area.name),
+    "ничего не пересчитывается само": true,
+  }));
+
+  /* По умолчанию открыт первый устаревший: именно он и есть повод
+     зайти в этот раздел. */
+  const shown = onlyStale && stale.length > 0 ? stale : rows;
+  const current = shown.find((r) => r.entry.calc_id === opened) ?? shown[0];
 
   return (
     <>
@@ -446,7 +452,9 @@ export function Monitoring() {
       <Card className="mon-summary mb20">
         <div className="ov-summary__head">
           <h2 className="card__title">Коротко по разделу</h2>
-          <span className="lvl lvl--outline">{ai ? "изложено моделью" : "собрано шаблоном"}</span>
+          <span className="lvl lvl--outline">
+            {ai ? "изложено моделью" : asking ? "модель отвечает…" : "собрано шаблоном"}
+          </span>
           <span className="ov-summary__spacer" />
           <button
             className="btn btn--dark btn--inline"
@@ -454,7 +462,7 @@ export function Monitoring() {
             onClick={askModel}
             disabled={asking}
           >
-            {asking ? "модель отвечает…" : "спросить модель"}
+            {asking ? "модель отвечает…" : "пересобрать"}
           </button>
         </div>
         <p className="mon-summary__text">
@@ -472,8 +480,69 @@ export function Monitoring() {
         </p>
       </Card>
 
-      <div className="scrollbox mon-list">
-      {rows.map(({ entry, changes, material, target }) => (
+      <Card className="mb20">
+        <div className="ov-summary__head">
+          <h2 className="card__title">Сохранённые расчёты</h2>
+          <span className="ov-summary__spacer" />
+          {stale.length > 0 && stale.length < rows.length && (
+            <button
+              className="filter"
+              type="button"
+              onClick={() => setOnlyStale((v) => !v)}
+            >
+              {onlyStale ? `показать все ${rows.length}` : `только устаревшие (${stale.length})`}
+            </button>
+          )}
+        </div>
+
+        <div className="tbl__scroll">
+          <table className="tbl mon-table">
+            <thead>
+              <tr>
+                <th>участок</th>
+                <th>период</th>
+                <th className="num">результат</th>
+                <th className="num">единицы</th>
+                <th>состояние</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((row) => (
+                <tr
+                  key={row.entry.calc_id}
+                  className={
+                    current?.entry.calc_id === row.entry.calc_id ? "mon-row mon-row--on" : "mon-row"
+                  }
+                  onClick={() => setOpened(row.entry.calc_id)}
+                >
+                  <td>{row.entry.area.name}</td>
+                  <td className="tabular">
+                    {row.entry.period.year_start}—{row.entry.period.year_end}
+                  </td>
+                  <td className="num tabular">
+                    {formatNumber(Math.round(row.entry.period.e_tco2e))}
+                  </td>
+                  <td className="num tabular">
+                    {row.entry.period.units === null ? "—" : row.entry.period.units}
+                  </td>
+                  <td>
+                    <span className={`lvl lvl--${row.material.length > 0 ? "low" : "none"}`}>
+                      {row.material.length > 0 ? "стоит пересчитать" : "актуален"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="ov-note">
+          Нажмите строку, чтобы посмотреть, что именно изменилось во входных данных этого
+          расчёта. Ничего не пересчитывается само.
+        </p>
+      </Card>
+
+      <div className="mon-list">
+      {(current ? [current] : []).map(({ entry, changes, material, target }) => (
         <Card
           key={entry.calc_id}
           title={entry.area.name}
@@ -506,7 +575,7 @@ export function Monitoring() {
                   <b>{c.title}</b>
                   <span>{c.detail}</span>
                 </span>
-                <span className={`lvl lvl--${c.weight === "material" ? "medium" : "none"}`}>
+                <span className={`lvl lvl--${c.weight === "material" ? "low" : "none"}`}>
                   {c.weight === "material" ? "влияет на результат" : "без изменений"}
                 </span>
               </li>

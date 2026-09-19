@@ -489,3 +489,23 @@
   color: var(--c-muted-alt);
   font-size: 12px;
 }
+
+/* Сводка расчётов: строка на участок. Двенадцать строк помещаются на
+   экран целиком, двенадцать карточек — нет, и нужный участок
+   приходилось искать прокруткой. */
+.mon-table tbody tr {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.mon-row:hover td {
+  background: rgb(213 231 139 / 20%);
+}
+
+.mon-row--on td {
+  background: rgb(213 231 139 / 34%);
+}
+
+.mon-row--on td:first-child {
+  font-weight: 500;
+}

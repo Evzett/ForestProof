@@ -12,6 +12,7 @@ import {
 } from "../../components/ui";
 import { AddPlotButton, PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS, ROLE_HINT, formatBbox } from "../../data/case";
+import type { Area } from "../../data/case";
 import "./Areas.css";
 
 /* Каталог участков. В наборе кейса это исследовательские участки,
@@ -35,7 +36,24 @@ const SIGNS = [
   { value: "gain", label: "накопление" },
 ];
 
+/* Самое свежее годное наблюдение. Негодные сцены сюда не попадают:
+   снимок, закрытый облаком на 98 %, показывает облако, а не лес, — и
+   на обложке выглядел бы как поломка, хотя это штатное состояние
+   наблюдения. */
+function coverScene(area: Area): { image: string; date: string } | null {
+  const usable = (area.sentinel?.observations ?? []).filter((o) => o.usable && o.image);
+  if (usable.length === 0) return null;
+  const latest = usable.reduce((a, b) => (a.date >= b.date ? a : b));
+  return { image: latest.image, date: latest.date };
+}
+
 export default function Areas() {
+  /* Что на обложке: снимок или карта изменений. Переключатель общий на
+     все карточки — свой на каждой превратил бы список в россыпь
+     органов управления, а сравнивать участки проще, когда они показаны
+     одинаково. */
+  const [cover, setCover] = useState<"scene" | "change">("scene");
+
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState("all");
   const [role, setRole] = useState("all");
@@ -134,6 +152,24 @@ export default function Areas() {
         </div>
       )}
 
+      <div className="areas__cover-switch">
+        <span>на обложке</span>
+        <button
+          type="button"
+          className={cover === "scene" ? "filter filter--on" : "filter"}
+          onClick={() => setCover("scene")}
+        >
+          спутниковый снимок
+        </button>
+        <button
+          type="button"
+          className={cover === "change" ? "filter filter--on" : "filter"}
+          onClick={() => setCover("change")}
+        >
+          карта изменений
+        </button>
+      </div>
+
       <div className="areas scrollbox">
         {rows.map((a) => {
           const p = a.period_2019_2024;
@@ -144,7 +180,25 @@ export default function Areas() {
           return (
             <Card key={a.aoi_id} className="area">
               <div className="area__map">
-                {a.maps && <img src={`/maps/${a.maps.change}`} alt="" />}
+                {(() => {
+                  const scene = cover === "scene" ? coverScene(a) : null;
+                  if (scene) {
+                    return (
+                      <>
+                        <img src={`/maps/${scene.image}`} alt={`Снимок участка ${a.name}`} />
+                        <span className="area__date">снимок {scene.date}</span>
+                      </>
+                    );
+                  }
+                  return a.maps ? (
+                    <>
+                      <img src={`/maps/${a.maps.change}`} alt="" />
+                      <span className="area__date">
+                        {cover === "scene" ? "годного снимка нет" : "изменение запаса"}
+                      </span>
+                    </>
+                  ) : null;
+                })()}
                 <span className="area__pick">
                   <Checkbox
                     checked={picked.includes(a.aoi_id)}

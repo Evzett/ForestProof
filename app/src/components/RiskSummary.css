@@ -1,88 +1,3 @@
-/* Распределение одной полосой: сколько участков в каждой ступени.
-   Полоса именно составная, а не три отдельные шкалы — вопрос здесь
-   «как набор делится», и доли видны сразу, без сравнения длин.
-
-   Цвета те же, что у плашек, и других быть не должно: если полоса и
-   подпись под ней окрашены по-разному, читатель решит, что это разные
-   величины. Жёлтого и красного нет намеренно — они читаются как оценка
-   качества участка, а оценивается устойчивость результата. */
-.risk__chart {
-  margin-bottom: 22px;
-}
-
-.risk__stack {
-  display: flex;
-  gap: 4px;
-  height: 46px;
-  margin-bottom: 12px;
-}
-
-.risk__seg {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  border-radius: 14px;
-  font-size: 17px;
-  font-weight: 500;
-  transition: flex-grow 0.35s ease;
-}
-
-.risk__seg--high {
-  background: #f8e3ec;
-  color: #9c3f66;
-}
-
-.risk__seg--medium {
-  background: #ece7f5;
-  color: #5b4a86;
-}
-
-.risk__seg--low {
-  background: #e9ecdd;
-  color: #283a0e;
-}
-
-.risk__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 22px;
-  list-style: none;
-  font-size: 12px;
-  color: var(--c-muted-alt);
-}
-
-.risk__legend li {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.risk__legend b {
-  font-weight: 500;
-  color: var(--c-ink-black);
-}
-
-.risk__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
-
-.risk__dot--high {
-  background: #e4a8c2;
-}
-
-.risk__dot--medium {
-  background: #b9a9dd;
-}
-
-.risk__dot--low {
-  background: #bcc79c;
-}
-
-/* Три ступени рядом: высокая, средняя, низкая. Порядок от худшего к
-   лучшему — читают такие сводки ради плохих новостей. */
 .risk__levels {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -113,6 +28,7 @@
   flex-direction: column;
   gap: 6px;
   margin-top: 14px;
+  padding: 0;
   list-style: none;
   font-size: 12px;
   line-height: 1.35;
@@ -140,16 +56,22 @@
 .risk__drivers {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 13px;
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
+/* Название — по содержимому, полоса — на всю оставшуюся ширину, число
+   справа. Раньше название занимало всю свободную ширину, а полоса жалась
+   к правому краю: между подписью и диаграммой зиял провал в половину
+   карточки, и полосы было не с чем сопоставить. */
 .risk__drivers li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(90px, 30%) auto;
+  grid-template-columns: minmax(150px, max-content) minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
-  font-size: 13px;
+  gap: 18px;
+  font-size: 14px;
 }
 
 .risk__driver-name {
@@ -157,24 +79,35 @@
 }
 
 /* Полоса — доля участков, а не шкала риска: длина считается от самого
-   частого признака, и числом рядом подписана честно. Градиента нет
-   намеренно, он читался бы как величина риска. */
+   частого признака, и числом рядом подписана честно. Плавного градиента
+   нет намеренно, он читался бы как величина риска. */
 .risk__bar {
-  height: 8px;
-  border-radius: 4px;
+  height: 14px;
+  border-radius: var(--r-pill);
   background: rgb(46 62 40 / 8%);
   overflow: hidden;
 }
 
-.risk__bar i {
+.risk__bar-fill {
   display: block;
   height: 100%;
-  border-radius: 4px;
-  background: var(--c-ink);
+  border-radius: var(--r-pill);
+  background-color: var(--c-ink);
+  /* Та же штриховка, что у столбцов потерь покрова. */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 15px,
+    rgb(255 255 255 / 16%) 15px 22px
+  );
+  transition: width 0.35s ease;
+}
+
+.risk__bar-fill--top {
+  background-color: var(--c-lime);
 }
 
 .risk__driver-count {
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
   color: var(--c-muted-alt);
 }
