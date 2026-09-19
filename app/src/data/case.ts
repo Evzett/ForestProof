@@ -169,6 +169,10 @@ export type CaseEvent = {
   uncertainty_days: [number, number];
   source_id: string;
   context_url: string;
+  /* Откуда взялось событие: пришло с набором кейса или найдено нашим
+     поиском по продукту гарей. Показывается на экране — выдавать своё
+     за данные набора нельзя. */
+  source_kind?: string;
   limitations: string;
 };
 
@@ -409,6 +413,20 @@ export type StabilityModel = {
 };
 
 export const MODEL = modelRaw as unknown as StabilityModel;
+
+/* Горизонт скрининга — один на правила и на модель, и берётся он из
+   расчёта, а не вписывается в подпись. Раньше в трёх местах стояло
+   «2024—2029», а в данных лежало «2025—2029»: признаки считаются по
+   данные включительно, а отвечает скрининг про следующую пятилетку. */
+export const SCREENING_HORIZON: [number, number] = (() => {
+  const known = MODEL.predictions.map((p) => p.forecast?.horizon).filter(Boolean) as [
+    number,
+    number,
+  ][];
+  return known[0] ?? [2025, 2029];
+})();
+
+export const SCREENING_HORIZON_LABEL = `${SCREENING_HORIZON[0]}—${SCREENING_HORIZON[1]}`;
 
 export function modelFor(aoiId: string): ModelPrediction | undefined {
   return MODEL.predictions.find((p) => p.aoi_id === aoiId);

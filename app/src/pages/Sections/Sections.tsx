@@ -348,6 +348,7 @@ function recalcTarget(entry: Entry) {
   return {
     start,
     end,
+    period,
     available: Boolean(period),
     hash: period ? inputHash(entry.area, period) : null,
   };
@@ -355,6 +356,14 @@ function recalcTarget(entry: Entry) {
 
 export function Monitoring() {
   const journal = useMemo(buildJournal, []);
+
+  /* Какие расчёты пересчитаны в этом сеансе. Сам пересчёт мгновенный:
+     все пары лет посчитаны сервисом заранее, здесь берётся готовая. Но
+     заменять сохранённый результат новым нельзя — тогда пропадёт то,
+     ради чего раздел и нужен: видно должно быть оба числа сразу. */
+  const [recalculated, setRecalculated] = useState<Set<string>>(new Set());
+  const recalc = (calcId: string) =>
+    setRecalculated((done) => new Set(done).add(calcId));
   /* Справку по разделу излагает та же модель, что и в обзоре: список
      карточек отвечает «что именно изменилось», а одна фраза сверху —
      «стоит ли вообще этим заниматься». Числа считает наш код, модель
@@ -504,20 +513,70 @@ export function Monitoring() {
             ))}
           </ul>
 
-          {material.length > 0 && target.available && (
-            <div className="report-actions">
-              <Link
-                className="btn btn--dark btn--inline"
-                to={`/app/area/${entry.area.aoi_id}?start=${target.start}&end=${target.end}`}
-              >
-                <span>
-                  Пересчитать за {target.start}—{target.end}
-                </span>
-              </Link>
-            </div>
+          {material.length > 0 && target.available && target.period && (
+            <>
+              {recalculated.has(entry.calc_id) ? (
+                <div className="mon-recalc">
+                  <div className="mon-recalc__head">
+                    <b>
+                      пересчёт за {target.start}—{target.end}
+                    </b>
+                    <span className="lvl lvl--low">готово</span>
+                  </div>
+                  <dl className="kv">
+                    <div>
+                      <dt>результат</dt>
+                      <dd className="tabular">
+                        {formatNumber(Math.round(target.period.e_tco2e))} т CO₂-экв.{" "}
+                        <small>
+                          было {formatNumber(Math.round(entry.period.e_tco2e))}
+                        </small>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>потенциальные единицы</dt>
+                      <dd className="tabular">
+                        {target.period.units === null ? "недоступны" : target.period.units}
+                        {target.period.reason ? ` · ${target.period.reason}` : ""}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>хеш входных данных</dt>
+                      <dd className="tabular">
+                        {target.hash?.slice(0, 12)} <small>вместо {entry.input_hash.slice(0, 12)}</small>
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="report-actions">
+                    <Link
+                      className="btn btn--outline"
+                      to={`/app/area/${entry.area.aoi_id}?start=${target.start}&end=${target.end}`}
+                    >
+                      <span>Открыть полный отчёт →</span>
+                    </Link>
+                  </div>
+                  <p className="ov-note">
+                    Сохранённый расчёт остался на месте: раздел показывает, что изменилось, а
+                    не подменяет прежний отчёт новым.
+                  </p>
+                </div>
+              ) : (
+                <div className="report-actions">
+                  <button
+                    className="btn btn--dark"
+                    type="button"
+                    onClick={() => recalc(entry.calc_id)}
+                  >
+                    <span>
+                      Пересчитать за {target.start}—{target.end}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
-          {material.length > 0 && target.available && target.hash && (
+          {material.length > 0 && target.available && target.hash && !recalculated.has(entry.calc_id) && (
             <p className="ov-note">
               Хеш входных данных после пересчёта: {target.hash.slice(0, 12)} вместо{" "}
               {entry.input_hash.slice(0, 12)} — это другой вход, а значит и другой отчёт.

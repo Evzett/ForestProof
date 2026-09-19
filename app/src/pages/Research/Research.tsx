@@ -34,7 +34,7 @@ function Block({ block }: { block: ReportBlock }) {
 
     case "steps":
       return (
-        <ol className="chain">
+        <ol className="steps">
           {block.rows.map(([label, value]) => (
             <li key={label + value}>
               <b>{label}</b>

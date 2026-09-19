@@ -1,23 +1,106 @@
+/* Распределение одной полосой: сколько участков в каждой ступени.
+   Полоса именно составная, а не три отдельные шкалы — вопрос здесь
+   «как набор делится», и доли видны сразу, без сравнения длин.
+
+   Цвета те же, что у плашек, и других быть не должно: если полоса и
+   подпись под ней окрашены по-разному, читатель решит, что это разные
+   величины. Жёлтого и красного нет намеренно — они читаются как оценка
+   качества участка, а оценивается устойчивость результата. */
+.risk__chart {
+  margin-bottom: 22px;
+}
+
+.risk__stack {
+  display: flex;
+  gap: 4px;
+  height: 46px;
+  margin-bottom: 12px;
+}
+
+.risk__seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  border-radius: 14px;
+  font-size: 17px;
+  font-weight: 500;
+  transition: flex-grow 0.35s ease;
+}
+
+.risk__seg--high {
+  background: #f8e3ec;
+  color: #9c3f66;
+}
+
+.risk__seg--medium {
+  background: #ece7f5;
+  color: #5b4a86;
+}
+
+.risk__seg--low {
+  background: #e9ecdd;
+  color: #283a0e;
+}
+
+.risk__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  list-style: none;
+  font-size: 12px;
+  color: var(--c-muted-alt);
+}
+
+.risk__legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.risk__legend b {
+  font-weight: 500;
+  color: var(--c-ink-black);
+}
+
+.risk__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.risk__dot--high {
+  background: #e4a8c2;
+}
+
+.risk__dot--medium {
+  background: #b9a9dd;
+}
+
+.risk__dot--low {
+  background: #bcc79c;
+}
+
 /* Три ступени рядом: высокая, средняя, низкая. Порядок от худшего к
    лучшему — читают такие сводки ради плохих новостей. */
 .risk__levels {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 18px;
-  margin-bottom: 26px;
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .risk__level {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
-  padding: 18px 20px;
+  padding: 20px 22px 22px;
   border: 1px solid rgb(46 62 40 / 14%);
   border-radius: 24px;
 }
 
 .risk__count {
+  margin-bottom: 12px;
   font-size: clamp(30px, 2.4vw, 44px);
   font-weight: 500;
   line-height: 1;
@@ -28,8 +111,8 @@
 .risk__names {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 2px;
+  gap: 6px;
+  margin-top: 14px;
   list-style: none;
   font-size: 12px;
   line-height: 1.35;
@@ -51,7 +134,7 @@
 }
 
 .risk__subhead {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .risk__drivers {

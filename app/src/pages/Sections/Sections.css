@@ -461,3 +461,31 @@
   --scrollbox: clamp(480px, 58vh, 900px);
   padding-right: 6px;
 }
+
+/* Результат пересчёта — внутри той же карточки, отдельным блоком.
+   Отдельным, а не вместо прежнего: смысл раздела в том, чтобы видеть
+   оба числа рядом и понимать, насколько отчёт устарел. */
+.mon-recalc {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgb(46 62 40 / 14%);
+  border-radius: 20px;
+  background: var(--c-page);
+}
+
+.mon-recalc__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.mon-recalc .kv {
+  margin: 0;
+}
+
+.mon-recalc small {
+  color: var(--c-muted-alt);
+  font-size: 12px;
+}

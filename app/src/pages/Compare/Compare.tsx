@@ -1,9 +1,11 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS } from "../../data/case";
 import CarbonTerrain from "../../components/CarbonTerrain";
+import CompareChart from "../../components/CompareChart";
+import { useAiSummary } from "../../data/aiSummary";
 import "./Compare.css";
 
 /* Сравнение участков.
@@ -127,6 +129,38 @@ const GROUPS: { title: string; rows: Row[] }[] = [
 /* Справка по выбранным участкам. Как и в обзоре, собирается шаблоном
    из посчитанного: языковой модели здесь нет, и сказать что-то, чего
    нет в числах, справка не может по устройству. */
+/* Факты для модели. Ровно те же величины, что в шаблонных строках:
+   модель здесь только излагает, а сверка на сервере отбракует ответ,
+   в котором появится число, которого тут нет. */
+function compareFacts(picked: (typeof AREAS)[number][]): Record<string, unknown> {
+  const spread = picked.map(
+    (a) => a.period_2019_2024.upper_tco2e - a.period_2019_2024.lower_tco2e
+  );
+  const widest = picked[spread.indexOf(Math.max(...spread))];
+  const sorted = [...picked].sort(
+    (a, b) => b.period_2019_2024.e_tco2e - a.period_2019_2024.e_tco2e
+  );
+
+  return {
+    период: "2019—2024",
+    участков_в_сравнении: picked.length,
+    теряют_углерод: picked.filter((a) => a.period_2019_2024.e_tco2e > 0).length,
+    наибольшая_потеря_участок: sorted[0]?.name,
+    наибольшая_потеря_tco2e: Math.round(sorted[0]?.period_2019_2024.e_tco2e ?? 0),
+    наименьшая_потеря_участок: sorted[sorted.length - 1]?.name,
+    наименьшая_потеря_tco2e: Math.round(
+      sorted[sorted.length - 1]?.period_2019_2024.e_tco2e ?? 0
+    ),
+    самый_широкий_диапазон_участок: widest?.name,
+    самый_широкий_диапазон_tco2e: Math.round(Math.max(...spread)),
+    единиц_всего: picked.reduce((sum, a) => sum + (a.period_2019_2024.units ?? 0), 0),
+    контрольный_участок:
+      picked.find((a) => a.role === "контрольный участок")?.name ?? "в выборке отсутствует",
+    сводного_балла_нет:
+      "группы отвечают на разные вопросы; складывать их в один балл нельзя",
+  };
+}
+
 function buildCompareSummary(picked: (typeof AREAS)[number][]): string[] {
   if (picked.length < 2) return [];
   const worst = [...picked].sort(
@@ -204,6 +238,17 @@ export default function Compare() {
   );
   const summary = useMemo(() => buildCompareSummary(rows), [rows]);
 
+  /* Пересобирается при смене выбора: справка о другой паре участков —
+     это другая справка, а не та же самая. */
+  const { ai, note: aiNote, busy: asking } = useAiSummary(
+    `compare:${rows.map((a) => a.aoi_id).join(",")}`,
+    () => compareFacts(rows)
+  );
+
+  /* Какой участок сейчас под курсором. Подсветка — не выбор: она
+     ничего не меняет в сравнении и живёт только пока мышь на месте. */
+  const [hovered, setHovered] = useState<string | null>(null);
+
   const toggle = (id: string) => {
     const next = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id];
     setParams(next.length > 0 ? { ids: next.join(",") } : {}, { replace: true });
@@ -221,11 +266,13 @@ export default function Compare() {
         }
       />
 
-      <div className="cmp-cards">
+      <div className="cmp-cards scrollbox">
         {AREAS.map((a) => (
           <Card
             key={a.aoi_id}
-            className={`cmp-card ${picked.includes(a.aoi_id) ? "cmp-card--on" : ""}`.trim()}
+            className={`cmp-card ${picked.includes(a.aoi_id) ? "cmp-card--on" : ""} ${
+              hovered === a.aoi_id ? "cmp-card--hl" : ""
+            }`.trim()}
           >
             {a.terrain ? (
               <CarbonTerrain
@@ -238,7 +285,11 @@ export default function Compare() {
             ) : (
               a.maps && <img className="cmp-card__img" src={`/maps/${a.maps.change}`} alt="" />
             )}
-            <div className="cmp-card__body">
+            <div
+              className="cmp-card__body"
+              onMouseEnter={() => setHovered(a.aoi_id)}
+              onMouseLeave={() => setHovered(null)}
+            >
               <b>{a.name}</b>
               <span>
                 {a.aoi_id} · {formatDecimal(a.area_ha, 1)} га
@@ -271,17 +322,28 @@ export default function Compare() {
           <Card className="cmp-summary">
             <div className="ov-summary__head">
               <h2 className="card__title">Краткая справка по выбранным</h2>
-              <span className="lvl lvl--outline">собрано шаблоном</span>
+              <span className="lvl lvl--outline">
+                {ai ? "изложено моделью" : asking ? "модель отвечает…" : "собрано шаблоном"}
+              </span>
             </div>
+            {ai && <p className="cmp-summary__ai">{ai.text}</p>}
             <ul className="cmp-summary__list">
               {summary.map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ul>
             <p className="ov-note">
-              собрано из посчитанного · без языковой модели · пересобирается при смене выбора
+              {ai
+                ? `текст изложен моделью ${ai.model}; числа посчитаны сервисом и сверены с ответом`
+                : "собрано из посчитанного, без языковой модели"}{" "}
+              · пересобирается при смене выбора
+              {aiNote && ` · модель не подключилась: ${aiNote}`}
             </p>
           </Card>
+
+      <Card title="Как менялся запас" note="т C/га по годам наблюдений" className="mb20">
+        <CompareChart areas={rows} hovered={hovered} onHover={setHovered} />
+      </Card>
 
       <Card>
         <div className="tbl__scroll tbl__scroll--tall">
@@ -290,7 +352,13 @@ export default function Compare() {
               <tr>
                 <th>показатель</th>
                 {rows.map((a) => (
-                  <th key={a.aoi_id} className="num">
+                  <th
+                    key={a.aoi_id}
+                    className={`num ${hovered === a.aoi_id ? "cmp-col--hl" : ""}`.trim()}
+                    onMouseEnter={() => setHovered(a.aoi_id)}
+                    onMouseLeave={() => setHovered(null)}
+                    title={a.name}
+                  >
                     {a.aoi_id.replace("RU_", "")}
                   </th>
                 ))}
@@ -311,7 +379,12 @@ export default function Compare() {
                         {row.hint && <span className="cmp-hint">{row.hint}</span>}
                       </td>
                       {rows.map((a) => (
-                        <td key={a.aoi_id} className="num">
+                        <td
+                          key={a.aoi_id}
+                          className={`num ${hovered === a.aoi_id ? "cmp-col--hl" : ""}`.trim()}
+                          onMouseEnter={() => setHovered(a.aoi_id)}
+                          onMouseLeave={() => setHovered(null)}
+                        >
                           {row.value(a)}
                         </td>
                       ))}
@@ -323,6 +396,7 @@ export default function Compare() {
           </table>
         </div>
         <p className="ov-note">
+          Наведите курсор на столбец — подсветится карточка этого участка и его мини-лес.
           Числа не раскрашены намеренно: раскрашенная целиком таблица — это и есть сводная оценка,
           просто нарисованная. Контрольный участок в Тверской области нужен для сравнения: если
           результат уезжает и там, дело в методе, а не в нарушении.

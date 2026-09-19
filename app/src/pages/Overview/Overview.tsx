@@ -11,11 +11,18 @@ import {
   formatNumber,
 } from "../../components/ui";
 import { PageHead } from "../../components/AppShell";
-import { AREAS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
+import {
+  AREAS,
+  PARAMETERS,
+  PRICE_SCENARIOS,
+  SCREENING_HORIZON_LABEL,
+  YEARS,
+  formatBbox,
+} from "../../data/case";
 import { useScenario } from "../../data/scenario";
 import RiskSummary from "../../components/RiskSummary";
 import { YearLossChart } from "../../components/YearLossChart";
-import { composeSummary } from "../../data/aiSummary";
+import { useAiSummary } from "../../data/aiSummary";
 import "./Overview.css";
 
 /* Обзор — состояние набора и результатов по всем участкам сразу.
@@ -145,35 +152,29 @@ export default function Overview() {
   );
 
 
-  const [summary, setSummary] = useState(() => ({ lines: buildSummary(2019, 2024), at: "—" }));
-  const [rebuilding, setRebuilding] = useState(false);
-  /* Текст модели держится отдельно от шаблонных строк: если модель
-     недоступна или её ответ отбракован, строки остаются на экране, а не
+  /* Шаблонные строки живут отдельно от текста модели: если модель
+     недоступна или её ответ отбракован, числа остаются на экране, а не
      сменяются пустотой. */
-  const [ai, setAi] = useState<{ text: string; model: string } | null>(null);
-  const [aiNote, setAiNote] = useState<string | null>(null);
+  const summary = useMemo(
+    () => ({
+      lines: buildSummary(startYear, endYear),
+      at: new Date().toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    }),
+    [startYear, endYear]
+  );
 
-  const regenerate = async () => {
-    if (rebuilding) return;
-    setRebuilding(true);
-    setAiNote(null);
-
-    const now = new Date();
-    const at = `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`;
-    setSummary({ lines: buildSummary(startYear, endYear), at });
-
-    const result = await composeSummary(summaryFacts(startYear, endYear));
-    if (result.ok) {
-      setAi({ text: result.text, model: result.model });
-    } else {
-      setAi(null);
-      setAiNote(result.reason);
-    }
-    setRebuilding(false);
-  };
+  const {
+    ai,
+    note: aiNote,
+    busy: rebuilding,
+    refresh: regenerate,
+  } = useAiSummary(`overview:${startYear}-${endYear}`, () => summaryFacts(startYear, endYear));
 
   const totalArea = AREAS.reduce((s, a) => s + a.area_ha, 0);
   const losing = rows.filter((r) => r.period.e_tco2e > 0).length;
@@ -248,7 +249,7 @@ export default function Overview() {
             <div className="ov-summary__head">
               <h2 className="card__title">Краткая справка по набору</h2>
               <span className="lvl lvl--outline">
-                {ai ? "изложено моделью" : "собрано шаблоном"}
+                {ai ? "изложено моделью" : rebuilding ? "модель отвечает…" : "собрано шаблоном"}
               </span>
               <span className="ov-summary__spacer" />
               <CircleBtn
@@ -367,7 +368,7 @@ export default function Overview() {
             Положительное E означает потерю углерода из учитываемого пула, отрицательное —
             накопление. Ноль в колонке единиц — расчёт выполнен и дал ноль; «недоступно» — расчёт
             не выполнялся из-за неполных входных данных. Это разные ответы. Устойчивость —
-            скрининг на горизонт 2024—2029, на число единиц он не влияет.
+            скрининг на горизонт {SCREENING_HORIZON_LABEL}, на число единиц он не влияет.
           </p>
         </Card>
 

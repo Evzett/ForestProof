@@ -493,6 +493,7 @@
   counter-reset: chain;
 }
 
+/* Вывод формулой: слева что считаем, справа чем. */
 .chain li {
   display: grid;
   grid-template-columns: 26px minmax(0, 1fr) auto;
@@ -516,6 +517,7 @@
 
 .chain li > span {
   font-size: 13px;
+  line-height: 1.45;
   color: var(--c-muted-alt);
 }
 
@@ -900,5 +902,67 @@
   .chain li {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
+  }
+}
+
+/* Шаги вывода: номер, название шага, что на нём вышло. Отдельный класс,
+   а не вариант .chain: там значение стоит справа и не переносится, а
+   здесь описание занимает всю ширину и переносится свободно. Пока это
+   был один класс, одна из двух разметок всегда слипалась. */
+.steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: steps;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 22px minmax(92px, 148px) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--c-page);
+}
+
+.steps li:last-child {
+  border-bottom: 0;
+}
+
+.steps li::before {
+  counter-increment: steps;
+  content: counter(steps);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted-alt);
+}
+
+.steps li > b {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-ink);
+}
+
+.steps li > span {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+.card--dark .steps li,
+.card--dark .steps li:last-child {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 700px) {
+  .steps li {
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 4px 12px;
+  }
+
+  .steps li > span {
+    grid-column: 2;
   }
 }

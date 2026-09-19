@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Card, LevelPill, plural } from "./ui";
-import { AREAS, MODEL, modelFor } from "../data/case";
+import { AREAS, MODEL, SCREENING_HORIZON_LABEL, modelFor } from "../data/case";
 import "./RiskSummary.css";
 
 /* Сводка по рискам для обзора — KAN-35.
@@ -53,10 +53,16 @@ export default function RiskSummary() {
       return forecast && a.stability && forecast.category === a.stability.level;
     }).length;
 
+    const counted = AREAS.filter((a) => a.stability).length;
+    const stackLabel = LEVELS.map(
+      (level) => `${LEVEL_TITLE[level]} — ${(byLevel[level] ?? []).length}`
+    ).join(", ");
+
     return {
+      stackLabel,
       byLevel,
       drivers: [...drivers.entries()].sort((a, b) => b[1] - a[1]),
-      counted: AREAS.filter((a) => a.stability).length,
+      counted,
       scored,
       agree,
     };
@@ -67,9 +73,41 @@ export default function RiskSummary() {
   return (
     <Card
       title="Устойчивость результата по набору"
-      note={`горизонт 2024—2029 · ${MODEL.method.split(",")[0]}`}
+      note={`горизонт ${SCREENING_HORIZON_LABEL} · ${MODEL.method.split(",")[0]}`}
       className="risk"
     >
+      <div className="risk__chart">
+        <div className="risk__stack" role="img" aria-label={stats.stackLabel}>
+          {LEVELS.map((level) => {
+            const count = (stats.byLevel[level] ?? []).length;
+            if (!count) return null;
+            return (
+              <span
+                key={level}
+                className={`risk__seg risk__seg--${level}`}
+                style={{ flexGrow: count }}
+              >
+                <b className="tabular">{count}</b>
+              </span>
+            );
+          })}
+        </div>
+        <ul className="risk__legend">
+          {LEVELS.map((level) => {
+            const count = (stats.byLevel[level] ?? []).length;
+            return (
+              <li key={level}>
+                <i className={`risk__dot risk__dot--${level}`} aria-hidden="true" />
+                {LEVEL_TITLE[level]}
+                <b className="tabular">
+                  {count} из {stats.counted}
+                </b>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
       <div className="risk__levels">
         {LEVELS.map((level) => {
           const areas = stats.byLevel[level] ?? [];

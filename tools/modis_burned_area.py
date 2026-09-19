@@ -32,6 +32,7 @@ import argparse
 import csv
 import http.cookiejar
 import json
+import os
 import math
 import urllib.error
 import urllib.parse
@@ -58,18 +59,34 @@ Y_MAX = 10007554.677
 TIMEOUT = 300
 
 
-def credentials() -> tuple[str, str] | None:
-    """Учётка Earthdata из .env. Её отсутствие — не ошибка: поиск гранул
-    работает без неё, недоступна только сама загрузка."""
-    if not ENV_FILE.exists():
-        return None
+def _env() -> dict[str, str]:
+    """Переменные окружения плюс .env. Окружение имеет приоритет: на
+    сервере секрета в файле нет и быть не должно."""
     env = {}
-    for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
-        if "=" in line and not line.startswith("#"):
-            key, value = line.split("=", 1)
-            env[key.strip()] = value.strip()
-    user = env.get("EARTHDATA_USERNAME")
-    password = env.get("EARTHDATA_PASSWORD")
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+            if "=" in line and not line.startswith("#"):
+                key, value = line.split("=", 1)
+                env[key.strip()] = value.strip()
+    for key in ("EARTHDATA_TOKEN", "EARTHDATA_USERNAME", "EARTHDATA_PASSWORD"):
+        if os.environ.get(key):
+            env[key] = os.environ[key]
+    return env
+
+
+def credentials() -> tuple[str, str] | str | None:
+    """Доступ к Earthdata: токен, иначе пара логин-пароль, иначе ничего.
+
+    Токен предпочтительнее: он не тянет за собой редирект на сервер
+    входа и отзывается отдельно от самой учётной записи. Отсутствие
+    любого доступа — не ошибка сразу: поиск гранул через CMR работает
+    и без него, недоступна только выкачка файла.
+    """
+    env = _env()
+    token = env.get("EARTHDATA_TOKEN")
+    if token:
+        return token
+    user, password = env.get("EARTHDATA_USERNAME"), env.get("EARTHDATA_PASSWORD")
     return (user, password) if user and password else None
 
 
@@ -127,14 +144,25 @@ def find_granules(bbox: tuple[float, float, float, float], start: str, end: str)
     return out
 
 
-def download(granule: dict, cache: Path, auth: tuple[str, str]) -> Path:
+def download(granule: dict, cache: Path, auth: tuple[str, str] | str) -> Path:
     target = cache / f"{granule['title']}.hdf"
     if target.exists():
         return target
     cache.mkdir(parents=True, exist_ok=True)
     part = target.with_suffix(".part")
-    request = urllib.request.Request(granule["url"], headers={"User-Agent": "ForestProof/1.0"})
-    with _opener(*auth).open(request, timeout=TIMEOUT) as response, open(part, "wb") as handle:
+
+    headers = {"User-Agent": "ForestProof/1.0"}
+    if isinstance(auth, str):
+        headers["Authorization"] = f"Bearer {auth}"
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()),
+            _KeepAuthOnRedirect(),
+        )
+    else:
+        opener = _opener(*auth)
+
+    request = urllib.request.Request(granule["url"], headers=headers)
+    with opener.open(request, timeout=TIMEOUT) as response, open(part, "wb") as handle:
         while chunk := response.read(1 << 20):
             handle.write(chunk)
     part.replace(target)
@@ -206,7 +234,7 @@ def _day_to_date(year: int, day: int) -> str:
     return (date(year, 1, 1) + timedelta(days=day - 1)).isoformat()
 
 
-def verify(cache: Path, auth: tuple[str, str]) -> bool:
+def verify(cache: Path, auth: tuple[str, str] | str) -> bool:
     """Сверка с подтверждениями, пришедшими вместе с набором."""
     expected = [
         ("RU_MORDOVIA_03", 60, 88),
@@ -272,9 +300,9 @@ def main() -> None:
     auth = credentials()
     if auth is None:
         raise SystemExit(
-            "нет учётной записи Earthdata\n"
-            "положите EARTHDATA_USERNAME и EARTHDATA_PASSWORD в .env "
-            "(см. .env.example); поиск гранул работает и без неё, загрузка — нет"
+            "нет доступа к Earthdata\n"
+            "положите EARTHDATA_TOKEN в .env (или пару EARTHDATA_USERNAME и "
+            "EARTHDATA_PASSWORD); поиск гранул работает и без него, загрузка — нет"
         )
 
     if not verify(args.cache, auth):
