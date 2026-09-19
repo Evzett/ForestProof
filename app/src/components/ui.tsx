@@ -7,17 +7,26 @@ export function Button({
   children,
   variant = "dark",
   arrow = false,
+  size = "base",
   onClick,
   type = "button",
 }: {
   children: ReactNode;
   variant?: "dark" | "lime" | "outline";
   arrow?: boolean;
+  /* «hero» — только для обложки: там кнопка единственная и уводит со
+     страницы. Внутри разделов она одна из многих, и крупный кегль
+     перетягивает внимание с содержимого. */
+  size?: "base" | "hero";
   onClick?: () => void;
   type?: "button" | "submit";
 }) {
   return (
-    <button type={type} className={`btn btn--${variant}`} onClick={onClick}>
+    <button
+      type={type}
+      className={`btn btn--${variant} ${size === "hero" ? "btn--hero" : ""}`.trim()}
+      onClick={onClick}
+    >
       <span>{children}</span>
       {arrow && <span className="btn__arrow" aria-hidden="true">→</span>}
     </button>

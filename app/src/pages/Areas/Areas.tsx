@@ -8,6 +8,7 @@ import {
   SearchField,
   formatDecimal,
   formatNumber,
+  plural,
 } from "../../components/ui";
 import { AddPlotButton, PageHead } from "../../components/AppShell";
 import { AREAS, EVENTS, ROLE_HINT, formatBbox } from "../../data/case";
@@ -88,7 +89,11 @@ export default function Areas() {
     <>
       <PageHead
         title="Участки"
-        subtitle="Четыре исследовательских участка набора. Это не зарегистрированные климатические проекты — так помечены сами данные"
+        subtitle={`${AREAS.length} ${plural(AREAS.length, [
+          "исследовательский участок",
+          "исследовательских участка",
+          "исследовательских участков",
+        ])} в наборе. Это не зарегистрированные климатические проекты — так помечены сами данные`}
         action={<AddPlotButton label="Задать свой контур" />}
       />
 
@@ -119,7 +124,7 @@ export default function Areas() {
           </span>
           <span className="selbar__spacer" />
           <button
-            className="btn btn--lime"
+            className="btn btn--lime btn--inline"
             type="button"
             onClick={() => navigate(`/app/compare?ids=${picked.join(",")}`)}
           >
@@ -129,7 +134,7 @@ export default function Areas() {
         </div>
       )}
 
-      <div className="areas">
+      <div className="areas scrollbox">
         {rows.map((a) => {
           const p = a.period_2019_2024;
           const events = EVENTS.filter((e) => e.aoi_id === a.aoi_id);

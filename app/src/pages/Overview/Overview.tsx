@@ -13,6 +13,7 @@ import {
 import { PageHead } from "../../components/AppShell";
 import { AREAS, PARAMETERS, PRICE_SCENARIOS, YEARS, formatBbox } from "../../data/case";
 import { useScenario } from "../../data/scenario";
+import RiskSummary from "../../components/RiskSummary";
 import { YearLossChart } from "../../components/YearLossChart";
 import { composeSummary } from "../../data/aiSummary";
 import "./Overview.css";
@@ -304,7 +305,7 @@ export default function Overview() {
             <FilterSelect value={range} onChange={setRange} options={PERIODS} label="период" />
           </div>
 
-          <div className="tbl__scroll">
+          <div className="tbl__scroll tbl__scroll--tall">
             <table className="tbl">
               <thead>
                 <tr>
@@ -461,8 +462,10 @@ export default function Overview() {
         </Card>
       </div>
 
+      <RiskSummary />
+
       <Card title="Что в наборе" className="ov-attention">
-        <ul className="attention">
+        <ul className="attention scrollbox">
           {AREAS.map((a) => (
             <li key={a.aoi_id}>
               <Link to={`/app/area/${a.aoi_id}`} className="attention__name">
@@ -481,8 +484,9 @@ export default function Overview() {
           ))}
         </ul>
         <p className="ov-note">
-          Все четыре участка имеют статус исследовательских и не являются зарегистрированными
-          климатическими проектами — это записано в самом наборе.
+          {AREAS.length === 1 ? "Участок имеет" : "Все участки имеют"} статус
+          исследовательских и не являются зарегистрированными климатическими проектами — это
+          записано в самом наборе.
         </p>
       </Card>
     </>

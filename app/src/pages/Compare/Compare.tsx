@@ -284,7 +284,7 @@ export default function Compare() {
           </Card>
 
       <Card>
-        <div className="tbl__scroll">
+        <div className="tbl__scroll tbl__scroll--tall">
           <table className="tbl cmp-table">
             <thead>
               <tr>

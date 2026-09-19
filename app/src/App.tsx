@@ -6,6 +6,7 @@ import Areas from "./pages/Areas/Areas";
 import Compare from "./pages/Compare/Compare";
 import ClaimProjects from "./pages/ClaimProjects/ClaimProjects";
 import Plot from "./pages/Plot/Plot";
+import Research from "./pages/Research/Research";
 import { Calculations, Methodology, Monitoring } from "./pages/Sections/Sections";
 
 /* Роутинг по структуре из docs/05-frontend-user-flow.md.
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="projects" element={<ClaimProjects />} />
           <Route path="calculations" element={<Calculations />} />
           <Route path="monitoring" element={<Monitoring />} />
+          <Route path="research" element={<Research />} />
           <Route path="methodology" element={<Methodology />} />
           <Route path="plot/:id" element={<Navigate to="/app/areas" replace />} />
           <Route path="territories" element={<Navigate to="/app/areas" replace />} />

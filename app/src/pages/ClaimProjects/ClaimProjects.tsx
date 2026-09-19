@@ -217,7 +217,7 @@ export default function ClaimProjects() {
           </div>
 
           <div className="claim-actions">
-            <button className="btn btn--dark" type="button" onClick={add}>
+            <button className="btn btn--dark btn--inline" type="button" onClick={add}>
               <span>Сверить</span>
             </button>
             <input
@@ -232,7 +232,7 @@ export default function ClaimProjects() {
               }}
             />
             <button
-              className="btn btn--outline"
+              className="btn btn--outline btn--inline"
               type="button"
               onClick={() => fileInput.current?.click()}
             >
@@ -267,7 +267,7 @@ export default function ClaimProjects() {
       ) : (
         <>
           <Card className="mb20">
-            <div className="tbl__scroll">
+            <div className="tbl__scroll tbl__scroll--tall">
               <table className="tbl">
                 <thead>
                   <tr>

@@ -46,7 +46,9 @@ export default function Welcome() {
               Без регистрации. Все входные данные открытые — спутниковые продукты ESA, NASA и
               Мэрилендского университета.
             </p>
-            <Button onClick={() => navigate("/app/areas")}>Открыть участки</Button>
+            <Button size="hero" onClick={() => navigate("/app/areas")}>
+              Открыть участки
+            </Button>
           </div>
 
           <div className="hero__side">
@@ -78,7 +80,9 @@ export default function Welcome() {
             биомассы, показываем, где и насколько он изменился, и сравниваем результат с базовой
             линией. Там, где данных не хватает на вывод, так и пишем.
           </p>
-          <Button onClick={() => navigate("/app/overview")}>Посмотреть расчёты</Button>
+          <Button size="hero" onClick={() => navigate("/app/overview")}>
+            Посмотреть расчёты
+          </Button>
 
           <div className="about__gallery">
             <img src="/images/gallery-1.jpg" alt="" loading="lazy" />
@@ -123,7 +127,7 @@ export default function Welcome() {
             подтверждённые пожары и диапазон результата. Откройте любой или задайте свой контур.
           </p>
           <div className="closing__actions">
-            <Button variant="lime" arrow onClick={() => navigate("/app/areas")}>
+            <Button variant="lime" arrow size="hero" onClick={() => navigate("/app/areas")}>
               Открыть участки
             </Button>
             <p className="closing__caption">

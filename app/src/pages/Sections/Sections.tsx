@@ -4,6 +4,7 @@ import { Card, Checkbox, formatDecimal, formatNumber, plural } from "../../compo
 import { PageHead } from "../../components/AppShell";
 import { AREAS, ASSUMPTIONS, DATASETS, EVENTS, PARAMETERS, YEARS } from "../../data/case";
 import type { Area, Period } from "../../data/case";
+import { composeSummary } from "../../data/aiSummary";
 import "./Sections.css";
 
 /* Журнал расчётов и наблюдение.
@@ -110,7 +111,7 @@ export function Calculations() {
                 : "разные участки, расчёты напрямую не сравнимы"}
           </span>
           <span className="selbar__spacer" />
-          <button className="btn btn--lime" type="button" onClick={() => setCompare([])}>
+          <button className="btn btn--lime btn--inline" type="button" onClick={() => setCompare([])}>
             <span>Сбросить</span>
           </button>
         </div>
@@ -118,7 +119,7 @@ export function Calculations() {
 
       {pair && (
         <Card title="Построчное сравнение" className="mb20">
-          <div className="tbl__scroll">
+          <div className="tbl__scroll tbl__scroll--tall">
             <table className="tbl">
               <thead>
                 <tr>
@@ -160,7 +161,7 @@ export function Calculations() {
       )}
 
       <Card className="mb20">
-        <div className="tbl__scroll">
+        <div className="tbl__scroll tbl__scroll--tall">
           <table className="tbl">
             <thead>
               <tr>
@@ -354,6 +355,13 @@ function recalcTarget(entry: Entry) {
 
 export function Monitoring() {
   const journal = useMemo(buildJournal, []);
+  /* Справку по разделу излагает та же модель, что и в обзоре: список
+     карточек отвечает «что именно изменилось», а одна фраза сверху —
+     «стоит ли вообще этим заниматься». Числа считает наш код, модель
+     их только связывает, и лишние величины сервер отбраковывает. */
+  const [ai, setAi] = useState<{ text: string; model: string } | null>(null);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
 
   /* По одному сохранённому расчёту на участок — самому раннему по концу
      периода. Он и есть «прошлый расчёт»: остальные строки журнала уже
@@ -383,6 +391,29 @@ export function Monitoring() {
 
   const stale = rows.filter((r) => r.material.length > 0);
 
+  const askModel = async () => {
+    if (asking) return;
+    setAsking(true);
+    setAiNote(null);
+    const result = await composeSummary({
+      "раздел": "устаревание сохранённых расчётов",
+      "сохранённых расчётов": rows.length,
+      "стоит повторить": stale.length,
+      "почему стоит повторить": stale.length
+        ? "во входных данных появились изменения, влияющие на результат"
+        : null,
+      "участки, где расчёт устарел": stale.map((r) => r.entry.area.name),
+      "ничего не пересчитывается само": true,
+    });
+    if (result.ok) {
+      setAi({ text: result.text, model: result.model });
+    } else {
+      setAi(null);
+      setAiNote(result.reason);
+    }
+    setAsking(false);
+  };
+
   return (
     <>
       <PageHead
@@ -403,6 +434,36 @@ export function Monitoring() {
         </span>
       </div>
 
+      <Card className="mon-summary mb20">
+        <div className="ov-summary__head">
+          <h2 className="card__title">Коротко по разделу</h2>
+          <span className="lvl lvl--outline">{ai ? "изложено моделью" : "собрано шаблоном"}</span>
+          <span className="ov-summary__spacer" />
+          <button
+            className="btn btn--dark btn--inline"
+            type="button"
+            onClick={askModel}
+            disabled={asking}
+          >
+            {asking ? "модель отвечает…" : "спросить модель"}
+          </button>
+        </div>
+        <p className="mon-summary__text">
+          {ai
+            ? ai.text
+            : stale.length === 0
+              ? "Все сохранённые расчёты опираются на те же входные данные, что лежат в наборе сейчас. Повторять их незачем."
+              : `Из ${rows.length} сохранённых расчётов ${stale.length} опираются на устаревшие входные данные: в наборе появились годы наблюдений, которых в отчёт не вошли. Пересчёт даст другой хеш входа, а значит и другой отчёт.`}
+        </p>
+        <p className="ov-note">
+          {ai
+            ? `текст изложен моделью ${ai.model}; числа посчитаны сервисом и сверены с ответом`
+            : "собрано шаблоном из посчитанного, без языковой модели"}
+          {aiNote && ` · модель не подключилась: ${aiNote}`}
+        </p>
+      </Card>
+
+      <div className="scrollbox mon-list">
       {rows.map(({ entry, changes, material, target }) => (
         <Card
           key={entry.calc_id}
@@ -446,7 +507,7 @@ export function Monitoring() {
           {material.length > 0 && target.available && (
             <div className="report-actions">
               <Link
-                className="btn btn--dark"
+                className="btn btn--dark btn--inline"
                 to={`/app/area/${entry.area.aoi_id}?start=${target.start}&end=${target.end}`}
               >
                 <span>
@@ -472,6 +533,7 @@ export function Monitoring() {
           )}
         </Card>
       ))}
+      </div>
 
       <Card title="Чего этот раздел не делает">
         <ul className="drivers">

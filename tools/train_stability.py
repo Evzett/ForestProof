@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -243,16 +244,32 @@ def main() -> None:
                 tile = tile_for(box)
                 loss_path = args.hansen / f"Hansen_GFC-2024-v1.12_lossyear_{tile}.tif"
                 cover_path = args.hansen / f"Hansen_GFC-2024-v1.12_treecover2000_{tile}.tif"
-                try:
-                    row = builder.sample_plot(loss_path, cover_path, box)
-                except (ValueError, IndexError, FileNotFoundError):
-                    row = None
-                if row is None:
-                    # Тайл не скачан или участок не лесной — штатный случай,
-                    # и молча ставить ему категорию нельзя.
+                # Причины отказа разные, и называть их одной строкой
+                # нельзя: «нет файла» чинится загрузкой, «не лесной» —
+                # это ответ по существу, и участок так и останется без
+                # оценки, сколько тайлов ни качай.
+                if not loss_path.exists() or not cover_path.exists():
                     predictions.append(
                         {"aoi_id": meta["aoi_id"], "available": False,
-                         "reason": f"нет данных Hansen по тайлу {tile} либо участок не лесной"}
+                         "reason": f"тайл Hansen {tile} не скачан"}
+                    )
+                    continue
+                try:
+                    row = builder.sample_plot(loss_path, cover_path, box)
+                except (ValueError, IndexError, FileNotFoundError) as error:
+                    predictions.append(
+                        {"aoi_id": meta["aoi_id"], "available": False,
+                         "reason": f"растр не читается: {type(error).__name__}"}
+                    )
+                    continue
+                if row is None:
+                    predictions.append(
+                        {"aoi_id": meta["aoi_id"], "available": False,
+                         "reason": (
+                             f"участок не проходит порог леса: сомкнутость крон ниже "
+                             f"{builder.MIN_TREECOVER_PCT} % более чем на "
+                             f"{round((1 - builder.MIN_FOREST_SHARE) * 100)} % площади"
+                         )}
                     )
                     continue
                 vector = np.array([[float(row[k]) for k in FEATURES]])
@@ -310,6 +327,10 @@ def main() -> None:
 
     payload = {
         "predictions": predictions,
+        # Отпечаток обучающей выборки. По нему видно, что показанное
+        # качество относится именно к той выборке, на которой модель
+        # училась, а не к другой, подложенной позже.
+        "training_fingerprint": hashlib.sha256(args.data.read_bytes()).hexdigest()[:12],
         "method": "логистическая регрессия с L2, подбор регуляризации по скользящему контролю",
         "features": FEATURES,
         "l2": l2,
