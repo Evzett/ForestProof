@@ -14,7 +14,13 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { getSession, login as apiLogin, logout as apiLogout, setToken } from "../api";
+import {
+  getSession,
+  login as apiLogin,
+  logout as apiLogout,
+  register as apiRegister,
+  setToken,
+} from "../api";
 import type { Session } from "../api";
 
 const VIEWER: Session = {
@@ -23,7 +29,17 @@ const VIEWER: Session = {
   display_name: null,
   role: "viewer",
   role_label: "наблюдатель",
-  can: { view: true, calculate: false, upload: false, manage: false },
+  role_note: "Просмотр участков, расчётов и журнала — без входа.",
+  blocked: false,
+  avatar: null,
+  can: {
+    view: true,
+    value: false,
+    calculate: false,
+    upload: false,
+    publish: false,
+    manage: false,
+  },
 };
 
 type SessionValue = {
@@ -33,7 +49,10 @@ type SessionValue = {
   /** Бэкенд не отвечает — вход невозможен, просмотр работает. */
   offline: boolean;
   signIn: (login: string, password: string) => Promise<void>;
+  signUp: (login: string, displayName: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Обновить сведения о себе после правки профиля — без повторного входа. */
+  refresh: (value: Session) => void;
 };
 
 const Ctx = createContext<SessionValue | null>(null);
@@ -75,6 +94,24 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setOffline(false);
   }, []);
 
+  const signUp = useCallback(
+    async (loginName: string, displayName: string, password: string) => {
+      const value = await apiRegister({
+        login: loginName,
+        display_name: displayName,
+        password,
+      });
+      // Регистрация сразу входит: заставлять человека вводить те же
+      // логин и пароль второй раз подряд незачем.
+      setToken(value.token ?? null);
+      setSession(value);
+      setOffline(false);
+    },
+    []
+  );
+
+  const refresh = useCallback((value: Session) => setSession(value), []);
+
   const signOut = useCallback(async () => {
     try {
       await apiLogout();
@@ -82,13 +119,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // Токен снимаем в любом случае: если сервер не ответил, держать
       // его у себя — значит считать себя вошедшим без оснований.
       setToken(null);
-      setSession(VIEWER);
+      // Кто мы после выхода — решает сервер, а не мы. В режиме
+      // демонстрации он открывает сервис администратором, и подставить
+      // здесь наблюдателя значило бы показать состояние, которого на
+      // сервере нет: кнопки бы исчезли, а запросы продолжили работать.
+      try {
+        setSession(await getSession());
+      } catch {
+        setSession(VIEWER);
+      }
     }
   }, []);
 
   const value = useMemo(
-    () => ({ session, ready, offline, signIn, signOut }),
-    [session, ready, offline, signIn, signOut]
+    () => ({ session, ready, offline, signIn, signUp, signOut, refresh }),
+    [session, ready, offline, signIn, signUp, signOut, refresh]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

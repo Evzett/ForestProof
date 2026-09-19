@@ -19,8 +19,20 @@ services:
       # Секрет подписи токенов и пароли учётных записей — из окружения,
       # не из репозитория (KAN-78). Локально можно оставить пустыми.
       AUTH_SECRET: ${AUTH_SECRET:-}
-      FORESTPROOF_ANALYST_PASSWORD: ${FORESTPROOF_ANALYST_PASSWORD:-}
+      FORESTPROOF_OPERATOR_PASSWORD: ${FORESTPROOF_OPERATOR_PASSWORD:-}
+      FORESTPROOF_INVESTOR_PASSWORD: ${FORESTPROOF_INVESTOR_PASSWORD:-}
       FORESTPROOF_ADMIN_PASSWORD: ${FORESTPROOF_ADMIN_PASSWORD:-}
+      # Демонстрационный режим: сервис открывается администратором без
+      # входа. Выключается значением 0 и не действует при
+      # ENVIRONMENT=production ни при каком значении.
+      FORESTPROOF_OPEN_ADMIN: ${FORESTPROOF_OPEN_ADMIN:-1}
+      # Токен Earthdata для продукта гарей MODIS. Без него гари просто
+      # не ищутся — расчёт от этого не падает.
+      EARTHDATA_TOKEN: ${EARTHDATA_TOKEN:-}
+      # Ключ языковой модели для краткой справки. Пустой — штатное
+      # состояние: справка собирается шаблоном, сервис работает.
+      ROUTERAI_API_KEY: ${ROUTERAI_API_KEY:-}
+      ROUTERAI_MODEL: ${ROUTERAI_MODEL:-}
     volumes:
       # Код — живьём, чтобы --reload имел смысл.
       - .:/app

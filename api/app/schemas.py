@@ -84,3 +84,49 @@ class SaveContourRequest(BaseModel):
     source_kind: str = Field(min_length=1, max_length=32)
     geometry: dict
     calc_id: str = Field(min_length=1, max_length=32)
+
+
+class RegisterRequest(BaseModel):
+    """`POST /api/auth/register`. KAN-78.
+
+    Поля роли здесь нет намеренно: роль назначает сервер, и прислать её
+    нельзя. Восемь символов пароля — не идеал, но нижняя граница, ниже
+    которой подбор перестаёт быть работой.
+    """
+
+    login: str = Field(min_length=3, max_length=64)
+    display_name: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=8, max_length=256)
+
+
+class ProfileRequest(BaseModel):
+    """`PATCH /api/auth/me`. Своё имя и цвет аватара — и только они."""
+
+    display_name: str | None = Field(default=None, max_length=255)
+    avatar_color: str | None = Field(default=None, max_length=16)
+
+
+class ChangePasswordRequest(BaseModel):
+    """`POST /api/auth/password`. Текущий пароль обязателен: иначе
+    украденного токена хватило бы, чтобы забрать учётную запись."""
+
+    current_password: str = Field(min_length=1, max_length=256)
+    new_password: str = Field(min_length=8, max_length=256)
+
+
+class AdminUserRequest(BaseModel):
+    """`PATCH /api/admin/users/{login}`. Роль и блокировка.
+
+    Пароля здесь нет: сброс чужого пароля — отдельное действие с
+    отдельным следом, а не поле среди прочих.
+    """
+
+    role: str | None = Field(default=None, max_length=32)
+    blocked: bool | None = None
+
+
+class AdminPasswordRequest(BaseModel):
+    """`POST /api/admin/users/{login}/password`. Новый пароль задаёт
+    администратор и передаёт человеку сам."""
+
+    new_password: str = Field(min_length=8, max_length=256)

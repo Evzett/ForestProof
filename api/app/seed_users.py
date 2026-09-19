@@ -2,8 +2,9 @@
 
     docker compose -f api/docker-compose.yml exec api python -m app.seed_users
 
-Регистрации в сервисе нет намеренно: подтверждение почты на хакатоне —
-время без баллов. Учётные записи заводятся заранее, этой командой.
+Регистрация в сервисе есть и выдаёт роль оператора. Эта команда нужна
+для другого: завести демонстрационные учётные записи всех трёх ролей,
+чтобы на защите можно было показать сервис глазами каждой.
 
 Пароли берутся из окружения, а в код не зашиваются. Если переменная не
 задана, пароль генерируется случайно и печатается ОДИН раз — записать
@@ -18,7 +19,8 @@ from app.database import SessionLocal
 from app import models
 
 ACCOUNTS = [
-    ("analyst", "Аналитик", models.Role.analyst, "FORESTPROOF_ANALYST_PASSWORD"),
+    ("operator", "Оператор", models.Role.operator, "FORESTPROOF_OPERATOR_PASSWORD"),
+    ("investor", "Инвестор", models.Role.investor, "FORESTPROOF_INVESTOR_PASSWORD"),
     ("admin", "Администратор", models.Role.admin, "FORESTPROOF_ADMIN_PASSWORD"),
 ]
 

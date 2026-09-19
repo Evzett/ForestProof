@@ -21,6 +21,7 @@ import { CALC_STEPS } from "../data/mock";
 import { formatArea, formatNumber } from "./ui";
 import "./Wizard.css";
 import { SAMPLE_CONTOURS, type SampleContour } from "../data/sampleContours";
+import DrawMap, { type LatLon } from "./DrawMap";
 
 /* Мастер добавления участка. Требования FR-18 — FR-24.
 
@@ -65,11 +66,10 @@ const TITLES = [
 ];
 
 type Method = "file" | "draw" | "coords" | "table";
-type Point = { x: number; y: number };
 
 const METHODS: [Method, string, string][] = [
   ["file", "Загрузить файл границы", "GeoJSON или Shapefile, система координат EPSG:4326"],
-  ["draw", "Обвести полигон на карте", "если файла нет — контур рисуется кликами поверх снимка"],
+  ["draw", "Обвести полигон на карте", "настоящая карта: клик ставит вершину в градусах WGS 84"],
   ["coords", "Ввести координаты", "список вершин в десятичных градусах, по одной паре в строке"],
   ["table", "Загрузить таблицу", "CSV со столбцами name, lat, lon, order — контуры из ведомости"],
 ];
@@ -213,8 +213,10 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
   );
   const [fileError, setFileError] = useState("");
 
-  /* --- способ 2: рисование --- */
-  const [points, setPoints] = useState<Point[]>([]);
+  /* --- способ 2: обводка по карте ---
+     Точки сразу в градусах, а не в процентах полотна: раньше обводка
+     географией не была и на расчёт не уходила вовсе. */
+  const [points, setPoints] = useState<LatLon[]>([]);
 
   /* --- способ 3: координаты --- */
   const [coordText, setCoordText] = useState("");
@@ -317,7 +319,9 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
      до расчёта. Настоящую площадь считает сервер по доле пересечения
      каждого пикселя с контуром, и она будет отличаться. */
   const drawnAreaHa =
-    method === "coords" && parsed.points.length >= 3
+    method === "draw" && points.length >= 3
+      ? polygonAreaHa(points)
+      : method === "coords" && parsed.points.length >= 3
       ? polygonAreaHa(parsed.points)
       : method === "table" && tableContour
         ? polygonAreaHa(tableContour.points)
@@ -391,11 +395,12 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     setTableIndex(0);
   };
 
-  /* Геометрия для отправки: файл и таблица дают её напрямую, координаты
-     собираются в полигон. Обводка на карте живёт в процентах экрана, а не
-     в градусах, поэтому географией не является и на расчёт не уходит. */
+  /* Геометрия для отправки. Все четыре способа сходятся к одному
+     полигону в WGS 84 — в этом и смысл замены картинки на карту:
+     обводка перестала быть особым случаем, который никуда не уходит. */
   const requestGeometry = (): GeoJsonPolygon | null => {
     if (method === "file") return geometry;
+    if (method === "draw" && points.length >= 3) return polygonFromPoints(points);
     if (method === "coords" && parsed.points.length >= 3) return polygonFromPoints(parsed.points);
     if (method === "table" && tableContour) return polygonFromPoints(tableContour.points);
     return null;
@@ -463,17 +468,6 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
     } finally {
       setCalcPending(false);
     }
-  };
-
-  const addPoint = (e: React.MouseEvent<SVGSVGElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
-    setPoints((prev) => [
-      ...prev,
-      {
-        x: ((e.clientX - box.left) / box.width) * 100,
-        y: ((e.clientY - box.top) / box.height) * 100,
-      },
-    ]);
   };
 
   return (
@@ -579,42 +573,16 @@ function Wizard({ projectName, onClose }: { projectName?: string; onClose: () =>
                 </div>
               )}
 
-              {/* --- рисование --- */}
+              {/* --- обводка по карте --- */}
               {method === "draw" && (
                 <div className="wz__pane">
-                  <svg
-                    className="wz__draw"
-                    viewBox="0 0 100 60"
-                    preserveAspectRatio="none"
-                    onClick={addPoint}
-                    role="application"
-                    aria-label="Полотно для обводки полигона"
-                  >
-                    {points.length >= 2 && (
-                      <polygon
-                        points={points.map((p) => `${p.x},${(p.y / 100) * 60}`).join(" ")}
-                        className="wz__draw-poly"
-                      />
-                    )}
-                    {points.map((p, i) => (
-                      <circle key={i} cx={p.x} cy={(p.y / 100) * 60} r="0.9" />
-                    ))}
-                  </svg>
-                  <div className="wz__draw-foot">
-                    <span>
-                      {points.length === 0
-                        ? "кликайте по снимку — каждая точка добавляет вершину"
-                        : `${points.length} вершин${points.length >= 3 ? " · контур замкнут" : ", нужно минимум 3"}`}
-                    </span>
-                    <button
-                      className="link-btn"
-                      type="button"
-                      onClick={() => setPoints([])}
-                      disabled={points.length === 0}
-                    >
-                      очистить
-                    </button>
-                  </div>
+                  <DrawMap points={points} onChange={setPoints} />
+                  <p className="wz__samples-note">
+                    Вершины ставятся в градусах WGS 84 и уходят на расчёт ровно так же, как
+                    координаты из файла. Рисуйте там, где есть лес: под контуром вне
+                    подготовленного покрытия данные тянутся из открытых источников и расчёт
+                    занимает минуты.
+                  </p>
                 </div>
               )}
 

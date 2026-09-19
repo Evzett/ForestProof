@@ -1,0 +1,244 @@
+/* Верхняя панель. KAN-78.
+   Цвета и радиусы — из токенов; своих значений здесь нет, кроме
+   служебных оттенков линий, уже принятых в AppShell.css. */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 64px;
+  margin: -40px clamp(-50px, -2.6vw, -20px) 24px;
+  padding: 0 clamp(20px, 2.6vw, 50px);
+  background: var(--c-surface);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.topbar__scope {
+  font-size: 12px;
+  color: #9b9b93;
+  white-space: nowrap;
+}
+
+.topbar__offline {
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: rgba(138, 59, 42, 0.1);
+  font-size: 11px;
+  color: #8a3b2a;
+}
+
+.topbar__right {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar__role {
+  padding: 5px 12px;
+  border: 1px solid #d5d8cf;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.topbar__link {
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+  cursor: pointer;
+}
+
+.topbar__link:hover {
+  color: var(--c-ink);
+}
+
+.topbar__signin {
+  padding: 8px 18px;
+  border: 1.5px solid var(--c-ink);
+  border-radius: var(--r-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-ink);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topbar__signin:hover {
+  background: var(--c-ink);
+  color: #fff;
+}
+
+/* ---------- Аватар ---------- */
+
+.avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.topbar__user:hover,
+.topbar__user[aria-expanded="true"] {
+  border-color: #d5d8cf;
+  background: rgba(46, 62, 40, 0.04);
+}
+
+.topbar__who {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.topbar__who b {
+  font-size: 13px;
+  color: var(--c-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar__who span {
+  font-size: 11px;
+  color: #9b9b93;
+}
+
+.topbar__chev {
+  width: 8px;
+  height: 8px;
+  margin-left: 2px;
+  border-right: 1.5px solid var(--c-muted);
+  border-bottom: 1.5px solid var(--c-muted);
+  transform: translateY(-2px) rotate(45deg);
+}
+
+/* ---------- Меню ---------- */
+
+.topbar__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 50;
+  width: 260px;
+  padding: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 24px;
+  background: var(--c-surface);
+  box-shadow: 0 14px 40px rgba(27, 27, 23, 0.14);
+}
+
+.topbar__menu-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 6px 12px;
+}
+
+.topbar__menu-head div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.topbar__menu-head b {
+  font-size: 14px;
+  color: var(--c-ink);
+}
+
+.topbar__menu-head span {
+  font-size: 11px;
+  color: #9b9b93;
+}
+
+.topbar__menu-note {
+  margin: 0 6px 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+.topbar__menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--c-ink);
+  cursor: pointer;
+}
+
+.topbar__menu-item:hover {
+  background: rgba(46, 62, 40, 0.06);
+}
+
+.topbar__menu-item--out {
+  margin-top: 6px;
+  color: #8a3b2a;
+}
+
+/* ---------- Пилюля роли ---------- */
+
+.rolepill {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid #d5d8cf;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  color: var(--c-muted);
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    margin: -40px -20px 20px;
+    padding: 10px 20px;
+    flex-wrap: wrap;
+  }
+
+  .topbar__who {
+    display: none;
+  }
+}

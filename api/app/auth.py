@@ -1,13 +1,22 @@
 """Роли и авторизация. KAN-78.
 
-Три роли по возрастанию прав: наблюдатель, аналитик, администратор.
+Три назначаемые роли: оператор, инвестор, администратор. Плюс `viewer` —
+не роль, а вид сервиса для того, кто ещё не вошёл.
 
-Главное решение: **по умолчанию сервис открыт в роли наблюдателя**, и на
-пути к демо формы входа нет. Прежнее «регистрации нет» принималось именно
-из-за риска, что форма входа сломает защиту. Вход появляется только там,
-где начинается запись: загрузка контура, запуск расчёта, удаление.
+Главное решение: **на пути к демо формы входа нет**. Сервис открывается
+сразу, и всё содержимое видно без логина. Вход нужен, чтобы работать от
+своего имени: у загруженного контура и запущенного расчёта появляется
+владелец.
 
-Второе решение: **права проверяются здесь, на сервере**. Скрытая в
+Второе: **регистрация открыта и даёт роль оператора**. Выше оператора —
+только рукой администратора. Иначе форма регистрации раздавала бы права
+на чужие данные любому, кто её открыл.
+
+Третье: **в режиме демонстрации сервис открывается администратором**.
+Включается переменной окружения и по умолчанию действует только при
+`ENVIRONMENT=development`. На проде выключено: там вход обязателен.
+
+Четвёртое: **права проверяются здесь, на сервере**. Скрытая в
 интерфейсе кнопка ограничением доступа не является — запрос можно послать
 мимо интерфейса, и он должен быть отклонён.
 
@@ -27,6 +36,7 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 import bcrypt
 from fastapi import Depends, HTTPException, Request
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import models
@@ -121,12 +131,42 @@ def _token_from_request(request: Request) -> str | None:
     return request.cookies.get(COOKIE_NAME)
 
 
+def _open_admin_enabled() -> bool:
+    """Открывать ли сервис администратором без входа.
+
+    Это режим демонстрации, а не настройка по умолчанию «для удобства».
+    Явно включается переменной, и на проде (`ENVIRONMENT=production`) не
+    включается вовсе, чем бы ни была заполнена переменная: открытая
+    панель администратора в интернете — это не демо, а раздача доступа.
+    """
+    if os.environ.get("ENVIRONMENT", "development").strip().lower() == "production":
+        return False
+    value = os.environ.get("FORESTPROOF_OPEN_ADMIN", "1").strip().lower()
+    return value not in {"", "0", "false", "no"}
+
+
 def current_user(request: Request, db: Session = Depends(get_db)) -> models.User | None:
-    """Пользователь запроса или None. Отсутствие входа — не ошибка:
-    наблюдателю доступ к чтению открыт, и 401 на каждом экране сломал бы
-    демо."""
+    """Пользователь запроса или None.
+
+    Отсутствие входа — не ошибка: чтение открыто, и 401 на каждом экране
+    сломал бы демо.
+
+    В режиме демонстрации вместо None возвращается администратор: на
+    защите никто не должен искать логин, чтобы показать, как работает
+    загрузка контура. Подмена одна и в одном месте — дальше по коду
+    разницы между «вошёл администратор» и «демо» нет, а значит нет и
+    ветки, в которой права случайно разъедутся.
+    """
     token = _token_from_request(request)
     if not token:
+        if _open_admin_enabled():
+            demo = db.scalars(
+                select(models.User)
+                .where(models.User.role == models.Role.admin, models.User.blocked.is_(False))
+                .order_by(models.User.created_at)
+            ).first()
+            if demo is not None:
+                return demo
         return None
     payload = read_token(token)
     if payload is None:
@@ -142,7 +182,19 @@ def role_of(user: models.User | None) -> models.Role:
     return user.role if user is not None else models.Role.viewer
 
 
-_ORDER = {models.Role.viewer: 0, models.Role.analyst: 1, models.Role.admin: 2}
+_ORDER = {
+    models.Role.viewer: 0,
+    models.Role.investor: 1,
+    models.Role.operator: 2,
+    models.Role.admin: 3,
+}
+
+
+def at_least(user: models.User | None, minimum: models.Role) -> bool:
+    """Хватает ли прав — без исключения. Нужно там, где ответ зависит от
+    роли, но отказывать не за что: список контуров, например, просто
+    показывает разным людям разное."""
+    return _ORDER[role_of(user)] >= _ORDER[minimum]
 
 
 def _require(user: models.User | None, minimum: models.Role, action: str) -> models.User:
@@ -150,6 +202,11 @@ def _require(user: models.User | None, minimum: models.Role, action: str) -> mod
         raise HTTPException(
             status_code=401,
             detail=f"{action} требует входа. Наблюдателю доступен просмотр без входа.",
+        )
+    if user.blocked:
+        raise HTTPException(
+            status_code=403,
+            detail="Учётная запись заблокирована. Обратитесь к администратору.",
         )
     if _ORDER[user.role] < _ORDER[minimum]:
         raise HTTPException(
@@ -161,13 +218,45 @@ def _require(user: models.User | None, minimum: models.Role, action: str) -> mod
 
 ROLE_LABELS = {
     models.Role.viewer: "наблюдатель",
-    models.Role.analyst: "аналитик",
+    models.Role.investor: "инвестор",
+    models.Role.operator: "оператор",
     models.Role.admin: "администратор",
 }
 
+# Что роль означает на человеческом языке. Показывается в профиле и в
+# панели администратора: выдавая роль, надо понимать, что именно выдаёшь.
+ROLE_NOTES = {
+    models.Role.viewer: "Просмотр участков, расчётов и журнала — без входа.",
+    models.Role.investor: (
+        "Просмотр, денежная оценка и отбор участков. Данные не правит: "
+        "решение принимается по числам, которые инвестор не менял."
+    ),
+    models.Role.operator: (
+        "Загружает контуры, запускает расчёты, ведёт свои участки и решает, "
+        "публиковать ли их."
+    ),
+    models.Role.admin: (
+        "Всё вышеперечисленное плюс учётные записи, роли и обслуживание "
+        "источников данных."
+    ),
+}
 
-def require_analyst(user: models.User | None = Depends(current_user)) -> models.User:
-    return _require(user, models.Role.analyst, "Действие")
+# Роли, которые администратор может выдать. `viewer` в списке нет: это
+# вид сервиса до входа, а не назначение.
+ASSIGNABLE = [models.Role.investor, models.Role.operator, models.Role.admin]
+
+
+def require_any(user: models.User | None = Depends(current_user)) -> models.User:
+    """Только вход, без требований к роли: свой профиль и свой пароль."""
+    return _require(user, models.Role.viewer, "Действие")
+
+
+def require_operator(user: models.User | None = Depends(current_user)) -> models.User:
+    return _require(user, models.Role.operator, "Действие")
+
+
+def require_investor(user: models.User | None = Depends(current_user)) -> models.User:
+    return _require(user, models.Role.investor, "Действие")
 
 
 def require_admin(user: models.User | None = Depends(current_user)) -> models.User:

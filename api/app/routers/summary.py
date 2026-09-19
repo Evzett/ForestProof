@@ -17,9 +17,10 @@ router = APIRouter(prefix="/api", tags=["summary"])
 @router.get("/summary/status")
 def summary_status() -> dict:
     """Доступна ли модель. Фронт спрашивает это до показа кнопки."""
+    configured = settings.routerai
     return {
-        "available": bool(settings.routerai_api_key),
-        "model": settings.routerai_model if settings.routerai_api_key else None,
+        "available": configured is not None,
+        "model": configured[1] if configured else None,
     }
 
 

@@ -1,0 +1,139 @@
+/* Карта для обводки. KAN-78.
+   Цвета и радиусы — из токенов. Внутренности MapLibre перекрашиваем
+   только там, где его собственный вид спорит с нашим. */
+
+.drawmap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drawmap__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.drawmap__jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.drawmap__jump select {
+  padding: 7px 12px;
+  border: 1px solid #d5d8cf;
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  font: inherit;
+  font-size: 13px;
+  color: var(--c-ink);
+}
+
+.drawmap__hint {
+  font-size: 12px;
+  color: #9b9b93;
+}
+
+.drawmap__canvas {
+  position: relative;
+  height: clamp(320px, 42vh, 520px);
+  border-radius: var(--r-img-md);
+  overflow: hidden;
+  background: #e8e8e4;
+  cursor: crosshair;
+}
+
+/* Поверх карты, а не вместо неё: карта остаётся управляемой, даже
+   когда тайлы не пришли. */
+.drawmap__failed {
+  position: absolute;
+  inset: auto 12px 12px 12px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--r-img-sm);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.drawmap__failed b {
+  font-size: 13px;
+  color: var(--c-ink);
+}
+
+.drawmap__failed span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--c-muted-alt);
+}
+
+.drawmap__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+
+.drawmap__acts {
+  display: inline-flex;
+  gap: 14px;
+}
+
+.drawmap__warn {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #8a3b2a;
+}
+
+/* Управление MapLibre: скругления наши, чтобы кнопки не выбивались
+   из остального интерфейса прямыми углами. */
+.drawmap .maplibregl-ctrl-group {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(27, 27, 23, 0.14);
+}
+
+.drawmap .maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+
+/* Контур поверх карты. Указатель сквозь него проходит: клик должен
+   доходить до карты, иначе поставить вершину поверх уже нарисованного
+   контура стало бы нельзя. */
+.drawmap__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.drawmap__overlay polygon {
+  fill: rgba(167, 187, 47, 0.3);
+  stroke: var(--c-ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.drawmap__overlay line {
+  stroke: var(--c-ink);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.drawmap__overlay circle {
+  fill: var(--c-surface);
+  stroke: var(--c-ink);
+  stroke-width: 2;
+}

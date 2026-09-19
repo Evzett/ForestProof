@@ -194,15 +194,33 @@ export function polygonFromPoints(points: { lon: number; lat: number }[]): GeoJs
 
 /* ---------- Роли и вход. KAN-78 ---------- */
 
+/* Роли сервиса. `viewer` — не назначаемая роль, а вид сервиса до входа:
+   в списке панели администратора её нет. */
+export type RoleName = "viewer" | "investor" | "operator" | "admin";
+
+export type Avatar = { initials: string; color: string };
+
 export type Session = {
   authenticated: boolean;
   login: string | null;
   display_name: string | null;
-  role: "viewer" | "analyst" | "admin";
+  role: RoleName;
   role_label: string;
-  can: { view: boolean; calculate: boolean; upload: boolean; manage: boolean };
+  role_note: string;
+  blocked: boolean;
+  avatar: Avatar | null;
+  can: {
+    view: boolean;
+    value: boolean;
+    calculate: boolean;
+    upload: boolean;
+    publish: boolean;
+    manage: boolean;
+  };
   token?: string;
 };
+
+export type RoleInfo = { value: RoleName; label: string; note: string };
 
 export function getSession(): Promise<Session> {
   return request<Session>("/api/auth/me");
@@ -215,8 +233,118 @@ export function login(loginName: string, password: string): Promise<Session> {
   });
 }
 
+/** Регистрация. Роль назначает сервер — прислать её нельзя. */
+export function register(body: {
+  login: string;
+  display_name: string;
+  password: string;
+}): Promise<Session> {
+  return request<Session>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export function logout(): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>("/api/auth/logout", { method: "POST" });
+}
+
+export function getRoles(): Promise<{ roles: RoleInfo[] }> {
+  return request<{ roles: RoleInfo[] }>("/api/auth/roles");
+}
+
+export function getPalette(): Promise<{ colors: string[] }> {
+  return request<{ colors: string[] }>("/api/auth/palette");
+}
+
+export function updateProfile(body: {
+  display_name?: string;
+  avatar_color?: string;
+}): Promise<Session> {
+  return request<Session>("/api/auth/me", { method: "PATCH", body: JSON.stringify(body) });
+}
+
+export function changePassword(current: string, next: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>("/api/auth/password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: current, new_password: next }),
+  });
+}
+
+/* ---------- Панель администратора. KAN-78 ---------- */
+
+export type AdminUser = {
+  login: string;
+  display_name: string;
+  role: RoleName;
+  role_label: string;
+  blocked: boolean;
+  avatar: Avatar;
+  created_at: string | null;
+  contours: number;
+  calculations: number;
+};
+
+export function getUsers(): Promise<{ users: AdminUser[] }> {
+  return request<{ users: AdminUser[] }>("/api/admin/users");
+}
+
+export function updateUser(
+  login: string,
+  body: { role?: RoleName; blocked?: boolean }
+): Promise<AdminUser> {
+  return request<AdminUser>(`/api/admin/users/${login}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function resetUserPassword(login: string, password: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/admin/users/${login}/password`, {
+    method: "POST",
+    body: JSON.stringify({ new_password: password }),
+  });
+}
+
+export type SourceState = {
+  sources: { name: string; kind: string; auth: string; ready: boolean; note: string }[];
+  cache: { name: string; path: string; size_mb: number }[];
+  contour_maps: { path: string; size_mb: number; count: number };
+};
+
+export function getSources(): Promise<SourceState> {
+  return request<SourceState>("/api/admin/sources");
+}
+
+export function clearSourceCache(): Promise<{ ok: boolean; freed_mb: number }> {
+  return request<{ ok: boolean; freed_mb: number }>("/api/admin/sources/cache", {
+    method: "DELETE",
+  });
+}
+
+/* ---------- Фоновый расчёт. KAN-78 ---------- */
+
+export type CalcJob = {
+  job_id: string;
+  status: "queued" | "running" | "done" | "failed";
+  step: number;
+  steps: string[];
+  error: string | null;
+  calc_id: string | null;
+  created_by: string | null;
+  result: CalcResult | null;
+};
+
+export function startCalcJob(body: CalcRequest): Promise<{
+  job_id: string;
+  status: string;
+  steps: string[];
+}> {
+  return request("/api/calc/jobs", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function getCalcJob(id: string): Promise<CalcJob> {
+  return request<CalcJob>(`/api/calc/jobs/${id}`);
 }
 
 /* ---------- Сохранённые контуры. KAN-78 ---------- */
@@ -232,6 +360,7 @@ export type SavedContour = {
   year_end: number;
   calc_id: string | null;
   created_by: string | null;
+  published: boolean;
   created_at: string;
   e_tco2e: number | null;
   units: number | null;
@@ -264,8 +393,36 @@ export type ContourStats = {
   gaining_carbon: number;
 };
 
-export function getContours(): Promise<{ contours: SavedContour[] }> {
-  return request<{ contours: SavedContour[] }>("/api/contours");
+export function getContours(mine = false): Promise<{ contours: SavedContour[] }> {
+  return request<{ contours: SavedContour[] }>(`/api/contours${mine ? "?mine=true" : ""}`);
+}
+
+/** Публикация контура: автор решает, видят ли его остальные. */
+export function publishContour(id: string, published: boolean): Promise<SavedContour> {
+  return request<SavedContour>(`/api/contours/${id}/publish?published=${published}`, {
+    method: "POST",
+  });
+}
+
+/* ---------- Журнал расчётов ---------- */
+
+export type JournalEntry = {
+  calc_id: string;
+  project_id: string | null;
+  calculated_at: string;
+  methodology_version: string;
+  algorithm_version: string;
+  model_version: string | null;
+  input_hash: string;
+  created_by: string | null;
+  author: string | null;
+  mine: boolean;
+};
+
+export function getCalculations(mine = false): Promise<{ calculations: JournalEntry[] }> {
+  return request<{ calculations: JournalEntry[] }>(
+    `/api/calculations${mine ? "?mine=true" : ""}`
+  );
 }
 
 export function getContourStats(): Promise<ContourStats> {

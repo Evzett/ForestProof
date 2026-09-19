@@ -4,18 +4,18 @@ import { NavLink, Outlet } from "react-router-dom";
 import { AREAS, GENERATED_FROM } from "../data/case";
 import { plural } from "./ui";
 import { WizardProvider, useWizard } from "./Wizard";
-import { RoleBadge, SignInDialog } from "./SignIn";
+import { SignInDialog } from "./SignIn";
+import TopBar from "./TopBar";
 import { SessionProvider, useSession } from "../data/session";
 import { ScenarioProvider } from "../data/scenario";
 import "./AppShell.css";
 
 /* Каркас приложения: постоянная навигация из шести разделов.
    Требования FR-02 — FR-04.
-   Роль показана пилюлей внизу панели (KAN-78). Формы входа на пути к
-   демо нет: сервис открывается наблюдателем, и всё содержимое видно
-   сразу. Вход предлагается там, где начинается запись, — прежнее
-   «регистрации нет» (NFR-05) принималось именно из-за риска, что форма
-   входа на старте сломает защиту, и этот риск снят, а не принят.
+   Роль и вход — в верхней панели (KAN-78). Раньше пилюля роли стояла
+   внизу боковой панели и читалась как ещё один пункт навигации; наверху
+   справа её ищут не думая. Формы входа на пути к демо по-прежнему нет:
+   сервис открывается наблюдателем, и всё содержимое видно сразу.
 
    Раздел «Проекты» переименован в «Участки»: в наборе кейса это
    исследовательские участки, а не зарегистрированные климатические
@@ -38,6 +38,11 @@ const NAV = [
   { to: "/app/research", label: "Исследование", icon: "calc" },
   { to: "/app/methodology", label: "Методика", icon: "method" },
 ];
+
+/* Пункты, которые появляются не у всех. Держим их отдельно от NAV, а не
+   прячем условием внутри разметки: так видно списком, что кому открыто,
+   и правило не размазано по JSX. */
+const NAV_ADMIN = [{ to: "/app/admin", label: "Администрирование", icon: "admin" }];
 
 /* Кнопка добавления участка. Главное действие продукта,
    поэтому доступна из любого раздела (FR-03). */
@@ -72,6 +77,7 @@ export function AddPlotButton({ className = "", label = "Задать конту
 }
 
 function Shell() {
+  const { session } = useSession();
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -95,9 +101,20 @@ function Shell() {
               {item.label}
             </NavLink>
           ))}
+          {session.can.manage &&
+            NAV_ADMIN.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  isActive ? "sidebar__item sidebar__item--active" : "sidebar__item"
+                }
+              >
+                <i className={`ic ic--${item.icon}`} aria-hidden="true" />
+                {item.label}
+              </NavLink>
+            ))}
         </nav>
-
-        <RoleBadge />
 
         <div className="sidebar__foot">
           <span>набор данных</span>
@@ -109,6 +126,7 @@ function Shell() {
       </aside>
 
       <main className="shell__main">
+        <TopBar />
         <Outlet />
       </main>
     </div>

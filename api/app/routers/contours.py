@@ -12,7 +12,7 @@
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app import auth, models
@@ -60,6 +60,7 @@ def _view(row: models.SavedContour) -> dict:
         "year_end": row.year_end,
         "calc_id": row.calc_id,
         "created_by": row.created_by,
+        "published": bool(row.published),
         "created_at": row.created_at.isoformat(),
         # Показатели берутся из сохранённого расчёта, а не пересчитываются:
         # список и карточка обязаны показывать одно и то же число.
@@ -69,17 +70,61 @@ def _view(row: models.SavedContour) -> dict:
     }
 
 
+def _visible(user: models.User | None):
+    """Условие видимости контура для этого человека.
+
+    Свой — автору. Опубликованный — всем, включая гостя без входа.
+    Чужой непубликованный — верификатору и администратору: первому он
+    нужен по работе, второму по должности.
+
+    Условие живёт в запросе к базе, а не в фильтре по готовому списку:
+    иначе чужие контуры сначала прочитались бы, а потом «не показались»,
+    и любая ошибка в отрисовке превращалась бы в утечку.
+    """
+    if auth.at_least(user, models.Role.admin):
+        return None  # видно всё
+    if user is None:
+        return models.SavedContour.published.is_(True)
+    return or_(
+        models.SavedContour.published.is_(True),
+        models.SavedContour.created_by == user.login,
+    )
+
+
+def _may_see(row: models.SavedContour, user: models.User | None) -> bool:
+    """То же правило, что в `_visible`, но для одной уже прочитанной строки."""
+    if row.published or auth.at_least(user, models.Role.admin):
+        return True
+    return user is not None and row.created_by == user.login
+
+
 @router.get("/contours")
-def list_contours(db: Session = Depends(get_db)) -> dict:
-    """Список сохранённых контуров — открыт всем, включая наблюдателя."""
-    rows = db.scalars(
-        select(models.SavedContour).order_by(models.SavedContour.created_at.desc())
-    ).all()
+def list_contours(
+    mine: bool = False,
+    db: Session = Depends(get_db),
+    user: models.User | None = Depends(auth.current_user),
+) -> dict:
+    """Список контуров: свои и опубликованные.
+
+    `mine=true` — только свои, для переключателя «мои / все».
+    """
+    query = select(models.SavedContour).order_by(models.SavedContour.created_at.desc())
+    if mine:
+        # «Мои» без входа — это пусто, а не «все»: у гостя нет своих.
+        query = query.where(models.SavedContour.created_by == (user.login if user else None))
+    else:
+        condition = _visible(user)
+        if condition is not None:
+            query = query.where(condition)
+    rows = db.scalars(query).all()
     return {"contours": [_view(row) for row in rows]}
 
 
 @router.get("/contours/stats")
-def contour_stats(db: Session = Depends(get_db)) -> dict:
+def contour_stats(
+    db: Session = Depends(get_db),
+    user: models.User | None = Depends(auth.current_user),
+) -> dict:
     """Сводка по загруженным контурам.
 
     Считается запросом к базе, а не обходом списка на клиенте: статистика
@@ -89,10 +134,17 @@ def contour_stats(db: Session = Depends(get_db)) -> dict:
     «недоступно» и «ноль» — разные ответы, и смешивать их в среднем
     значило бы занижать его на ровном месте.
     """
-    total = db.scalar(select(func.count()).select_from(models.SavedContour)) or 0
-    area = db.scalar(select(func.sum(models.SavedContour.area_ha))) or 0
+    query = select(models.SavedContour)
+    condition = _visible(user)
+    if condition is not None:
+        query = query.where(condition)
 
-    rows = db.scalars(select(models.SavedContour)).all()
+    # Сводка считается по тем же строкам, которые человек видит списком.
+    # Иначе итог не сходился бы с таблицей под ним, и объяснить эту
+    # разницу было бы нечем.
+    rows = db.scalars(query).all()
+    total = len(rows)
+    area = sum(float(r.area_ha) for r in rows)
     with_units = [r for r in rows if r.calculation and r.calculation.result.get("period", {}).get("units") is not None]
     losses = [
         r.calculation.result["period"]["e_tco2e"]
@@ -113,7 +165,11 @@ def contour_stats(db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/contours/{contour_id}")
-def get_contour(contour_id: str, db: Session = Depends(get_db)) -> dict:
+def get_contour(
+    contour_id: str,
+    db: Session = Depends(get_db),
+    user: models.User | None = Depends(auth.current_user),
+) -> dict:
     """Контур целиком — в той же форме, что участок набора.
 
     Экран участка один на оба случая, поэтому и отдаётся ему одно и то
@@ -123,6 +179,10 @@ def get_contour(contour_id: str, db: Session = Depends(get_db)) -> dict:
     """
     row = db.get(models.SavedContour, contour_id)
     if row is None:
+        raise HTTPException(status_code=404, detail="контур не найден")
+    if not _may_see(row, user):
+        # 404, а не 403: иначе по коду ответа видно, что контур с таким
+        # номером существует, и чужой список можно перебрать по одному.
         raise HTTPException(status_code=404, detail="контур не найден")
 
     result = dict(row.calculation.result) if row.calculation else {}
@@ -154,7 +214,7 @@ def get_contour(contour_id: str, db: Session = Depends(get_db)) -> dict:
 def save_contour(
     body: SaveContourRequest,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.require_analyst),
+    user: models.User = Depends(auth.require_operator),
 ) -> dict:
     calc = db.get(models.Calculation, body.calc_id)
     if calc is None:
@@ -188,7 +248,7 @@ def save_contour(
 def delete_contour(
     contour_id: str,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.require_analyst),
+    user: models.User = Depends(auth.require_operator),
 ) -> dict:
     row = db.get(models.SavedContour, contour_id)
     if row is None:
@@ -203,3 +263,34 @@ def delete_contour(
     db.delete(row)
     db.commit()
     return {"ok": True, "contour_id": contour_id}
+
+
+@router.post("/contours/{contour_id}/publish")
+def publish_contour(
+    contour_id: str,
+    published: bool = True,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.require_operator),
+) -> dict:
+    """Публикует контур или снимает публикацию.
+
+    Публикует автор — и только он: опубликовать чужую работу за автора
+    нельзя даже администратору, потому что показывать её или нет решает
+    тот, кто её сделал. Снять публикацию администратор может: это не
+    раскрытие, а сокрытие, и здесь право на стороне порядка.
+    """
+    row = db.get(models.SavedContour, contour_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="контур не найден")
+
+    own = row.created_by == user.login
+    if not own and not (user.role is models.Role.admin and not published):
+        raise HTTPException(
+            status_code=403,
+            detail="Публикацию контура меняет его автор.",
+        )
+
+    row.published = published
+    db.commit()
+    db.refresh(row)
+    return _view(row)

@@ -15,15 +15,44 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
+/* Адрес API берётся из общего модуля, а не собирается здесь заново.
+   Раньше тут стоял собственный запасной адрес `http://localhost:8000`, и
+   на собранном фронте за nginx справка уходила в localhost браузера —
+   то есть в никуда, — пока все остальные запросы шли на тот же origin и
+   работали. Два разных представления об адресе сервера — два разных
+   поведения, и расходятся они там, где это труднее всего заметить. */
+import { apiBase } from "../api";
+
+/* Подключена ли модель вообще. Спрашивается один раз на всё
+   приложение: без ключа ответ не изменится, а карточек справки на
+   экране бывает много — каждая слала бы свой запрос и получала один и
+   тот же отказ.
+
+   Promise кэшируется, а не результат: иначе две карточки, открытые
+   одновременно, успели бы отправить по запросу до того, как вернётся
+   первый. */
+let statusPromise: Promise<boolean> | null = null;
+
+function modelAvailable(): Promise<boolean> {
+  if (statusPromise === null) {
+    statusPromise = fetch(`${apiBase}/api/summary/status`)
+      .then((r) => (r.ok ? r.json() : { available: false }))
+      .then((body) => Boolean(body?.available))
+      .catch(() => false);
+  }
+  return statusPromise;
+}
 
 export type AiSummary =
   | { ok: true; text: string; model: string }
   | { ok: false; reason: string };
 
 export async function composeSummary(facts: Record<string, unknown>): Promise<AiSummary> {
+  if (!(await modelAvailable())) {
+    return { ok: false, reason: "языковая модель не подключена" };
+  }
   try {
-    const response = await fetch(`${API_BASE}/api/summary`, {
+    const response = await fetch(`${apiBase}/api/summary`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ facts }),

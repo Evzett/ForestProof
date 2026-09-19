@@ -10,6 +10,8 @@ import Plot from "./pages/Plot/Plot";
 import Research from "./pages/Research/Research";
 import { Calculations, Methodology, Monitoring } from "./pages/Sections/Sections";
 import ContourRedirect from "./pages/Contours/ContourRedirect";
+import Profile from "./pages/Profile/Profile";
+import Admin from "./pages/Admin/Admin";
 
 /* Роутинг по структуре из docs/05-frontend-user-flow.md.
 
@@ -46,6 +48,11 @@ export default function App() {
           <Route path="monitoring" element={<Monitoring />} />
           <Route path="research" element={<Research />} />
           <Route path="methodology" element={<Methodology />} />
+          {/* Профиль и администрирование. Раньше пункт меню
+              «Администрирование» вёл в никуда: роута не было, и общий
+              перехват `*` уводил на стартовый экран. */}
+          <Route path="profile" element={<Profile />} />
+          <Route path="admin" element={<Admin />} />
           <Route path="plot/:id" element={<Navigate to="/app/areas" replace />} />
           <Route path="territories" element={<Navigate to="/app/areas" replace />} />
         </Route>

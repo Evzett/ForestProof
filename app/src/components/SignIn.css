@@ -1,85 +1,5 @@
-/* Вход и пилюля роли. KAN-78.
+/* Вход и регистрация. KAN-78.
    Все цвета и радиусы — из токенов: своих значений здесь нет. */
-
-/* ---------- Пилюля роли в боковой панели ---------- */
-
-.role {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  margin-bottom: 14px;
-  padding: 10px 12px;
-  border: 1px solid #d5d8cf;
-  border-radius: var(--r-pill);
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
-}
-
-.role--in {
-  cursor: default;
-}
-
-.role:hover {
-  border-color: var(--c-ink);
-}
-
-.role--in:hover {
-  border-color: #d5d8cf;
-}
-
-/* Точка состояния: серая у наблюдателя, лаймовая после входа.
-   Цвет дублируется текстом рядом — на монохромном экране и при
-   дальтонизме роль всё равно читается. */
-.role__dot {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #b4b8ad;
-}
-
-.role__dot--on {
-  background: var(--c-lime);
-}
-
-.role__text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  line-height: 1.25;
-}
-
-.role__text b {
-  font-size: 13px;
-  color: var(--c-ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.role__text span {
-  font-size: 11px;
-  color: #9b9b93;
-}
-
-.role__out {
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 11px;
-  color: var(--c-muted);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.role__out:hover {
-  color: var(--c-ink);
-}
 
 /* ---------- Окно входа ---------- */
 
@@ -108,11 +28,35 @@
   background: var(--c-surface);
 }
 
-.signin__title {
-  margin: 0 0 8px;
-  font-size: var(--t-lead);
-  letter-spacing: -0.04em;
+/* Вкладки «вход / регистрация». Переключатель, а не две разные
+   страницы: человек, пришедший войти и обнаруживший, что учётной записи
+   нет, не должен искать форму регистрации где-то ещё. */
+.signin__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: rgba(46, 62, 40, 0.06);
+}
+
+.signin__tab {
+  flex: 1;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--c-muted-alt);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.signin__tab--on {
+  background: var(--c-surface);
   color: var(--c-ink);
+  font-weight: 500;
 }
 
 .signin__lead {

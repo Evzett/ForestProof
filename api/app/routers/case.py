@@ -31,7 +31,7 @@ def list_areas() -> dict:
 def calculate(
     body: CalcRequest,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.require_analyst),
+    user: models.User = Depends(auth.require_operator),
 ) -> dict:
     """Расчёт по контуру и паре лет (В-02, В-03, В-04).
 
@@ -47,13 +47,18 @@ def calculate(
         raise HTTPException(status_code=422, detail="нужен geometry или aoi_id")
 
     geometry = body.geometry
+    # Контур прислали или это участок набора по идентификатору — от этого
+    # зависит, искать ли под него свои снимки.
+    own_geometry = geometry is not None
     if geometry is None:
         geometry = case_service.load_case_set().geometries.get(body.aoi_id)
         if geometry is None:
             raise HTTPException(status_code=404, detail=f"участок {body.aoi_id} не найден")
 
     try:
-        result = case_service.calculate(geometry, body.year_start, body.year_end)
+        result = case_service.calculate(
+            geometry, body.year_start, body.year_end, own_geometry=own_geometry
+        )
     except case_service.CalculationError as exc:
         # Причина отказа — часть ответа, а не текст в логе: её показывают
         # пользователю вместо результата (В-05).
@@ -130,7 +135,7 @@ def calculate(
 def start_calc_job(
     body: CalcRequest,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.require_analyst),
+    user: models.User = Depends(auth.require_operator),
 ) -> dict:
     """Ставит расчёт в фон и сразу возвращает номер задачи.
 

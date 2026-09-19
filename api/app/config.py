@@ -24,7 +24,19 @@ class Settings(BaseSettings):
     # справку. Ключ держится только на сервере и во фронт не уезжает.
     routerai_base_url: str = "https://routerai.ru/api/v1"
     routerai_model: str = "deepseek/deepseek-v4-pro-0813"
+    # Пустая строка в переменной окружения значит «не задано», а не
+    # «модель без имени»: иначе запрос уходил бы с пустым полем model и
+    # сервис модели отвечал бы 400 вместо текста.
     routerai_api_key: str = ""
+
+    @property
+    def routerai(self) -> tuple[str, str] | None:
+        """Ключ и имя модели, если справку действительно есть чем излагать."""
+        key = self.routerai_api_key.strip()
+        model = self.routerai_model.strip()
+        if not key or not model:
+            return None
+        return key, model
 
     @property
     def data_root(self) -> Path:

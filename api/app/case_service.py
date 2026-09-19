@@ -302,6 +302,40 @@ def _derive_baseline(geometry: dict, aoi_id: str, config) -> tuple[list[dict], f
     return rows, rate
 
 
+def _scene_preview(evidence) -> dict | None:
+    """Найденные снимки в той форме, в которой их ждёт экран участка.
+
+    У участков, добавленных нами в набор, снимок лежит в `scene_preview`,
+    и страница умеет показывать пару «до и после». Контур пользователя
+    собирает такую же пару — значит и класть её надо туда же, а не
+    заводить второе место, о котором экран не знает.
+    """
+    if evidence is None or not evidence.scenes:
+        return None
+
+    shots = sorted(evidence.scenes, key=lambda s: s.get("year", 0))
+    latest = shots[-1]
+    return {
+        "image": latest["image"],
+        "date": latest.get("date"),
+        "scene_id": latest.get("scene_id"),
+        "usable_fraction": latest.get("usable_fraction"),
+        "cloud_percent": latest.get("cloud_percent"),
+        "source": latest.get("source", "Sentinel-2 L2A, окно прочитано из облака по контуру"),
+        "shots": [
+            {
+                "role": shot.get("role", "after"),
+                "year": shot.get("year", 0),
+                "image": shot["image"],
+                "date": shot.get("date"),
+                "scene_id": shot.get("scene_id"),
+                "usable_fraction": shot.get("usable_fraction"),
+            }
+            for shot in shots
+        ],
+    }
+
+
 def _external_evidence(geometry: dict, year_start: int, year_end: int, maps_dir: Path):
     """Снимки и гари по контуру из открытых каталогов.
 
@@ -337,8 +371,16 @@ def _maps_dir(geometry: dict, year_start: int, year_end: int) -> Path:
     return target
 
 
-def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
+def calculate(
+    geometry: dict, year_start: int, year_end: int, *, own_geometry: bool = True
+) -> dict:
     """Полный расчёт по контуру. Форма результата — как у участка набора.
+
+    `own_geometry` — контур прислал пользователь. Тогда под него ищутся
+    свои снимки и гари: у участка набора они сняты по его собственной
+    рамке и про чужой выдел внутри неё ничего не говорят. Запрос по
+    идентификатору участка набора приходит с `own_geometry=False` — там
+    снимки пришли вместе с данными кейса.
 
     Контур не обязан лежать внутри участка набора. Если он снаружи,
     данные под него подтягиваются из открытых источников окном по HTTP
@@ -415,11 +457,19 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
     # вложенной вырезки, из тайла в кэше или прямо из облака.
     sources = sorted({row["source"] for row in area.get("series", []) if row.get("source")})
 
-    # Снимки и гари для чужого контура собираются отдельно: build_aoi
-    # берёт их из набора, а у загруженного контура в наборе ничего нет.
-    # Ищутся они в тех же открытых каталогах, что и всё остальное.
+    # Снимки и гари собираются для ЛЮБОГО контура пользователя, а не
+    # только для того, что лежит вне набора.
+    #
+    # Сначала было иначе, и это была ошибка: контур внутри участка кейса
+    # оставался без снимка вовсе. Рассуждение «у родителя снимки уже есть»
+    # не работает — они сняты по рамке родителя, в сотню раз большей, и
+    # выдел в ней не разглядеть. Снимок должен быть про тот контур,
+    # который загрузили, иначе он отвечает не на тот вопрос.
+    #
+    # Для запроса по идентификатору участка набора ничего не ищется: там
+    # снимки пришли вместе с данными кейса, и подменять их своими нельзя.
     evidence = None
-    if derived_baseline:
+    if own_geometry:
         evidence = _external_evidence(geometry, year_start, year_end, maps_dir)
     # Возвращается ПОЛНЫЙ участок, а не выжимка из него.
     #
@@ -456,6 +506,15 @@ def calculate(geometry: dict, year_start: int, year_end: int) -> dict:
         # Снимки и события, найденные во внешних каталогах. У участка
         # набора они приходят с данными, у загруженного контура — отсюда.
         "evidence": evidence.as_dict() if evidence is not None else None,
+        # Найденные снимки кладутся туда же, где их ищет экран участка.
+        # Раньше они лежали только в `evidence`, и страница про них не
+        # знала: снимки собирались, но показать их было негде.
+        "scene_preview": _scene_preview(evidence),
+        # Снимки родительского участка контуру не достаются. Они сняты по
+        # его рамке — в сотню раз большей, — и выдел на них не найти.
+        # Показать их под именем контура значило бы ответить не на тот
+        # вопрос: «что это за место» про совсем другое место.
+        "sentinel": None if own_geometry else area.get("sentinel"),
         "events": (evidence.events if evidence is not None else []),
         "data_sources": sources,
         "status": "расчёт по условиям кейса, а не сертифицированные единицы",

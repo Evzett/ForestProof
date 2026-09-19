@@ -132,11 +132,13 @@ def compose(facts: dict, *, timeout: float = 90.0) -> SummaryResult | None:
     сервис обязан работать без них. Вызывающая сторона показывает
     шаблонную справку.
     """
-    if not settings.routerai_api_key:
+    configured = settings.routerai
+    if configured is None:
         return None
+    api_key, model = configured
 
     payload = {
-        "model": settings.routerai_model,
+        "model": model,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {
@@ -154,14 +156,17 @@ def compose(facts: dict, *, timeout: float = 90.0) -> SummaryResult | None:
         settings.routerai_base_url.rstrip("/") + "/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
         headers={
-            "Authorization": f"Bearer {settings.routerai_api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             body = json.loads(response.read())
-    except (urllib.error.URLError, TimeoutError, ValueError, KeyError):
+    except (urllib.error.URLError, TimeoutError, ValueError, KeyError, OSError):
+        # OSError ловится вместе с остальными намеренно: оборванное
+        # соединение и сброс по таймауту приходят именно им, и без него
+        # падал весь запрос справки — вместе с карточкой участка.
         return None
 
     try:
@@ -175,8 +180,8 @@ def compose(facts: dict, *, timeout: float = 90.0) -> SummaryResult | None:
     if extra:
         return SummaryResult(
             text="",
-            model=settings.routerai_model,
+            model=model,
             rejected_reason=f"в ответе числа, которых нет в расчёте: {', '.join(extra[:5])}",
         )
 
-    return SummaryResult(text=text, model=settings.routerai_model)
+    return SummaryResult(text=text, model=model)

@@ -739,6 +739,9 @@
 .ic--calc { mask-image: url("/icons/calc.svg"); }
 .ic--compare { mask-image: url("/icons/compare.svg"); }
 .ic--method { mask-image: url("/icons/method.svg"); }
+/* Администрирование — человек с отметкой доступа. Раньше здесь стояла
+   иконка «Методики»: два разных раздела выглядели одинаково. */
+.ic--admin { mask-image: url("/icons/admin.svg"); }
 .ic--plus { mask-image: url("/icons/plus.svg"); width: 22px; height: 22px; }
 .ic--arrow { mask-image: url("/icons/arrow.svg"); width: 14px; height: 14px; }
 

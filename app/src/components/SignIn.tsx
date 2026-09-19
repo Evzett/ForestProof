@@ -1,68 +1,39 @@
-/* Вход и текущая роль. KAN-78.
+/* Вход и регистрация. KAN-78.
 
-   Форма входа намеренно не стоит на пути к демо: сервис открывается
+   Форма намеренно не стоит на пути к демо: сервис открывается
    наблюдателем, и всё содержимое видно сразу. Вход предлагается ровно
    там, где начинается запись, — и объясняет, зачем он нужен, а не просто
    требует логин.
 
-   Оформление берётся из дизайн-системы: пилюля роли построена на тех же
-   токенах, что и остальные плашки, кнопки — общий `.btn`, карточка —
-   общий `Card`. Собственных цветов здесь нет. */
+   Регистрация открыта и даёт роль аналитика: этого хватает, чтобы
+   загрузить свой контур и посчитать его, и не хватает, чтобы тронуть
+   чужое. Роли выше выдаёт администратор — в форме их нет вовсе.
+
+   Оформление берётся из дизайн-системы: кнопки — общий `.btn`, поля и
+   радиусы — общие токены. Собственных цветов здесь нет. */
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "../data/session";
 import "./SignIn.css";
 
-/* ---------- Пилюля роли в боковой панели ---------- */
-
-export function RoleBadge() {
-  const { session, ready, offline, signOut } = useSession();
-  const [open, setOpen] = useState(false);
-
-  if (!ready) return null;
-
-  if (!session.authenticated) {
-    return (
-      <>
-        <button className="role" type="button" onClick={() => setOpen(true)}>
-          <span className="role__dot" aria-hidden="true" />
-          <span className="role__text">
-            <b>{session.role_label}</b>
-            <span>{offline ? "сервис расчёта недоступен" : "войти для расчёта"}</span>
-          </span>
-        </button>
-        {open && <SignInDialog onClose={() => setOpen(false)} />}
-      </>
-    );
-  }
-
-  return (
-    <div className="role role--in">
-      <span className="role__dot role__dot--on" aria-hidden="true" />
-      <span className="role__text">
-        <b>{session.display_name}</b>
-        <span>{session.role_label}</span>
-      </span>
-      <button className="role__out" type="button" onClick={signOut} title="Выйти">
-        выйти
-      </button>
-    </div>
-  );
-}
-
-/* ---------- Окно входа ---------- */
+type Mode = "in" | "up";
 
 export function SignInDialog({
   onClose,
   reason,
+  start = "in",
 }: {
   onClose: () => void;
   /** Зачем понадобился вход: показывается над формой. */
   reason?: string;
+  /** С какой вкладки открыть — вход или регистрация. */
+  start?: Mode;
 }) {
-  const { signIn, offline } = useSession();
+  const { signIn, signUp, offline } = useSession();
+  const [mode, setMode] = useState<Mode>(start);
   const [loginName, setLoginName] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,7 +41,7 @@ export function SignInDialog({
 
   useEffect(() => {
     firstField.current?.focus();
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -85,15 +56,21 @@ export function SignInDialog({
     setBusy(true);
     setError("");
     try {
-      await signIn(loginName.trim(), password);
+      if (mode === "in") await signIn(loginName.trim(), password);
+      else await signUp(loginName.trim(), displayName.trim(), password);
       onClose();
     } catch (err) {
       // Причина приходит от сервера и одинакова для неизвестного логина
       // и неверного пароля — по ответу нельзя перебрать существующие.
-      setError(err instanceof Error ? err.message : "Войти не удалось.");
+      setError(err instanceof Error ? err.message : "Не удалось.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const switchTo = (next: Mode) => {
+    setMode(next);
+    setError("");
   };
 
   /* Окно рисуется в корне документа, а не там, где стоит кнопка.
@@ -105,10 +82,32 @@ export function SignInDialog({
     <div className="signin" role="dialog" aria-modal="true" aria-label="Вход">
       <div className="signin__back" onClick={onClose} />
       <form className="signin__card" onSubmit={submit}>
-        <h2 className="signin__title">Вход</h2>
+        <div className="signin__tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "in"}
+            className={mode === "in" ? "signin__tab signin__tab--on" : "signin__tab"}
+            onClick={() => switchTo("in")}
+          >
+            Вход
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "up"}
+            className={mode === "up" ? "signin__tab signin__tab--on" : "signin__tab"}
+            onClick={() => switchTo("up")}
+          >
+            Регистрация
+          </button>
+        </div>
+
         <p className="signin__lead">
-          {reason ??
-            "Просмотр участков, расчётов и отчётов открыт без входа. Вход нужен, чтобы загрузить свой контур и запустить расчёт: у расчёта появляется владелец."}
+          {mode === "up"
+            ? "Новая учётная запись получает роль аналитика: можно загружать свои контуры и запускать расчёты. Роли выше выдаёт администратор."
+            : (reason ??
+              "Просмотр участков, расчётов и отчётов открыт без входа. Вход нужен, чтобы загрузить свой контур и запустить расчёт: у расчёта появляется владелец.")}
         </p>
 
         {offline && (
@@ -129,13 +128,27 @@ export function SignInDialog({
           />
         </label>
 
+        {mode === "up" && (
+          <label className="signin__field">
+            <span>как вас показывать</span>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              autoComplete="name"
+              placeholder="Имя Фамилия"
+              required
+            />
+          </label>
+        )}
+
         <label className="signin__field">
-          <span>пароль</span>
+          <span>пароль{mode === "up" ? " · не короче восьми символов" : ""}</span>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete={mode === "up" ? "new-password" : "current-password"}
+            minLength={mode === "up" ? 8 : undefined}
             required
           />
         </label>
@@ -148,7 +161,9 @@ export function SignInDialog({
 
         <div className="signin__actions">
           <button className="btn btn--dark btn--inline" type="submit" disabled={busy}>
-            <span>{busy ? "Проверяем…" : "Войти"}</span>
+            <span>
+              {busy ? "Проверяем…" : mode === "up" ? "Зарегистрироваться" : "Войти"}
+            </span>
           </button>
           <button className="btn btn--outline btn--inline" type="button" onClick={onClose}>
             <span>Остаться наблюдателем</span>
@@ -156,8 +171,8 @@ export function SignInDialog({
         </div>
 
         <p className="signin__note">
-          Регистрации нет: учётные записи заводятся администратором заранее. Пароль хранится
-          только хешем — восстановить его нельзя, можно назначить новый.
+          Пароль хранится только хешем — восстановить его нельзя, можно назначить новый.
+          Роль в форме регистрации не выбирается: её назначает сервер.
         </p>
       </form>
     </div>,

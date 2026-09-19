@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import models
+from app import auth, models
 
 router = APIRouter(prefix="/api", tags=["calculations"])
 
@@ -23,8 +23,28 @@ def _done_step(name: str) -> dict:
 
 
 @router.get("/calculations")
-def list_calculations(db: Session = Depends(get_db)) -> dict:
-    calcs = db.scalars(select(models.Calculation).order_by(models.Calculation.calculated_at.desc())).all()
+def list_calculations(
+    mine: bool = False,
+    db: Session = Depends(get_db),
+    user: models.User | None = Depends(auth.current_user),
+) -> dict:
+    """Журнал расчётов. `mine=true` — только свои (Ж-01).
+
+    Сам журнал открыт всем: в нём номера, версии методики и хеши входа, а
+    не содержимое чужих участков. Скрывать его значило бы отнять у
+    проверяющего главное — возможность увидеть, что расчёт вообще был.
+
+    Автор показывается именем, а не логином: журнал читают люди.
+    """
+    query = select(models.Calculation).order_by(models.Calculation.calculated_at.desc())
+    if mine:
+        query = query.where(models.Calculation.created_by == (user.login if user else None))
+    calcs = db.scalars(query).all()
+
+    # Имена авторов — одним запросом, а не по строке на расчёт: журнал
+    # растёт, и обход в цикле превратился бы в сотню запросов.
+    names = dict(db.execute(select(models.User.login, models.User.display_name)).all())
+
     return {
         "calculations": [
             {
@@ -35,6 +55,11 @@ def list_calculations(db: Session = Depends(get_db)) -> dict:
                 "algorithm_version": c.algorithm_version,
                 "model_version": c.model_version,
                 "input_hash": c.input_hash,
+                "created_by": c.created_by,
+                # Расчёты старше ролей автора не имеют, и приписывать им
+                # кого-то задним числом нельзя. Так и пишем.
+                "author": names.get(c.created_by) if c.created_by else None,
+                "mine": bool(user and c.created_by == user.login),
             }
             for c in calcs
         ]
