@@ -17,7 +17,10 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./api/Dockerfile
-    dockerContext: ./api
+    # Контекст — корень репозитория: Dockerfile копирует forestproof_core,
+    # tools и data, которые лежат вне api/. С контекстом ./api сборка
+    # падает на первом же COPY.
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL

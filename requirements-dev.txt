@@ -1,0 +1,9 @@
+# Зависимости для запуска тестов. Отдельно от requirements.txt: в образ
+# API и на машину, где только считают, pytest ставить незачем.
+#
+#     pip install -r requirements.txt -r requirements-dev.txt
+#     python -m pytest tests -q
+
+-r requirements.txt
+
+pytest==8.3.4
