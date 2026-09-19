@@ -594,10 +594,32 @@ def main() -> None:
     parser.add_argument("--data", required=True, type=Path, help="каталог data набора кейса")
     parser.add_argument("--out", required=True, type=Path, help="куда записать JSON")
     parser.add_argument("--maps", type=Path, default=None, help="каталог для PNG карт")
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="сверить средние запасы 2015 и 2019 с опорными значениями baseline.csv",
+    )
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        metavar="AOI",
+        default=None,
+        help="считать только перечисленные участки (например, четыре участка кейса)",
+    )
     args = parser.parse_args()
 
     with open(args.data / "areas.csv", encoding="utf-8-sig") as handle:
         areas = list(csv.DictReader(handle))
+
+    # Участки кейса вложены в репозиторий и считаются без сети. Добавленным
+    # нами участкам нужны тайлы из кэша — гигабайты, которых на свежем
+    # клоне нет. Отбор даёт воспроизвести расчёт по кейсу, не скачивая их.
+    if args.only:
+        wanted = set(args.only)
+        unknown = wanted - {row["aoi_id"] for row in areas}
+        if unknown:
+            parser.error(f"нет таких участков в areas.csv: {', '.join(sorted(unknown))}")
+        areas = [row for row in areas if row["aoi_id"] in wanted]
     with open(args.data / "methodology" / "baseline.csv", encoding="utf-8-sig") as handle:
         baseline = list(csv.DictReader(handle))
     with open(args.data / "events.csv", encoding="utf-8-sig") as handle:
@@ -688,6 +710,65 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"записано {args.out} ({args.out.stat().st_size / 1024:.0f} КБ)")
+
+    if args.verify:
+        ok = verify_against_baseline(payload, baseline)
+        if not ok:
+            sys.exit(1)
+
+
+def verify_against_baseline(payload: dict, baseline: list[dict]) -> bool:
+    """Сверяет посчитанные средние запасы 2015 и 2019 с опорными значениями.
+
+    Это самая короткая демонстрация того, что расчёт повторяет замысел
+    автора кейса: если площадное взвешивание пикселей или перевод биомассы
+    в углерод сделаны иначе, средние разойдутся уже в шестом знаке.
+
+    Печатается фактическое расхождение, а не вердикт «совпало»: порог
+    можно оспорить, а измеренную разницу — нет.
+    """
+    tolerance = 1e-6
+    rows: list[tuple[str, int, float, float]] = []
+    for area in payload["areas"]:
+        aoi = area["aoi_id"]
+        reference = next(
+            (r for r in baseline if r.get("aoi_id") == aoi and r.get("baseline_id") == area["baseline_id"]),
+            None,
+        )
+        if reference is None:
+            continue
+        computed = {row["year"]: row["c_t_ha"] for row in area["series"]}
+        for year in (2015, 2019):
+            expected = reference.get(f"reference_mean_{year}_tc_ha")
+            if expected is None or computed.get(year) is None:
+                continue
+            rows.append((aoi, year, float(computed[year]), float(expected)))
+
+    if not rows:
+        print("\nпроверка невозможна: опорные средние в baseline.csv не найдены")
+        return False
+
+    width = max(len(aoi) for aoi, *_ in rows)
+    worst = 0.0
+    print("\nсверка с methodology/baseline.csv (reference_mean_*_tc_ha):")
+    for aoi, year, got, expected in rows:
+        delta = abs(got - expected)
+        worst = max(worst, delta)
+        mark = "ok" if delta <= tolerance else "РАСХОЖДЕНИЕ"
+        print(
+            f"  {aoi:<{width}}  {year}  посчитано {got:.9f}  опорное {expected:.9f}  "
+            f"|Δ| {delta:.2e}  {mark}"
+        )
+
+    if worst <= tolerance:
+        print(f"совпадение до шестого знака: наибольшее расхождение {worst:.2e}")
+        return True
+    print(
+        f"\nнаибольшее расхождение {worst:.2e} превышает допуск {tolerance:.0e}.\n"
+        "Совпадение до шестого знака не достигнуто — это разница в самом расчёте, "
+        "а не в оформлении, и её нельзя списывать на округление."
+    )
+    return False
 
 
 if __name__ == "__main__":

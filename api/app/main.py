@@ -3,7 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import calculations, case, plots, projects, registry, summary, watchlist
+from app.routers import (
+    auth,
+    calculations,
+    case,
+    contours,
+    plots,
+    projects,
+    registry,
+    summary,
+    watchlist,
+)
 
 app = FastAPI(title="ForestProof API", version="0.1.0")
 
@@ -16,7 +26,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(case.router)
+app.include_router(contours.router)
 app.include_router(summary.router)
 app.include_router(projects.router)
 app.include_router(calculations.router)

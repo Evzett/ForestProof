@@ -8,6 +8,7 @@ import ClaimProjects from "./pages/ClaimProjects/ClaimProjects";
 import Plot from "./pages/Plot/Plot";
 import Research from "./pages/Research/Research";
 import { Calculations, Methodology, Monitoring } from "./pages/Sections/Sections";
+import { ContourCard, Contours } from "./pages/Contours/Contours";
 
 /* Роутинг по структуре из docs/05-frontend-user-flow.md.
 
@@ -30,6 +31,8 @@ export default function App() {
           <Route path="area/:id" element={<Plot />} />
           <Route path="compare" element={<Compare />} />
           <Route path="projects" element={<ClaimProjects />} />
+          <Route path="contours" element={<Contours />} />
+          <Route path="contours/:id" element={<ContourCard />} />
           <Route path="calculations" element={<Calculations />} />
           <Route path="monitoring" element={<Monitoring />} />
           <Route path="research" element={<Research />} />

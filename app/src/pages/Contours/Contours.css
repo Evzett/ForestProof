@@ -1,0 +1,49 @@
+/* Раздел «Мои контуры». KAN-78.
+   Собран из готовых классов дизайн-системы; здесь только то, чего в ней
+   ещё не было. Цвета и радиусы — из токенов. */
+
+/* Сводка: тот же ряд плашек, что на «Обзоре», — статистика по
+   загруженным контурам читается так же, как статистика по набору. */
+.cnt-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.cnt-search {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.cnt-search input {
+  width: min(420px, 100%);
+  margin-top: 6px;
+  padding: 11px 16px;
+  border: 1px solid #d5d8cf;
+  border-radius: var(--r-pill);
+  background: var(--c-surface);
+  font: inherit;
+  font-size: 14px;
+  color: var(--c-ink-black);
+}
+
+.cnt-search input:focus {
+  border-color: var(--c-ink);
+  outline: none;
+}
+
+/* Геометрия показывается как есть: это не украшение, а проверяемый
+   исходник, и подменять его картой нельзя. */
+.cnt-geom {
+  max-height: 320px;
+  margin: 0;
+  padding: 16px 18px;
+  overflow: auto;
+  border-radius: var(--r-img-md);
+  background: #f4f5f0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--c-ink-black);
+}

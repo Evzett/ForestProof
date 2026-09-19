@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app import case_service, models
+from app import auth, case_service, models
 from app.database import get_db
 from app.hashing import compute_input_hash
 from app.ids import next_calc_id
@@ -26,11 +26,20 @@ def list_areas() -> dict:
 
 
 @router.post("/calc")
-def calculate(body: CalcRequest, db: Session = Depends(get_db)) -> dict:
+def calculate(
+    body: CalcRequest,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.require_analyst),
+) -> dict:
     """Расчёт по контуру и паре лет (В-02, В-03, В-04).
 
     Контур приходит либо геометрией, либо идентификатором участка набора —
     второе нужно, чтобы экран участка и произвольный контур шли одним путём.
+
+    Запуск расчёта — запись: он создаёт строку в журнале, которой кто-то
+    владеет. Поэтому требуется аналитик, и проверка стоит здесь, на
+    сервере (KAN-78). Наблюдателю остаётся просмотр участков набора: они
+    посчитаны заранее и открываются вообще без обращения к API.
     """
     if body.geometry is None and body.aoi_id is None:
         raise HTTPException(status_code=422, detail="нужен geometry или aoi_id")
@@ -98,6 +107,8 @@ def calculate(body: CalcRequest, db: Session = Depends(get_db)) -> dict:
                 datasets=[{"name": "ESA CCI Biomass", "version": "v7.0"}],
                 parameters={"year_start": body.year_start, "year_end": body.year_end},
                 result=result,
+                # Ж-01: в журнале должно быть видно, кто запустил расчёт.
+                created_by=user.login,
             )
         )
         db.commit()
